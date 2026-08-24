@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   Image as ImageIcon,
   Video as VideoIcon,
@@ -30,6 +30,8 @@ interface GalleryViewerProps {
   media: MediaItemProps[];
   modelName: string;
 }
+
+const ITEMS_PER_PAGE = 24;
 
 function distributeMediaItems(
   items: MediaItemProps[],
@@ -64,13 +66,11 @@ export default function ModelGalleryViewer({
   media,
   modelName,
 }: GalleryViewerProps) {
-  const [activeTab, setActiveTab] = useState<"all" | "photos" | "videos">(
-    "all",
-  );
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "photos" | "videos">("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [playingVideoId, setPlayingVideoId] = useState<string | number | null>(
-    null,
-  );
+  const [playingVideoId, setPlayingVideoId] = useState<string | number | null>(null);
 
   const photos = media.filter((item) => item.type === "photo");
   const videos = media.filter((item) => item.type === "video");
@@ -78,34 +78,56 @@ export default function ModelGalleryViewer({
   const filteredMedia =
     activeTab === "photos" ? photos : activeTab === "videos" ? videos : media;
 
+  const totalPages = Math.ceil(filteredMedia.length / ITEMS_PER_PAGE) || 1;
+
+  // Paginated subset of filtered media
+  const paginatedMedia = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredMedia.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredMedia, currentPage]);
+
   const cols3 = useMemo(
-    () => distributeMediaItems(filteredMedia, 3),
-    [filteredMedia]
+    () => distributeMediaItems(paginatedMedia, 3),
+    [paginatedMedia]
   );
   const cols2 = useMemo(
-    () => distributeMediaItems(filteredMedia, 2),
-    [filteredMedia]
+    () => distributeMediaItems(paginatedMedia, 2),
+    [paginatedMedia]
   );
 
   const currentItem =
     lightboxIndex !== null ? filteredMedia[lightboxIndex] : null;
 
+  const handleTabChange = (tab: "all" | "photos" | "videos") => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setPlayingVideoId(null);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    setCurrentPage(page);
+    setPlayingVideoId(null);
+    galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handlePrev = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! > 0 ? prev! - 1 : filteredMedia.length - 1,
+      prev! > 0 ? prev! - 1 : filteredMedia.length - 1
     );
   };
 
   const handleNext = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! < filteredMedia.length - 1 ? prev! + 1 : 0,
+      prev! < filteredMedia.length - 1 ? prev! + 1 : 0
     );
   };
 
-  const renderMediaCard = (item: MediaItemProps, index: number) => {
-    const mediaKey = item._id || index;
+  const renderMediaCard = (item: MediaItemProps, pageItemIndex: number) => {
+    const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + pageItemIndex;
+    const mediaKey = item._id || globalIndex;
     const isPlaying = playingVideoId === mediaKey;
     const posterSrc =
       item.thumbnail || (item.type === "photo" ? item.url : "");
@@ -118,15 +140,15 @@ export default function ModelGalleryViewer({
         {item.type === "photo" ? (
           <div
             className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden"
-            onClick={() => setLightboxIndex(index)}
+            onClick={() => setLightboxIndex(globalIndex)}
           >
             <img
               src={item.url}
               alt={
                 item.alt ||
-                `${modelName} - Exclusive photo item ${index + 1}`
+                `${modelName} - Exclusive photo item ${globalIndex + 1}`
               }
-              title={item.title || `${modelName} photo ${index + 1}`}
+              title={item.title || `${modelName} photo ${globalIndex + 1}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
             />
@@ -197,7 +219,7 @@ export default function ModelGalleryViewer({
               src={posterSrc}
               alt={item.alt || `${modelName} video thumbnail`}
               title={
-                item.title || `${modelName} video clip ${index + 1}`
+                item.title || `${modelName} video clip ${globalIndex + 1}`
               }
               className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
               loading="lazy"
@@ -225,10 +247,10 @@ export default function ModelGalleryViewer({
               preload="metadata"
               className="w-full h-full object-cover"
               title={
-                item.title || `${modelName} video clip ${index + 1}`
+                item.title || `${modelName} video clip ${globalIndex + 1}`
               }
               aria-label={
-                item.alt || `${modelName} video clip ${index + 1}`
+                item.alt || `${modelName} video clip ${globalIndex + 1}`
               }
             >
               Your browser does not support the video element.
@@ -243,23 +265,64 @@ export default function ModelGalleryViewer({
     );
   };
 
+  const renderPaginationButtons = () => {
+    if (totalPages <= 1) return null;
+
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+      }
+    }
+
+    return (
+      <div className="flex items-center gap-1.5">
+        {pages.map((p, idx) =>
+          typeof p === "number" ? (
+            <button
+              key={idx}
+              onClick={() => handlePageChange(p)}
+              className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                currentPage === p
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {p}
+            </button>
+          ) : (
+            <span key={idx} className="w-8 text-center text-slate-400 text-xs">
+              ...
+            </span>
+          )
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full space-y-6">
+    <div ref={galleryRef} className="w-full space-y-6">
       {/* Gallery Filter Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 border-b border-slate-200 pb-4">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
-            onClick={() => setActiveTab("all")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+            onClick={() => handleTabChange("all")}
+            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
               activeTab === "all"
                 ? "bg-slate-900 text-white shadow-sm"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>All Content</span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
+              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
                 activeTab === "all"
                   ? "bg-slate-700 text-white"
                   : "bg-slate-200 text-slate-700"
@@ -270,17 +333,17 @@ export default function ModelGalleryViewer({
           </button>
 
           <button
-            onClick={() => setActiveTab("photos")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+            onClick={() => handleTabChange("photos")}
+            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
               activeTab === "photos"
                 ? "bg-slate-900 text-white shadow-sm"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            <ImageIcon className="w-4 h-4" />
+            <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Photos</span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
+              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
                 activeTab === "photos"
                   ? "bg-slate-700 text-white"
                   : "bg-slate-200 text-slate-700"
@@ -291,17 +354,17 @@ export default function ModelGalleryViewer({
           </button>
 
           <button
-            onClick={() => setActiveTab("videos")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+            onClick={() => handleTabChange("videos")}
+            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
               activeTab === "videos"
                 ? "bg-slate-900 text-white shadow-sm"
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            <VideoIcon className="w-4 h-4" />
+            <VideoIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Videos</span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
+              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
                 activeTab === "videos"
                   ? "bg-slate-700 text-white"
                   : "bg-slate-200 text-slate-700"
@@ -312,8 +375,9 @@ export default function ModelGalleryViewer({
           </button>
         </div>
 
-        <div className="text-xs font-medium text-slate-500">
-          Showing {filteredMedia.length} of {media.length} items
+        <div className="text-[11px] sm:text-xs font-medium text-slate-500">
+          Showing {paginatedMedia.length} of {filteredMedia.length} items
+          {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
         </div>
       </div>
 
@@ -354,8 +418,43 @@ export default function ModelGalleryViewer({
 
           {/* Mobile 1 Column */}
           <div className="flex flex-col sm:hidden gap-6">
-            {filteredMedia.map((item, index) => renderMediaCard(item, index))}
+            {paginatedMedia.map((item, index) => renderMediaCard(item, index))}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="pt-6 pb-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs font-semibold text-slate-500">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} -{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredMedia.length)} of{" "}
+                {filteredMedia.length} assets
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+
+                {renderPaginationButtons()}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer"
+                  aria-label="Next page"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

@@ -94,6 +94,7 @@ interface ModelData {
   focusKeyphrase: string;
   cornerstone: boolean;
   bio: string;
+  aboutContent?: string;
   profileImage: string;
   coverImage: string;
   media: MediaItem[];
@@ -566,6 +567,36 @@ export default function ModelManagementPage() {
                         className="mt-2 h-36 w-full rounded-2xl object-cover border border-slate-200 shadow-sm"
                       />
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Detailed SEO Article / About Content */}
+              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 text-base font-bold flex items-center justify-between">
+                    <span>Detailed SEO Article / About Content</span>
+                    <Badge variant="outline" className="text-[10px] text-slate-500 font-normal">
+                      Indexed in DOM &amp; Info Accordion
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-slate-500 text-xs">
+                    Comprehensive biography, modeling career details, background story, and keyword-rich text to boost search engine rankings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-slate-700">Detailed About Story / Article</Label>
+                    <Textarea
+                      rows={10}
+                      value={model.aboutContent || ""}
+                      onChange={(e) => updateField("aboutContent", e.target.value)}
+                      placeholder="Write a comprehensive article / biography about the model, career highlights, facts, and bio information for search engine indexation..."
+                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 leading-relaxed font-sans text-sm"
+                    />
+                    <p className="text-[11px] text-slate-400">
+                      This text is always rendered in the page DOM for search engine crawlers, and accessible to visitors via the info icon accordion below the gallery.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

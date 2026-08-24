@@ -32,6 +32,7 @@ export interface IModel extends Document {
 
   // Content
   bio: string;
+  aboutContent?: string;
   profileImage: string;
   coverImage: string;
 
@@ -98,6 +99,7 @@ const ModelSchema = new Schema<IModel>(
 
     // Content
     bio: { type: String, default: "" },
+    aboutContent: { type: String, default: "" },
     profileImage: { type: String, default: "" },
     coverImage: { type: String, default: "" },
 

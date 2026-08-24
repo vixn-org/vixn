@@ -5,7 +5,9 @@ import connectDB from "@/lib/db";
 import Model, { type IMediaItem } from "@/lib/models/model";
 import { generateModelMetadata, generateModelJsonLd } from "@/lib/seo";
 import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
+import ModelInfoAccordion from "@/components/public/model-info-accordion";
 import HeaderSearch from "@/components/public/header-search";
+import PublicFooter from "@/components/public/footer";
 import {
   ChevronRight,
   Home,
@@ -107,7 +109,7 @@ export default async function ModelPage({ params }: Props) {
     : "Recently added";
 
   return (
-    <div className="bg-white text-slate-900 min-h-screen pb-24">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-rose-500 selection:text-white">
       {/* Top Search Bar (Transparent Overlay) */}
       <header className="absolute top-0 left-0 right-0 z-30 bg-transparent pointer-events-auto">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -131,30 +133,31 @@ export default async function ModelPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
-      {/* Cover Image Banner */}
-      <div className="relative w-full h-64 sm:h-80 md:h-96 bg-slate-900 overflow-hidden">
-        {model.coverImage ? (
-          <img
-            src={model.coverImage}
-            alt={`${model.name} official cover banner`}
-            className="w-full h-full object-cover opacity-90"
-            loading="eager"
-          />
-        ) : model.profileImage ? (
-          <img
-            src={model.profileImage}
-            alt={`${model.name} cover`}
-            className="w-full h-full object-cover blur-md scale-105 opacity-60"
-            loading="eager"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-      </div>
+      <main className="flex-1">
+        {/* Cover Image Banner */}
+        <div className="relative w-full h-64 sm:h-80 md:h-96 bg-slate-900 overflow-hidden">
+          {model.coverImage ? (
+            <img
+              src={model.coverImage}
+              alt={`${model.name} official cover banner`}
+              className="w-full h-full object-cover opacity-90"
+              loading="eager"
+            />
+          ) : model.profileImage ? (
+            <img
+              src={model.profileImage}
+              alt={`${model.name} cover`}
+              className="w-full h-full object-cover blur-md scale-105 opacity-60"
+              loading="eager"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        </div>
 
-      {/* Main Container */}
-      <article className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-32 relative z-10">
+        {/* Main Container */}
+        <article className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-32 relative z-10">
         {/* Breadcrumb Navigation */}
         <nav
           aria-label="Breadcrumb"
@@ -323,6 +326,13 @@ export default async function ModelPage({ params }: Props) {
             media={serializedMedia}
             modelName={model.name}
           />
+
+          {/* Expandable Model Information / SEO Article Accordion */}
+          <ModelInfoAccordion
+            content={model.aboutContent}
+            bio={model.bio}
+            modelName={model.name}
+          />
         </section>
 
         {/* Related Models / Internal Linking Section */}
@@ -379,6 +389,10 @@ export default async function ModelPage({ params }: Props) {
           </section>
         )}
       </article>
+      </main>
+
+      {/* SEO-Optimized Footer */}
+      <PublicFooter />
     </div>
   );
 }
