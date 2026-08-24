@@ -15,11 +15,11 @@ export default function PublicFooter() {
               />
             </div>
             <p className="text-sm text-slate-600 max-w-md leading-relaxed">
-              The premier verified model discovery platform featuring high-definition photo galleries, exclusive videos, biographical data, and structured creator portfolios.
+              The premier model discovery platform featuring high-definition photo galleries, exclusive videos, biographical data, and structured creator portfolios.
             </p>
             <div className="flex items-center gap-3 text-xs text-slate-500 pt-2">
               <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                <ShieldCheck className="w-4 h-4" /> 100% Verified Profiles
+                <ShieldCheck className="w-4 h-4" /> Verified Profiles
               </span>
               <span>•</span>
               <span>Fast CDN Delivery</span>

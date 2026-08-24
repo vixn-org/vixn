@@ -105,7 +105,7 @@ export default async function ModelsPage() {
     "@type": "CollectionPage",
     name: "All Models & Creators Directory",
     description:
-      "Complete directory of verified models, photo galleries, and video sets on VIXN.fun.",
+      "Complete directory of models, photo galleries, and video sets on VIXN.fun.",
     url: `${SITE_URL}/models`,
     mainEntity: {
       "@type": "ItemList",

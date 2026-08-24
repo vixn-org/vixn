@@ -1,7 +1,11 @@
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import { generateWebsiteJsonLd } from "@/lib/seo";
+import {
+  generateWebsiteJsonLd,
+  generateFaqJsonLd,
+  generateHomepageItemListJsonLd,
+} from "@/lib/seo";
 import FAQAccordion, { type FAQItem } from "@/components/public/faq-accordion";
 import {
   Sparkles,
@@ -16,6 +20,11 @@ import {
   Layers,
   ChevronRight,
   HelpCircle,
+  ShieldCheck,
+  Zap,
+  Globe,
+  Award,
+  TrendingUp,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -120,34 +129,26 @@ export default async function HomePage() {
 
   const featuredModels = models.filter((m) => m.featured);
   const totalPhotos = models.reduce(
-    (acc, m) => acc + (m.media?.filter((item) => item.type === "photo").length || 0),
-    0
+    (acc, m) =>
+      acc + (m.media?.filter((item) => item.type === "photo").length || 0),
+    0,
   );
   const totalVideos = models.reduce(
-    (acc, m) => acc + (m.media?.filter((item) => item.type === "video").length || 0),
-    0
+    (acc, m) =>
+      acc + (m.media?.filter((item) => item.type === "video").length || 0),
+    0,
   );
 
   // Extract unique categories
   const categories = Array.from(
-    new Set(models.map((m) => m.category).filter(Boolean))
+    new Set(models.map((m) => m.category).filter(Boolean)),
   ) as string[];
 
   const websiteJsonLd = generateWebsiteJsonLd();
-
-  // FAQ Schema for Rich SEO results with all 10 items
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqsList.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-    })),
-  };
+  const faqSchema = generateFaqJsonLd(faqsList);
+  const itemListSchema = generateHomepageItemListJsonLd(
+    models.map((m) => ({ name: m.name, slug: m.slug })),
+  );
 
   return (
     <div className="space-y-16 pb-20">
@@ -160,6 +161,10 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-rose-50/60 via-slate-50/40 to-white pt-16 pb-20 border-b border-slate-100">
@@ -168,14 +173,16 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           {/* Heading */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-tight max-w-4xl mx-auto">
-            Watch Your Favorite Pornstars{" "}
+            Watch Hot Girl XXX Videos & Nude Photos{" "}
             <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
               Free
             </span>
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
-            Free HD videos of the most popular pornstars — updated daily.
+            Free HD videos of popular pornstars, Indian hot girls, and trending
+            models — updated daily. Buttons: Explore Models | Watch Trending
+            Videos
           </p>
 
           {/* Call-to-Action Buttons */}
@@ -203,8 +210,10 @@ export default async function HomePage() {
                 <Flame className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <div className="text-xl font-bold text-slate-900">{models.length}</div>
-                <div className="text-xs font-medium text-slate-500">Verified Models</div>
+                <div className="text-xl font-bold text-slate-900">
+                  {models.length}
+                </div>
+                <div className="text-xs font-medium text-slate-500">Models</div>
               </div>
             </div>
 
@@ -213,8 +222,12 @@ export default async function HomePage() {
                 <ImageIcon className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <div className="text-xl font-bold text-slate-900">{totalPhotos}</div>
-                <div className="text-xs font-medium text-slate-500">4K Photos</div>
+                <div className="text-xl font-bold text-slate-900">
+                  {totalPhotos}
+                </div>
+                <div className="text-xs font-medium text-slate-500">
+                  4K Photos
+                </div>
               </div>
             </div>
 
@@ -223,8 +236,12 @@ export default async function HomePage() {
                 <VideoIcon className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <div className="text-xl font-bold text-slate-900">{totalVideos}</div>
-                <div className="text-xs font-medium text-slate-500">HD Videos</div>
+                <div className="text-xl font-bold text-slate-900">
+                  {totalVideos}
+                </div>
+                <div className="text-xs font-medium text-slate-500">
+                  HD Videos
+                </div>
               </div>
             </div>
           </div>
@@ -233,7 +250,10 @@ export default async function HomePage() {
 
       {/* Featured Creators Section */}
       {featuredModels.length > 0 && (
-        <section id="featured-models" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section
+          id="featured-models"
+          className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        >
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">
@@ -362,14 +382,17 @@ export default async function HomePage() {
       )}
 
       {/* Complete Models Directory */}
-      <section id="all-models" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section
+        id="all-models"
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
               All Creator Models
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Browse through our complete database of verified models
+              Browse through our complete database of models
             </p>
           </div>
 
@@ -397,7 +420,8 @@ export default async function HomePage() {
               Fresh Creator Galleries Coming Soon
             </h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
-              New verified model profiles and 4K media sets are currently being indexed. Check back shortly for updates.
+              New model profiles and 4K media sets are currently being indexed.
+              Check back shortly for updates.
             </p>
           </div>
         ) : (
@@ -506,8 +530,152 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* Fast-Crawl Internal Linking & Tags Hub */}
+      <section
+        id="directory-index"
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4"
+      >
+        <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-8 border border-slate-200/80 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 uppercase tracking-wider">
+                <TrendingUp className="w-3.5 h-3.5" />
+                Directory Index
+              </div>
+              <h3 className="text-lg font-black text-slate-900 mt-1">
+                Explore All Creators &amp; Categories
+              </h3>
+            </div>
+            <span className="text-xs text-slate-500 font-medium">
+              Direct fast crawl links for search engines &amp; visitors
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {models.map((model) => (
+              <Link
+                key={model._id.toString()}
+                href={`/model/${model.slug}`}
+                className="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:text-rose-600 hover:border-rose-300 shadow-xs hover:shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <span>{model.name}</span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  ({model.media?.length || 0})
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Authority & Editorial Guide Section (Light Mode) */}
+      <section
+        id="about-vixn"
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+      >
+        <div className="bg-slate-50/80 rounded-3xl p-8 sm:p-12 border border-slate-200/80 shadow-xs relative overflow-hidden">
+          <div className="relative z-10 space-y-10">
+            {/* Section Header */}
+            <div className="max-w-3xl space-y-3">
+              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600">
+                <Award className="w-4 h-4" />
+                Editorial Guide &amp; Platform Standards
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+                The Premier Destination for Model Galleries &amp;
+                High-Definition Media
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                Vixn.fun is your free destination for hot girl XXX videos, nude
+                photos, and exclusive adult content. Browse high-quality HD and
+                4K videos of popular pornstars, Indian hot girls, desi models,
+                and trending influencers. Explore dedicated model pages with
+                photo galleries, video collections, and detailed profiles. New
+                content is added regularly so you can always find the latest and
+                most searched hot girls in one place.
+              </p>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  100% Verified Profiles
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Every model portfolio on VIXN undergoes identity and content
+                  verification to ensure genuine, high-quality, and official
+                  media sets.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Ultra-Fast 4K CDN Streaming
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Powered by edge-accelerated CDN infrastructure, enjoying
+                  seamless high-definition media browsing with instant loading
+                  and zero lag.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Structured SEO Discovery
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Organized by categories, bio insights, tags, and internal link
+                  routing to make exploring top trending talent intuitive and
+                  accessible.
+                </p>
+              </div>
+            </div>
+
+            {/* Editorial Articles / Search Engine Text */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2 text-xs text-slate-600 leading-relaxed">
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900">
+                  Curated Portfolios &amp; Exclusive Content Sets
+                </h4>
+                <p>
+                  Explore thousands of authentic photo sets and video streams
+                  with full-screen interactive lightbox viewing. Each model
+                  profile features detailed biography information, social
+                  presence, and organized folders for seamless browsing across
+                  mobile and desktop devices.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-bold text-slate-900">
+                  Daily Updates &amp; Trending Model Discoveries
+                </h4>
+                <p>
+                  Our directory is continuously updated with fresh creator
+                  highlights, high-resolution studio shoots, and verified media
+                  streams. Use our instant search and category navigation to
+                  discover your favorite adult creators in one secure hub.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 10 Robust SEO FAQs Section */}
-      <section id="faq-section" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
+      <section
+        id="faq-section"
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8"
+      >
         <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-10 border border-slate-200/80">
           <div className="text-center max-w-2xl mx-auto mb-8">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 uppercase tracking-wider mb-2">
@@ -518,7 +686,8 @@ export default async function HomePage() {
               Everything about VIXN.fun
             </h2>
             <p className="text-sm text-slate-600 mt-2">
-              Explore answers to common questions regarding model verification, media quality, search optimization, and platform infrastructure.
+              Explore answers to common questions regarding model verification,
+              media quality, search optimization, and platform infrastructure.
             </p>
           </div>
 

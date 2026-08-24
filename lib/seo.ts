@@ -140,4 +140,33 @@ export function generateWebsiteJsonLd() {
   };
 }
 
+export function generateFaqJsonLd(faqs: { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+}
+
+export function generateHomepageItemListJsonLd(models: { name: string; slug: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: models.map((model, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: model.name,
+      url: `${SITE_URL}/model/${model.slug}`,
+    })),
+  };
+}
+
 export { SITE_URL, SITE_NAME };
+
