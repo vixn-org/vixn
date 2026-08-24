@@ -775,24 +775,26 @@ export default function ModelManagementPage() {
                         Bulk
                       </Button>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {model.metaKeywords.map((kw) => (
-                        <Badge
-                          key={kw}
-                          variant="secondary"
-                          className="bg-indigo-50 text-indigo-700 border-indigo-200 gap-1 rounded-full px-3"
-                        >
-                          {kw}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveKeyword(kw)}
-                            className="ml-1 hover:text-red-600 cursor-pointer"
+                    {model.metaKeywords.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 max-h-48 overflow-y-auto p-2 rounded-xl bg-slate-50/80 border border-slate-100">
+                        {model.metaKeywords.map((kw) => (
+                          <Badge
+                            key={kw}
+                            variant="secondary"
+                            className="bg-indigo-50 text-indigo-700 border-indigo-200 gap-1 rounded-full px-3 shrink-0"
                           >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
+                            {kw}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveKeyword(kw)}
+                              className="ml-1 hover:text-red-600 cursor-pointer"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -1190,8 +1192,8 @@ export default function ModelManagementPage() {
       </Tabs>
       {/* Bulk Meta Keywords Dialog */}
       <Dialog open={bulkKeywordsOpen} onOpenChange={setBulkKeywordsOpen}>
-        <DialogContent className="bg-white border-slate-200 sm:max-w-lg rounded-2xl">
-          <DialogHeader>
+        <DialogContent className="bg-white border-slate-200 sm:max-w-lg rounded-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-slate-900 text-base font-bold flex items-center gap-2">
               <ListPlus className="w-5 h-5 text-indigo-600" />
               Add Meta Keywords in Bulk
@@ -1201,15 +1203,14 @@ export default function ModelManagementPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-2">
+          <div className="space-y-3 py-2 flex-1 overflow-hidden flex flex-col min-h-0">
             <Textarea
               value={bulkKeywordsText}
               onChange={(e) => setBulkKeywordsText(e.target.value)}
               placeholder={`aditi mistry photos\naditi mistry 4k videos\naditi mistry instagram\naditi mistry full portfolio`}
-              rows={8}
-              className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono text-xs focus:bg-white resize-y"
+              className="h-60 max-h-60 min-h-[15rem] rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono text-xs focus:bg-white resize-none overflow-y-auto leading-relaxed"
             />
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium shrink-0">
               <span>One keyword per line</span>
               <span className="bg-slate-100 px-2 py-0.5 rounded-md text-slate-700 font-semibold">
                 {
