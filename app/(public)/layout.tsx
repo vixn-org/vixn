@@ -40,7 +40,7 @@ export default function PublicLayout({
           {/* Single Explore Models Tab */}
           <div className="flex items-center shrink-0">
             <Link
-              href="/#all-models"
+              href="/models"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
             >
               <Compass className="w-4 h-4 text-rose-500" />
@@ -87,8 +87,8 @@ export default function PublicLayout({
               </h4>
               <ul className="space-y-2 text-sm text-slate-600">
                 <li>
-                  <Link href="/" className="hover:text-rose-600 transition-colors">
-                    Explore Models
+                  <Link href="/models" className="hover:text-rose-600 transition-colors">
+                    All Models Directory
                   </Link>
                 </li>
                 <li>
@@ -97,7 +97,7 @@ export default function PublicLayout({
                   </Link>
                 </li>
                 <li>
-                  <Link href="/#faq-section" className="hover:text-rose-600 transition-colors">
+                  <Link href="/faq" className="hover:text-rose-600 transition-colors">
                     Platform FAQ
                   </Link>
                 </li>

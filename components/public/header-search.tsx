@@ -24,6 +24,9 @@ interface SearchResult {
   media?: Array<{ type: string }>;
 }
 
+// Global client-side memory cache for ultra-fast search results
+const searchCache = new Map<string, SearchResult[]>();
+
 export default function HeaderSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -33,33 +36,60 @@ export default function HeaderSearch() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Debounced search
+  // Debounced search with in-memory caching and request cancellation
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       setResults([]);
       setLoading(false);
       return;
     }
 
+    // Check memory cache first for 0ms instant response
+    const cacheKey = trimmed.toLowerCase();
+    if (searchCache.has(cacheKey)) {
+      setResults(searchCache.get(cacheKey)!);
+      setLoading(false);
+      return;
+    }
+
+    // Cancel prior in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/models?search=${encodeURIComponent(query.trim())}&status=published&limit=6`
+          `/api/models?search=${encodeURIComponent(trimmed)}&status=published&limit=6`,
+          { signal: abortController.signal }
         );
         if (res.ok) {
           const data = await res.json();
-          setResults(data.models || []);
+          const items: SearchResult[] = data.models || [];
+          searchCache.set(cacheKey, items);
+          setResults(items);
         }
-      } catch (err) {
-        console.error("Search error:", err);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== "AbortError") {
+          console.error("Search error:", err);
+        }
       } finally {
-        setLoading(false);
+        if (abortControllerRef.current === abortController) {
+          setLoading(false);
+        }
       }
-    }, 200);
+    }, 120);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      abortController.abort();
+    };
   }, [query]);
 
   // Click outside listener

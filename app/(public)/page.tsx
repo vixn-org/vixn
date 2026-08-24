@@ -401,7 +401,7 @@ export default async function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {models.map((model) => {
               const photoCount =
                 model.media?.filter((m) => m.type === "photo").length || 0;
@@ -412,68 +412,90 @@ export default async function HomePage() {
                 <Link
                   key={model._id.toString()}
                   href={`/model/${model.slug}`}
-                  className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col"
+                  className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1"
                 >
-                  {/* Image */}
-                  <div className="relative aspect-3/4 w-full bg-slate-100 overflow-hidden">
-                    <img
-                      src={
-                        model.profileImage ||
-                        model.coverImage ||
-                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80"
-                      }
-                      alt={`${model.name} profile`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-                    {/* Category pill */}
-                    {model.category && (
-                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-800 uppercase shadow-xs">
-                        {model.category}
+                  {/* Media Preview / Cover */}
+                  <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
+                    {model.profileImage || model.coverImage ? (
+                      <img
+                        src={model.profileImage || model.coverImage}
+                        alt={model.name}
+                        className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-4xl">
+                        {model.name.charAt(0)}
                       </div>
                     )}
 
-                    {/* Bottom overlay info */}
-                    <div className="absolute bottom-3 left-3 right-3 text-white">
-                      <div className="flex items-center gap-1">
-                        <h3 className="font-bold text-base leading-tight truncate">
-                          {model.name}
-                        </h3>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      </div>
-                      <div className="flex items-center gap-2.5 mt-1 text-[11px] text-slate-300">
-                        <span className="flex items-center gap-1">
-                          <ImageIcon className="w-3 h-3 text-rose-400" />
-                          {photoCount} photos
-                        </span>
-                        {videoCount > 0 && (
-                          <span className="flex items-center gap-1">
-                            <VideoIcon className="w-3 h-3 text-violet-400" />
-                            {videoCount} vids
-                          </span>
-                        )}
-                      </div>
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                    {/* Category Badge */}
+                    {model.category && (
+                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-rose-600 shadow-xs border border-white/50">
+                        {model.category}
+                      </span>
+                    )}
+
+                    {/* Media Counts */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                      <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
+                        <ImageIcon className="w-3 h-3 text-rose-400" />
+                        {photoCount}
+                      </span>
+                      <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
+                        <VideoIcon className="w-3 h-3 text-violet-400" />
+                        {videoCount}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Meta Details */}
-                  <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2 bg-white">
-                    {model.bio ? (
-                      <p className="text-xs text-slate-500 line-clamp-2">
-                        {model.bio}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-slate-400">
-                        /model/{model.slug}
-                      </p>
+                  {/* Body Content */}
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
+                          {model.name}
+                        </h3>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      </div>
+
+                      {model.bio && (
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
+                          {model.bio}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Tags preview */}
+                    {model.tags && model.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {model.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-[10px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                        {model.tags.length > 3 && (
+                          <span className="text-[10px] font-medium text-slate-400 self-center">
+                            +{model.tags.length - 3}
+                          </span>
+                        )}
+                      </div>
                     )}
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-400">
-                      <span>Verified Profile</span>
-                      <span className="text-slate-900 group-hover:text-rose-600 transition-colors inline-flex items-center gap-0.5">
-                        Open Folder <ArrowRight className="w-3 h-3" />
+                    {/* View Folder Button */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
+                      <span className="flex items-center gap-1.5">
+                        <FolderOpen className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
+                        Open Folder
+                      </span>
+                      <span className="text-slate-400 group-hover:translate-x-1 group-hover:text-rose-600 transition-all font-black">
+                        →
                       </span>
                     </div>
                   </div>

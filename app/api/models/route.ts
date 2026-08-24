@@ -8,16 +8,18 @@ export async function GET(request: Request) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const search = searchParams.get("search") || "";
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+    const search = (searchParams.get("search") || "").trim();
     const status = searchParams.get("status") || "";
     const sort = searchParams.get("sort") || "-createdAt";
 
     const query: Record<string, unknown> = {};
 
     if (search) {
-      const searchRegex = new RegExp(search, "i");
+      // Escape special regex characters for safe and fast pattern matching
+      const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(escaped, "i");
       query.$or = [
         { name: { $regex: searchRegex } },
         { slug: { $regex: searchRegex } },
@@ -31,22 +33,39 @@ export async function GET(request: Request) {
       query.status = status;
     }
 
-    const total = await Model.countDocuments(query);
-    const models = await Model.find(query)
+    // For fast typeahead/header search (small limit), skip countDocuments for maximum speed
+    const isFastSearch = search.length > 0 && limit <= 10;
+
+    const findPromise = Model.find(query)
+      .select("name slug profileImage coverImage category tags media createdAt status featured")
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
-    return NextResponse.json({
-      models,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+    const countPromise = isFastSearch
+      ? Promise.resolve(null)
+      : Model.countDocuments(query);
+
+    const [models, totalCount] = await Promise.all([findPromise, countPromise]);
+    const total = totalCount !== null ? totalCount : models.length;
+
+    return NextResponse.json(
+      {
+        models,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+        },
+      }
+    );
   } catch (error) {
     console.error("GET /api/models error:", error);
     return NextResponse.json(
