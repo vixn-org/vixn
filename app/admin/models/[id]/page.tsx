@@ -73,6 +73,7 @@ interface MediaItem {
   title: string;
   alt: string;
   order: number;
+  isExternal?: boolean;
 }
 
 interface ModelData {
@@ -123,8 +124,10 @@ export default function ModelManagementPage() {
   const [newMedia, setNewMedia] = useState({
     type: "photo" as "photo" | "video",
     url: "",
+    thumbnail: "",
     title: "",
     alt: "",
+    isExternal: false,
   });
 
   const fetchModel = useCallback(async () => {
@@ -251,7 +254,14 @@ export default function ModelManagementPage() {
 
       const data = await res.json();
       setModel(data.model);
-      setNewMedia({ type: "photo", url: "", title: "", alt: "" });
+      setNewMedia({
+        type: "photo",
+        url: "",
+        thumbnail: "",
+        title: "",
+        alt: "",
+        isExternal: false,
+      });
       setMediaDialogOpen(false);
       toast.success("Media item added to gallery");
     } catch {
@@ -1080,16 +1090,55 @@ export default function ModelManagementPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">Asset URL *</Label>
+                        <Label className="text-xs font-bold text-slate-700">
+                          {newMedia.type === "video" ? "Video Stream / File URL *" : "Photo URL *"}
+                        </Label>
                         <Input
                           value={newMedia.url}
                           onChange={(e) =>
                             setNewMedia({ ...newMedia, url: e.target.value })
                           }
-                          placeholder="https://..."
+                          placeholder={newMedia.type === "video" ? "https://.../video.mp4" : "https://.../photo.jpg"}
                           className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                         />
                       </div>
+
+                      {newMedia.type === "video" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                              <span>Video Thumbnail / Poster Image URL</span>
+                              <span className="text-[10px] text-slate-400 font-normal">Shown as card preview</span>
+                            </Label>
+                            <Input
+                              value={newMedia.thumbnail}
+                              onChange={(e) =>
+                                setNewMedia({ ...newMedia, thumbnail: e.target.value })
+                              }
+                              placeholder="https://.../video-thumbnail.jpg"
+                              className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+                            <div className="space-y-0.5 pr-2">
+                              <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 cursor-pointer">
+                                <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
+                                External Redirect Video Link
+                              </Label>
+                              <p className="text-[11px] text-slate-500">
+                                When clicked, users are redirected to the external streaming page in a new tab instead of playing here
+                              </p>
+                            </div>
+                            <Switch
+                              checked={newMedia.isExternal}
+                              onCheckedChange={(checked) =>
+                                setNewMedia({ ...newMedia, isExternal: checked })
+                              }
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold text-slate-700">Title Caption</Label>
@@ -1160,11 +1209,30 @@ export default function ModelManagementPage() {
                           className="w-full h-44 object-cover"
                         />
                       ) : (
-                        <div className="relative w-full h-44 bg-slate-900 flex items-center justify-center">
-                          <VideoIcon className="h-8 w-8 text-white/60" />
-                          <Badge className="absolute top-2 left-2 bg-slate-800 text-white text-[10px] rounded-full">
-                            VIDEO
-                          </Badge>
+                        <div className="relative w-full h-44 bg-slate-900 flex items-center justify-center overflow-hidden">
+                          {item.thumbnail ? (
+                            <img
+                              src={item.thumbnail}
+                              alt={item.title || "Video thumbnail"}
+                              className="w-full h-full object-cover opacity-80"
+                            />
+                          ) : null}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                              <VideoIcon className="h-5 w-5" />
+                            </div>
+                          </div>
+                          <div className="absolute top-2 left-2 flex items-center gap-1">
+                            <Badge className="bg-slate-800 text-white text-[10px] rounded-full">
+                              VIDEO
+                            </Badge>
+                            {item.isExternal && (
+                              <Badge className="bg-indigo-600 text-white text-[10px] rounded-full flex items-center gap-0.5">
+                                <ExternalLink className="w-2.5 h-2.5" />
+                                REDIRECT
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       )}
                       <div className="p-3 bg-white">

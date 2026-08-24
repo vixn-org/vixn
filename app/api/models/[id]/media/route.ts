@@ -29,6 +29,7 @@ export async function POST(
       title: body.title || "",
       alt: body.alt || "",
       order: model.media.length,
+      isExternal: Boolean(body.isExternal),
     };
 
     model.media.push(newMedia);

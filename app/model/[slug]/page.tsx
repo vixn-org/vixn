@@ -5,6 +5,7 @@ import connectDB from "@/lib/db";
 import Model, { type IMediaItem } from "@/lib/models/model";
 import { generateModelMetadata, generateModelJsonLd } from "@/lib/seo";
 import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
+import HeaderSearch from "@/components/public/header-search";
 import {
   ChevronRight,
   Home,
@@ -82,10 +83,21 @@ export default async function ModelPage({ params }: Props) {
   const { personSchema, imageGallerySchema, breadcrumbSchema } =
     generateModelJsonLd(model);
 
+  const serializedMedia = (model.media || []).map((m: any) => ({
+    _id: m._id?.toString() || "",
+    type: m.type,
+    url: m.url,
+    thumbnail: m.thumbnail || "",
+    title: m.title || "",
+    alt: m.alt || "",
+    order: m.order || 0,
+    isExternal: Boolean(m.isExternal),
+  }));
+
   const photos =
-    model.media?.filter((m: IMediaItem) => m.type === "photo") || [];
+    serializedMedia.filter((m: any) => m.type === "photo") || [];
   const videos =
-    model.media?.filter((m: IMediaItem) => m.type === "video") || [];
+    serializedMedia.filter((m: any) => m.type === "video") || [];
 
   const createdDate = model.createdAt
     ? new Date(model.createdAt).toLocaleDateString("en-US", {
@@ -96,6 +108,15 @@ export default async function ModelPage({ params }: Props) {
 
   return (
     <div className="bg-white text-slate-900 min-h-screen pb-24">
+      {/* Top Search Bar (Transparent Overlay) */}
+      <header className="absolute top-0 left-0 right-0 z-30 bg-transparent pointer-events-auto">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-md">
+            <HeaderSearch />
+          </div>
+        </div>
+      </header>
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -299,7 +320,7 @@ export default async function ModelPage({ params }: Props) {
 
           {/* Interactive Lightbox Viewer */}
           <ModelGalleryViewer
-            media={model.media || []}
+            media={serializedMedia}
             modelName={model.name}
           />
         </section>

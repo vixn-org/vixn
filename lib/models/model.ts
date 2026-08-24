@@ -8,6 +8,7 @@ export interface IMediaItem {
   title: string;
   alt: string;
   order: number;
+  isExternal?: boolean;
 }
 
 export interface IModel extends Document {
@@ -63,6 +64,7 @@ const MediaItemSchema = new Schema<IMediaItem>(
     title: { type: String, default: "" },
     alt: { type: String, default: "" },
     order: { type: Number, default: 0 },
+    isExternal: { type: Boolean, default: false },
   },
   { _id: true }
 );
