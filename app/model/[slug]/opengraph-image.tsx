@@ -8,6 +8,7 @@ export const size = {
 };
 
 export const contentType = "image/png";
+export const dynamic = "force-dynamic";
 
 export default async function OGImage({
   params,
@@ -15,10 +16,16 @@ export default async function OGImage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  await connectDB();
-  const model = await Model.findOne({
-    slug: { $regex: new RegExp(`^${slug}$`, "i") },
-  }).lean();
+  let model: any = null;
+
+  try {
+    await connectDB();
+    model = await Model.findOne({
+      slug: { $regex: new RegExp(`^${slug}$`, "i") },
+    }).lean();
+  } catch (error) {
+    console.error("OG Image generation DB error:", error);
+  }
 
   if (!model) {
     return new ImageResponse(

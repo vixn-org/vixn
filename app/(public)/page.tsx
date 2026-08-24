@@ -107,12 +107,16 @@ const faqsList: FAQItem[] = [
 ];
 
 export default async function HomePage() {
-  await connectDB();
+  let models: PublicModel[] = [];
 
-  // Fetch all models for the directory
-  const models = (await Model.find({ status: "published" })
-    .sort("-createdAt")
-    .lean()) as unknown as PublicModel[];
+  try {
+    await connectDB();
+    models = (await Model.find({ status: "published" })
+      .sort("-createdAt")
+      .lean()) as unknown as PublicModel[];
+  } catch (error) {
+    console.error("HomePage DB connection warning:", error);
+  }
 
   const featuredModels = models.filter((m) => m.featured);
   const totalPhotos = models.reduce(

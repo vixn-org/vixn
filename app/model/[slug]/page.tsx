@@ -28,43 +28,56 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  await connectDB();
-  
-  // Case-insensitive query
-  const model = await Model.findOne({
-    slug: { $regex: new RegExp(`^${slug}$`, "i") },
-  });
+  try {
+    await connectDB();
+    
+    // Case-insensitive query
+    const model = await Model.findOne({
+      slug: { $regex: new RegExp(`^${slug}$`, "i") },
+    });
 
-  if (!model) {
-    return { title: "Model Not Found | VIXN" };
+    if (!model) {
+      return { title: "Model Not Found | VIXN" };
+    }
+
+    return generateModelMetadata(model);
+  } catch (error) {
+    console.error("generateMetadata DB error:", error);
+    return { title: `${slug} | VIXN` };
   }
-
-  return generateModelMetadata(model);
 }
 
 export const dynamic = "force-dynamic";
 
 export default async function ModelPage({ params }: Props) {
   const { slug } = await params;
-  await connectDB();
+  let model: any = null;
+  let relatedModels: any[] = [];
 
-  // Case-insensitive search for resilience
-  const model = await Model.findOne({
-    slug: { $regex: new RegExp(`^${slug}$`, "i") },
-  }).lean();
+  try {
+    await connectDB();
+
+    // Case-insensitive search for resilience
+    model = await Model.findOne({
+      slug: { $regex: new RegExp(`^${slug}$`, "i") },
+    }).lean();
+
+    if (model) {
+      relatedModels = await Model.find({
+        _id: { $ne: model._id },
+        status: "published",
+      })
+        .limit(4)
+        .select("name slug profileImage coverImage category media")
+        .lean();
+    }
+  } catch (error) {
+    console.error("ModelPage DB error:", error);
+  }
 
   if (!model) {
     notFound();
   }
-
-  // Fetch related models for internal linking & engagement
-  const relatedModels = await Model.find({
-    _id: { $ne: model._id },
-    status: "published",
-  })
-    .limit(4)
-    .select("name slug profileImage coverImage category media")
-    .lean();
 
   const { personSchema, imageGallerySchema, breadcrumbSchema } =
     generateModelJsonLd(model);
