@@ -61,6 +61,7 @@ import {
   X,
   Sparkles,
   CheckCircle2,
+  ListPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -114,6 +115,8 @@ export default function ModelManagementPage() {
   const [saving, setSaving] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
+  const [bulkKeywordsOpen, setBulkKeywordsOpen] = useState(false);
+  const [bulkKeywordsText, setBulkKeywordsText] = useState("");
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -196,6 +199,40 @@ export default function ModelManagementPage() {
       ...model,
       metaKeywords: model.metaKeywords.filter((k) => k !== kw),
     });
+  };
+
+  const handleAddBulkKeywords = () => {
+    if (!model || !bulkKeywordsText.trim()) return;
+    const lines = bulkKeywordsText
+      .split(/\r?\n|,/)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+
+    const existingSet = new Set(model.metaKeywords);
+    const newKeywords = [...model.metaKeywords];
+    let addedCount = 0;
+
+    for (const kw of lines) {
+      if (!existingSet.has(kw)) {
+        existingSet.add(kw);
+        newKeywords.push(kw);
+        addedCount++;
+      }
+    }
+
+    setModel({
+      ...model,
+      metaKeywords: newKeywords,
+    });
+
+    if (addedCount > 0) {
+      toast.success(`Added ${addedCount} keyword${addedCount > 1 ? "s" : ""}`);
+    } else {
+      toast.info("No new unique keywords to add");
+    }
+
+    setBulkKeywordsText("");
+    setBulkKeywordsOpen(false);
   };
 
   const handleAddMedia = async () => {
@@ -700,7 +737,12 @@ export default function ModelManagementPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Meta Keywords</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700">Meta Keywords</Label>
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        {model.metaKeywords.length} keywords
+                      </span>
+                    </div>
                     <div className="flex gap-2">
                       <Input
                         value={keywordInput}
@@ -713,11 +755,24 @@ export default function ModelManagementPage() {
                         className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                       />
                       <Button
+                        type="button"
                         variant="outline"
                         onClick={handleAddKeyword}
                         className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
                       >
                         Add
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setBulkKeywordsText("");
+                          setBulkKeywordsOpen(true);
+                        }}
+                        className="rounded-xl border-indigo-200 bg-indigo-50/60 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 flex items-center gap-1.5 font-semibold"
+                      >
+                        <ListPlus className="w-4 h-4 text-indigo-600" />
+                        Bulk
                       </Button>
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -729,8 +784,9 @@ export default function ModelManagementPage() {
                         >
                           {kw}
                           <button
+                            type="button"
                             onClick={() => handleRemoveKeyword(kw)}
-                            className="ml-1 hover:text-red-600"
+                            className="ml-1 hover:text-red-600 cursor-pointer"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -1132,6 +1188,61 @@ export default function ModelManagementPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* Bulk Meta Keywords Dialog */}
+      <Dialog open={bulkKeywordsOpen} onOpenChange={setBulkKeywordsOpen}>
+        <DialogContent className="bg-white border-slate-200 sm:max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-slate-900 text-base font-bold flex items-center gap-2">
+              <ListPlus className="w-5 h-5 text-indigo-600" />
+              Add Meta Keywords in Bulk
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 text-xs">
+              Paste keywords line-by-line (or comma-separated). Duplicates and empty lines will be automatically filtered out.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <Textarea
+              value={bulkKeywordsText}
+              onChange={(e) => setBulkKeywordsText(e.target.value)}
+              placeholder={`aditi mistry photos\naditi mistry 4k videos\naditi mistry instagram\naditi mistry full portfolio`}
+              rows={8}
+              className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono text-xs focus:bg-white resize-y"
+            />
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <span>One keyword per line</span>
+              <span className="bg-slate-100 px-2 py-0.5 rounded-md text-slate-700 font-semibold">
+                {
+                  bulkKeywordsText
+                    .split(/\r?\n|,/)
+                    .map((k) => k.trim())
+                    .filter(Boolean).length
+                }{" "}
+                keywords detected
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBulkKeywordsOpen(false)}
+              className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAddBulkKeywords}
+              disabled={!bulkKeywordsText.trim()}
+              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+            >
+              Add Keywords
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
