@@ -1,0 +1,350 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import type { Metadata } from "next";
+import connectDB from "@/lib/db";
+import Model, { type IMediaItem } from "@/lib/models/model";
+import { generateModelMetadata, generateModelJsonLd } from "@/lib/seo";
+import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
+import {
+  ChevronRight,
+  Home,
+  CheckCircle2,
+  Calendar,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Sparkles,
+  Tag,
+  Share2,
+  ArrowLeft,
+  ShieldCheck,
+  Flame,
+  Globe,
+  Award,
+} from "lucide-react";
+
+interface Props {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  await connectDB();
+  
+  // Case-insensitive query
+  const model = await Model.findOne({
+    slug: { $regex: new RegExp(`^${slug}$`, "i") },
+  });
+
+  if (!model) {
+    return { title: "Model Not Found | VIXN" };
+  }
+
+  return generateModelMetadata(model);
+}
+
+export const dynamic = "force-dynamic";
+
+export default async function ModelPage({ params }: Props) {
+  const { slug } = await params;
+  await connectDB();
+
+  // Case-insensitive search for resilience
+  const model = await Model.findOne({
+    slug: { $regex: new RegExp(`^${slug}$`, "i") },
+  }).lean();
+
+  if (!model) {
+    notFound();
+  }
+
+  // Fetch related models for internal linking & engagement
+  const relatedModels = await Model.find({
+    _id: { $ne: model._id },
+    status: "published",
+  })
+    .limit(4)
+    .select("name slug profileImage coverImage category media")
+    .lean();
+
+  const { personSchema, imageGallerySchema, breadcrumbSchema } =
+    generateModelJsonLd(model);
+
+  const photos =
+    model.media?.filter((m: IMediaItem) => m.type === "photo") || [];
+  const videos =
+    model.media?.filter((m: IMediaItem) => m.type === "video") || [];
+
+  const createdDate = model.createdAt
+    ? new Date(model.createdAt).toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      })
+    : "Recently added";
+
+  return (
+    <div className="bg-white text-slate-900 min-h-screen pb-24">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(imageGallerySchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
+      {/* Cover Image Banner */}
+      <div className="relative w-full h-64 sm:h-80 md:h-96 bg-slate-900 overflow-hidden">
+        {model.coverImage ? (
+          <img
+            src={model.coverImage}
+            alt={`${model.name} official cover banner`}
+            className="w-full h-full object-cover opacity-90"
+            loading="eager"
+          />
+        ) : model.profileImage ? (
+          <img
+            src={model.profileImage}
+            alt={`${model.name} cover`}
+            className="w-full h-full object-cover blur-md scale-105 opacity-60"
+            loading="eager"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      </div>
+
+      {/* Main Container */}
+      <article className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-32 relative z-10">
+        {/* Breadcrumb Navigation */}
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-6 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm text-xs font-semibold text-slate-600"
+        >
+          <Link
+            href="/"
+            className="hover:text-rose-600 transition-colors flex items-center gap-1"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <Link href="/#featured-models" className="hover:text-rose-600 transition-colors">
+            Models
+          </Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-900 font-bold">{model.name}</span>
+        </nav>
+
+        {/* Model Profile Hero Header */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 sm:p-8 mb-10">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+            {/* Avatar & Title */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="relative">
+                {model.profileImage ? (
+                  <img
+                    src={model.profileImage}
+                    alt={`${model.name} verified profile avatar`}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-lg ring-1 ring-slate-200 shrink-0"
+                    loading="eager"
+                  />
+                ) : (
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-rose-500 to-indigo-600 flex items-center justify-center text-white text-3xl font-black shadow-lg">
+                    {model.name.charAt(0)}
+                  </div>
+                )}
+                <div
+                  className="absolute -bottom-1.5 -right-1.5 bg-emerald-500 text-white p-1 rounded-full border-2 border-white shadow-xs"
+                  title="Verified Profile"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-4xl font-black text-slate-950 tracking-tight">
+                    {model.name}
+                  </h1>
+                  {model.cornerstone && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <Award className="w-3 h-3 text-indigo-600" />
+                      Top Creator
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm font-medium text-slate-500">
+                  {model.category && (
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                      {model.category}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 text-slate-500">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Member since {createdDate}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metrics Cards */}
+            <div className="flex items-center gap-3 w-full md:w-auto justify-start sm:justify-end">
+              <div className="bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 text-center min-w-[90px]">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Photos
+                </div>
+                <div className="text-lg font-black text-slate-900 flex items-center justify-center gap-1 mt-0.5">
+                  <ImageIcon className="w-4 h-4 text-rose-500" />
+                  {photos.length}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 text-center min-w-[90px]">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Videos
+                </div>
+                <div className="text-lg font-black text-slate-900 flex items-center justify-center gap-1 mt-0.5">
+                  <VideoIcon className="w-4 h-4 text-violet-500" />
+                  {videos.length}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 text-center min-w-[90px]">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Total Sets
+                </div>
+                <div className="text-lg font-black text-slate-900 flex items-center justify-center gap-1 mt-0.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  {model.media?.length || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Biography Section */}
+          {model.bio && (
+            <div className="pt-6 space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                About {model.name}
+              </h3>
+              <p className="text-sm sm:text-base text-slate-700 leading-relaxed max-w-4xl">
+                {model.bio}
+              </p>
+            </div>
+          )}
+
+          {/* Tags & Focus Keywords */}
+          {((model.tags && model.tags.length > 0) ||
+            (model.metaKeywords && model.metaKeywords.length > 0)) && (
+            <div className="pt-6 mt-6 border-t border-slate-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase mr-1 flex items-center gap-1">
+                <Tag className="w-3 h-3" />
+                Tags:
+              </span>
+              {model.tags?.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100"
+                >
+                  #{tag}
+                </span>
+              ))}
+              {model.metaKeywords
+                ?.filter((kw: string) => !model.tags?.includes(kw))
+                .slice(0, 4)
+                .map((kw: string) => (
+                  <span
+                    key={kw}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                  >
+                    {kw}
+                  </span>
+                ))}
+            </div>
+          )}
+        </div>
+
+        {/* Media Gallery Section */}
+        <section className="space-y-6 mb-16">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">
+                Media Folder &amp; Galleries
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                High resolution photo captures and streaming video footage
+              </p>
+            </div>
+          </div>
+
+          {/* Interactive Lightbox Viewer */}
+          <ModelGalleryViewer
+            media={model.media || []}
+            modelName={model.name}
+          />
+        </section>
+
+        {/* Related Models / Internal Linking Section */}
+        {relatedModels && relatedModels.length > 0 && (
+          <section className="pt-12 border-t border-slate-200 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">
+                  Explore More Models
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Discover other trending creators on VIXN.fun
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="text-xs font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1"
+              >
+                View Directory <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedModels.map((rel: any) => (
+                <Link
+                  key={rel._id.toString()}
+                  href={`/model/${rel.slug}`}
+                  className="group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col"
+                >
+                  <div className="relative aspect-3/4 w-full bg-slate-100 overflow-hidden">
+                    <img
+                      src={
+                        rel.profileImage ||
+                        rel.coverImage ||
+                        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&q=80"
+                      }
+                      alt={rel.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2 text-white">
+                      <p className="font-bold text-sm leading-tight truncate">
+                        {rel.name}
+                      </p>
+                      <p className="text-[10px] text-slate-300">
+                        {rel.media?.length || 0} media sets
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </article>
+    </div>
+  );
+}
