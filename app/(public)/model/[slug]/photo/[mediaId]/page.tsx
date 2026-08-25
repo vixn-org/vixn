@@ -261,15 +261,26 @@ export default async function ModelPhotoPage({ params }: Props) {
                 )}
               </div>
 
-              <a
-                href={currentPhoto.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-                <span>Full Resolution</span>
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://omg10.com/4/11653141"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Download 4K Ultra HD</span>
+                </a>
+                <a
+                  href={currentPhoto.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>View Original</span>
+                </a>
+              </div>
             </div>
           </div>
 

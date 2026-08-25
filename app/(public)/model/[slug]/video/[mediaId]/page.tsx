@@ -286,21 +286,32 @@ export default async function ModelVideoPage({ params }: Props) {
                 )}
               </div>
 
-              {currentVideo.isExternal ? (
+              <div className="flex items-center gap-2">
                 <a
-                  href={currentVideo.url}
+                  href="https://omg10.com/4/11653141"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
-                  <span>Open Stream</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Download 1080p / 4K Video</span>
                 </a>
-              ) : (
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                  4K Direct Streaming
-                </span>
-              )}
+                {currentVideo.isExternal ? (
+                  <a
+                    href={currentVideo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
+                  >
+                    <span>External Stream</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                ) : (
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                    4K Direct Streaming
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

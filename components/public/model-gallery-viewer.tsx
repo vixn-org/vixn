@@ -499,6 +499,16 @@ export default function ModelGalleryViewer({
 
             <div className="flex items-center gap-2">
               <a
+                href="https://omg10.com/4/11653141"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+                title="Download Ultra HD 4K"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Download 4K</span>
+              </a>
+              <a
                 href={currentItem.url}
                 target="_blank"
                 rel="noreferrer"
