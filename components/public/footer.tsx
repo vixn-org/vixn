@@ -39,6 +39,11 @@ export default function PublicFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="hover:text-rose-600 transition-colors font-medium text-rose-600">
+                  Blog &amp; Insights
+                </Link>
+              </li>
+              <li>
                 <Link href="/#featured-models" className="hover:text-rose-600 transition-colors">
                   Featured Creators
                 </Link>

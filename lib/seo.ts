@@ -168,5 +168,355 @@ export function generateHomepageItemListJsonLd(models: { name: string; slug: str
   };
 }
 
+export function generateBlogMetadata(blog: any): Metadata {
+  const title = blog.metaTitle || `${blog.title} | ${SITE_NAME} Blog`;
+  const description =
+    blog.metaDescription ||
+    blog.excerpt ||
+    `Read ${blog.title} on ${SITE_NAME}. Tips, guides, and creator insights.`;
+  const url = `${SITE_URL}/blog/${blog.slug}`;
+  const ogImage = blog.ogImage || blog.coverImage || "";
+  const robots = blog.robotsDirective || "index, follow";
+
+  return {
+    title,
+    description,
+    keywords: blog.metaKeywords?.length
+      ? blog.metaKeywords.join(", ")
+      : `${blog.title}, ${blog.category}, blog, vixn`,
+    alternates: {
+      canonical: blog.canonicalUrl || url,
+    },
+    openGraph: {
+      title: blog.ogTitle || title,
+      description: blog.ogDescription || description,
+      url,
+      siteName: SITE_NAME,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: blog.title,
+            },
+          ]
+        : [],
+      type: "article",
+      publishedTime: blog.publishedAt
+        ? new Date(blog.publishedAt).toISOString()
+        : new Date(blog.createdAt).toISOString(),
+      modifiedTime: blog.updatedAt
+        ? new Date(blog.updatedAt).toISOString()
+        : undefined,
+      authors: [blog.author?.name || "VIXN Editorial"],
+      tags: blog.tags || [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: blog.twitterTitle || blog.ogTitle || title,
+      description: blog.twitterDescription || blog.ogDescription || description,
+      images: blog.twitterImage || ogImage ? [blog.twitterImage || ogImage] : [],
+    },
+    robots,
+  };
+}
+
+export function generateBlogJsonLd(blog: any) {
+  const url = `${SITE_URL}/blog/${blog.slug}`;
+  const ogImage = blog.ogImage || blog.coverImage || `${SITE_URL}/logo.jpg`;
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: blog.title,
+    description: blog.excerpt || blog.metaDescription || blog.title,
+    image: ogImage ? [ogImage] : undefined,
+    datePublished: blog.publishedAt
+      ? new Date(blog.publishedAt).toISOString()
+      : new Date(blog.createdAt).toISOString(),
+    dateModified: blog.updatedAt
+      ? new Date(blog.updatedAt).toISOString()
+      : new Date(blog.createdAt).toISOString(),
+    author: {
+      "@type": "Person",
+      name: blog.author?.name || "VIXN Editorial",
+      jobTitle: blog.author?.role || "Content Editor",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.jpg`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
+    articleSection: blog.category || "Guides",
+    keywords: blog.metaKeywords?.length
+      ? blog.metaKeywords.join(", ")
+      : blog.tags?.join(", "),
+    wordCount: blog.content ? blog.content.split(/\s+/).length : undefined,
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${SITE_URL}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: blog.title,
+        item: url,
+      },
+    ],
+  };
+
+  return { articleSchema, breadcrumbSchema };
+}
+
+export function generatePhotoMetadata(model: any, mediaItem: any): Metadata {
+  const photoTitle = mediaItem.title || `${model.name} HD Photo`;
+  const title = `${photoTitle} | ${model.name} Gallery | ${SITE_NAME}`;
+  const description =
+    mediaItem.alt ||
+    `View exclusive high-definition photo of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
+  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaItem._id}`;
+  const ogImage = mediaItem.url || model.profileImage || "";
+  const robots = model.robotsDirective || "index, follow";
+
+  const keywords = model.metaKeywords?.length
+    ? `${model.metaKeywords.join(", ")}, ${model.name} photo, ${model.name} picture, HD photo`
+    : `${model.name}, ${model.name} photo, model photo, HD photo, vixn`;
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: SITE_NAME,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 1500,
+              alt: mediaItem.alt || photoTitle,
+            },
+          ]
+        : [],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImage ? [ogImage] : [],
+    },
+    robots,
+  };
+}
+
+export function generatePhotoJsonLd(model: any, mediaItem: any) {
+  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaItem._id}`;
+  const photoTitle = mediaItem.title || `${model.name} HD Photo`;
+
+  const imageSchema = {
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    contentUrl: mediaItem.url,
+    url: url,
+    name: photoTitle,
+    caption: mediaItem.alt || photoTitle,
+    description: mediaItem.alt || `${photoTitle} - ${model.name}`,
+    author: {
+      "@type": "Person",
+      name: model.name,
+      url: `${SITE_URL}/model/${model.slug}`,
+    },
+    creator: {
+      "@type": "Person",
+      name: model.name,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.jpg`,
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Models",
+        item: `${SITE_URL}/models`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: model.name,
+        item: `${SITE_URL}/model/${model.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: photoTitle,
+        item: url,
+      },
+    ],
+  };
+
+  return { imageSchema, breadcrumbSchema };
+}
+
+export function generateVideoMetadata(model: any, mediaItem: any): Metadata {
+  const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
+  const title = `${videoTitle} | ${model.name} Videos | ${SITE_NAME}`;
+  const description =
+    mediaItem.alt ||
+    `Watch exclusive high-definition video of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
+  const url = `${SITE_URL}/model/${model.slug}/video/${mediaItem._id}`;
+  const thumbnail = mediaItem.thumbnail || model.profileImage || "";
+  const robots = model.robotsDirective || "index, follow";
+
+  const keywords = model.metaKeywords?.length
+    ? `${model.metaKeywords.join(", ")}, ${model.name} video, ${model.name} clip, 4K streaming`
+    : `${model.name}, ${model.name} video, model video, HD stream, vixn`;
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: SITE_NAME,
+      images: thumbnail
+        ? [
+            {
+              url: thumbnail,
+              width: 1280,
+              height: 720,
+              alt: mediaItem.alt || videoTitle,
+            },
+          ]
+        : [],
+      type: "video.other",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: thumbnail ? [thumbnail] : [],
+    },
+    robots,
+  };
+}
+
+export function generateVideoJsonLd(model: any, mediaItem: any) {
+  const url = `${SITE_URL}/model/${model.slug}/video/${mediaItem._id}`;
+  const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
+  const thumbnail = mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
+
+  const videoSchema = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: videoTitle,
+    description: mediaItem.alt || `${videoTitle} - ${model.name}`,
+    thumbnailUrl: [thumbnail],
+    uploadDate: new Date().toISOString(),
+    contentUrl: mediaItem.url,
+    actor: {
+      "@type": "Person",
+      name: model.name,
+      url: `${SITE_URL}/model/${model.slug}`,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.jpg`,
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Models",
+        item: `${SITE_URL}/models`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: model.name,
+        item: `${SITE_URL}/model/${model.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: videoTitle,
+        item: url,
+      },
+    ],
+  };
+
+  return { videoSchema, breadcrumbSchema };
+}
+
 export { SITE_URL, SITE_NAME };
+
+
 

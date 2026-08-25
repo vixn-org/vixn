@@ -10,14 +10,6 @@ export default function PublicLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Top Notification / Trust Bar */}
-      <div className="bg-slate-900 text-white text-xs py-2 px-4 text-center font-medium tracking-wide">
-        <span className="inline-flex items-center gap-1.5 text-emerald-400">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>High-Resolution 4K &amp; HD Media</span>
-        </span>
-      </div>
-
       {/* Main Header / Navigation */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -38,8 +30,14 @@ export default function PublicLayout({
             <HeaderSearch />
           </div>
 
-          {/* Single Explore Models Tab */}
-          <div className="flex items-center shrink-0">
+          {/* Navigation Links */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <span>Blog</span>
+            </Link>
             <Link
               href="/models"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition-all cursor-pointer shadow-2xs hover:shadow-xs"

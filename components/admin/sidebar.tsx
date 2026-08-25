@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Flame,
   Globe,
+  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -33,6 +34,11 @@ const navItems = [
     title: "Models Management",
     href: "/admin/models",
     icon: Users,
+  },
+  {
+    title: "Blog & SEO Articles",
+    href: "/admin/blogs",
+    icon: BookOpen,
   },
 ];
 

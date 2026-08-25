@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import {
   Image as ImageIcon,
   Video as VideoIcon,
@@ -29,17 +30,18 @@ export interface MediaItemProps {
 interface GalleryViewerProps {
   media: MediaItemProps[];
   modelName: string;
+  modelSlug?: string;
 }
 
 const ITEMS_PER_PAGE = 24;
 
 function distributeMediaItems(
   items: MediaItemProps[],
-  colCount: number
+  colCount: number,
 ): { item: MediaItemProps; originalIndex: number }[][] {
   const cols: { item: MediaItemProps; originalIndex: number }[][] = Array.from(
     { length: colCount },
-    () => []
+    () => [],
   );
   const colHeights = Array(colCount).fill(0);
 
@@ -65,12 +67,17 @@ function distributeMediaItems(
 export default function ModelGalleryViewer({
   media,
   modelName,
+  modelSlug,
 }: GalleryViewerProps) {
   const galleryRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "photos" | "videos">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "photos" | "videos">(
+    "all",
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [playingVideoId, setPlayingVideoId] = useState<string | number | null>(null);
+  const [playingVideoId, setPlayingVideoId] = useState<string | number | null>(
+    null,
+  );
 
   const photos = media.filter((item) => item.type === "photo");
   const videos = media.filter((item) => item.type === "video");
@@ -88,11 +95,11 @@ export default function ModelGalleryViewer({
 
   const cols3 = useMemo(
     () => distributeMediaItems(paginatedMedia, 3),
-    [paginatedMedia]
+    [paginatedMedia],
   );
   const cols2 = useMemo(
     () => distributeMediaItems(paginatedMedia, 2),
-    [paginatedMedia]
+    [paginatedMedia],
   );
 
   const currentItem =
@@ -101,36 +108,43 @@ export default function ModelGalleryViewer({
   const handleTabChange = (tab: "all" | "photos" | "videos") => {
     setActiveTab(tab);
     setCurrentPage(1);
-    setPlayingVideoId(null);
   };
 
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages || page === currentPage) return;
-    setCurrentPage(page);
-    setPlayingVideoId(null);
-    galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (galleryRef.current) {
+      const topOffset =
+        galleryRef.current.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top: topOffset, behavior: "smooth" });
+    }
   };
 
   const handlePrev = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! > 0 ? prev! - 1 : filteredMedia.length - 1
+      prev! > 0 ? prev! - 1 : filteredMedia.length - 1,
     );
   };
 
   const handleNext = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! < filteredMedia.length - 1 ? prev! + 1 : 0
+      prev! < filteredMedia.length - 1 ? prev! + 1 : 0,
     );
   };
 
-  const renderMediaCard = (item: MediaItemProps, pageItemIndex: number) => {
-    const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + pageItemIndex;
+  const renderMediaCard = (item: MediaItemProps, globalIndex: number) => {
     const mediaKey = item._id || globalIndex;
     const isPlaying = playingVideoId === mediaKey;
-    const posterSrc =
-      item.thumbnail || (item.type === "photo" ? item.url : "");
+    const posterSrc = item.thumbnail || (item.type === "photo" ? item.url : "");
+
+    const photoHref = modelSlug
+      ? `/model/${modelSlug}/photo/${item._id || item.order || globalIndex}`
+      : null;
+
+    const videoHref = modelSlug
+      ? `/model/${modelSlug}/video/${item._id || item.order || globalIndex}`
+      : null;
 
     return (
       <div
@@ -138,52 +152,74 @@ export default function ModelGalleryViewer({
         className="w-full rounded-xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-slate-300 transition-all duration-300 group relative bg-slate-900"
       >
         {item.type === "photo" ? (
-          <div
-            className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden"
-            onClick={() => setLightboxIndex(globalIndex)}
-          >
-            <img
-              src={item.url}
-              alt={
-                item.alt ||
-                `${modelName} - Exclusive photo item ${globalIndex + 1}`
-              }
-              title={item.title || `${modelName} photo ${globalIndex + 1}`}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-              <div className="w-full flex items-center justify-between text-white">
-                <span className="text-xs font-medium bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
-                  Click to enlarge
-                </span>
-                <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                  <Maximize2 className="w-4 h-4" />
+          photoHref ? (
+            /* Dedicated Photo Link */
+            <Link
+              href={photoHref}
+              className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden block"
+            >
+              <img
+                src={item.url}
+                alt={
+                  item.alt ||
+                  `${modelName} - Exclusive photo item ${globalIndex + 1}`
+                }
+                title={item.title || `${modelName} photo ${globalIndex + 1}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <div className="w-full flex items-center justify-between text-white">
+                  <span className="text-xs font-medium bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                    View HD Photo
+                  </span>
+                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <Maximize2 className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
+              {/* Badge */}
+              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
+                <ImageIcon className="w-3 h-3 text-rose-500" />
+                PHOTO
+              </div>
+            </Link>
+          ) : (
+            /* Lightbox Fallback */
+            <div
+              className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden"
+              onClick={() => setLightboxIndex(globalIndex)}
+            >
+              <img
+                src={item.url}
+                alt={
+                  item.alt ||
+                  `${modelName} - Exclusive photo item ${globalIndex + 1}`
+                }
+                title={item.title || `${modelName} photo ${globalIndex + 1}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
+                <ImageIcon className="w-3 h-3 text-rose-500" />
+                PHOTO
+              </div>
             </div>
-            {/* Badge */}
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
-              <ImageIcon className="w-3 h-3 text-rose-500" />
-              PHOTO
-            </div>
-          </div>
-        ) : item.isExternal ? (
-          /* External Video Redirect Card */
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
+          )
+        ) : videoHref ? (
+          /* Dedicated Video Link */
+          <Link
+            href={videoHref}
             className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer group/video block"
           >
             {posterSrc ? (
               <img
                 src={posterSrc}
-                alt={
-                  item.alt || `${modelName} external video thumbnail`
+                alt={item.alt || `${modelName} video thumbnail`}
+                title={
+                  item.title || `${modelName} video clip ${globalIndex + 1}`
                 }
-                title={item.title || `${modelName} full video stream`}
                 className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
@@ -192,52 +228,27 @@ export default function ModelGalleryViewer({
                 <VideoIcon className="w-12 h-12 text-slate-600" />
               </div>
             )}
-            {/* Dark gradient & Play button overlay */}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover/video:bg-black/25 transition-colors">
-              <div className="w-14 h-14 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl transform group-hover/video:scale-110 group-hover/video:bg-rose-600 transition-all">
+            {/* Play button overlay */}
+            <div className="absolute inset-0 bg-black/10 group-hover/video:bg-transparent transition-colors flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-rose-600/40 group-hover/video:bg-rose-600/70 text-white flex items-center justify-center shadow-lg transform group-hover/video:scale-110 transition-all">
                 <Play className="w-6 h-6 fill-current ml-0.5" />
               </div>
             </div>
-            {/* External Redirect Badge */}
+            {/* Badges */}
             <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
               <div className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1">
                 <VideoIcon className="w-3 h-3 text-violet-600" />
-                STREAM
+                VIDEO
               </div>
-              <div className="bg-indigo-600/90 backdrop-blur-md text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xs flex items-center gap-1">
-                <ExternalLink className="w-3 h-3" />
-              </div>
+              {item.isExternal && (
+                <div className="bg-indigo-600/90 backdrop-blur-md text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xs flex items-center gap-1">
+                  <ExternalLink className="w-3 h-3" />
+                </div>
+              )}
             </div>
-          </a>
-        ) : posterSrc && !isPlaying ? (
-          /* Internal Video with Poster - Click to Play */
-          <div
-            className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer group/video"
-            onClick={() => setPlayingVideoId(mediaKey)}
-          >
-            <img
-              src={posterSrc}
-              alt={item.alt || `${modelName} video thumbnail`}
-              title={
-                item.title || `${modelName} video clip ${globalIndex + 1}`
-              }
-              className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-            {/* Dark gradient & Play button overlay */}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover/video:bg-black/25 transition-colors">
-              <div className="w-14 h-14 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl transform group-hover/video:scale-110 group-hover/video:bg-rose-600 transition-all">
-                <Play className="w-6 h-6 fill-current ml-0.5" />
-              </div>
-            </div>
-            {/* Video Badge */}
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
-              <VideoIcon className="w-3 h-3 text-violet-600" />
-              VIDEO
-            </div>
-          </div>
+          </Link>
         ) : (
-          /* Video Player */
+          /* Fallback Direct Player */
           <div className="relative aspect-video w-full bg-slate-950 overflow-hidden flex items-center justify-center">
             <video
               src={item.url}
@@ -246,9 +257,7 @@ export default function ModelGalleryViewer({
               autoPlay={isPlaying}
               preload="metadata"
               className="w-full h-full object-cover"
-              title={
-                item.title || `${modelName} video clip ${globalIndex + 1}`
-              }
+              title={item.title || `${modelName} video clip ${globalIndex + 1}`}
               aria-label={
                 item.alt || `${modelName} video clip ${globalIndex + 1}`
               }
@@ -275,9 +284,24 @@ export default function ModelGalleryViewer({
       if (currentPage <= 3) {
         pages.push(1, 2, 3, 4, "...", totalPages);
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages,
+        );
       } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages,
+        );
       }
     }
 
@@ -300,7 +324,7 @@ export default function ModelGalleryViewer({
             <span key={idx} className="w-8 text-center text-slate-400 text-xs">
               ...
             </span>
-          )
+          ),
         )}
       </div>
     );
@@ -399,7 +423,7 @@ export default function ModelGalleryViewer({
             {cols3.map((col, colIdx) => (
               <div key={`col3-${colIdx}`} className="flex flex-col gap-6">
                 {col.map(({ item, originalIndex }) =>
-                  renderMediaCard(item, originalIndex)
+                  renderMediaCard(item, originalIndex),
                 )}
               </div>
             ))}
@@ -410,7 +434,7 @@ export default function ModelGalleryViewer({
             {cols2.map((col, colIdx) => (
               <div key={`col2-${colIdx}`} className="flex flex-col gap-6">
                 {col.map(({ item, originalIndex }) =>
-                  renderMediaCard(item, originalIndex)
+                  renderMediaCard(item, originalIndex),
                 )}
               </div>
             ))}
@@ -425,9 +449,9 @@ export default function ModelGalleryViewer({
           {totalPages > 1 && (
             <div className="pt-6 pb-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-xs font-semibold text-slate-500">
-                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} -{" "}
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredMedia.length)} of{" "}
-                {filteredMedia.length} assets
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredMedia.length)}{" "}
+                of {filteredMedia.length} assets
               </div>
 
               <div className="flex items-center gap-2">

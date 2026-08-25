@@ -325,6 +325,7 @@ export default async function ModelPage({ params }: Props) {
           <ModelGalleryViewer
             media={serializedMedia}
             modelName={model.name}
+            modelSlug={model.slug}
           />
 
           {/* Expandable Model Information / SEO Article Accordion */}
