@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import { generateVideoMetadata, generateVideoJsonLd } from "@/lib/seo";
+import { generateVideoMetadata, generateVideoJsonLd, getMediaSlug } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,9 +15,6 @@ import {
   Sparkles,
   Play,
   ExternalLink,
-  ShieldCheck,
-  Calendar,
-  Layers,
 } from "lucide-react";
 
 interface Props {
@@ -25,6 +22,29 @@ interface Props {
 }
 
 export const dynamic = "force-dynamic";
+
+function findVideoIndex(videos: any[], param: string): number {
+  if (!videos || videos.length === 0) return -1;
+  const decoded = decodeURIComponent(param);
+
+  // 1. Match exact ID or order
+  let idx = videos.findIndex(
+    (m: any) => m._id?.toString() === decoded || m.order?.toString() === decoded
+  );
+  if (idx !== -1) return idx;
+
+  // 2. Match slug with ID suffix
+  idx = videos.findIndex((m: any, i: number) => {
+    const mId = m._id?.toString();
+    const mOrder = m.order?.toString();
+    if (mId && (decoded.endsWith(`-${mId}`) || decoded === mId)) return true;
+    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder)) return true;
+    const mediaSlug = getMediaSlug(m, "video", i);
+    return mediaSlug === decoded;
+  });
+
+  return idx;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, mediaId } = await params;
@@ -37,16 +57,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!model) return { title: "Video Not Found | VIXN" };
 
-    const mediaItem = (model.media || []).find(
-      (m: any) =>
-        m._id?.toString() === mediaId || m.order?.toString() === mediaId,
-    );
+    const allVideos = (model.media || []).filter((m: any) => m.type === "video");
+    const videoIndex = findVideoIndex(allVideos, mediaId);
 
-    if (!mediaItem || mediaItem.type !== "video") {
+    if (videoIndex === -1) {
       return { title: `${model.name} Video | VIXN` };
     }
 
-    return generateVideoMetadata(model, mediaItem);
+    const mediaItem = allVideos[videoIndex];
+    return generateVideoMetadata(model, mediaItem, videoIndex);
   } catch {
     return { title: "VIXN Model Video" };
   }
@@ -66,10 +85,7 @@ export default async function ModelVideoPage({ params }: Props) {
   }
 
   const allVideos = (model.media || []).filter((m: any) => m.type === "video");
-  const currentIndex = allVideos.findIndex(
-    (m: any) =>
-      m._id?.toString() === mediaId || m.order?.toString() === mediaId,
-  );
+  const currentIndex = findVideoIndex(allVideos, mediaId);
 
   if (currentIndex === -1) {
     notFound();
@@ -81,13 +97,14 @@ export default async function ModelVideoPage({ params }: Props) {
     currentIndex < allVideos.length - 1 ? allVideos[currentIndex + 1] : null;
 
   // Other related videos from the same model
-  const relatedVideos = allVideos.filter(
-    (v: any) => v._id?.toString() !== currentVideo._id?.toString(),
-  );
+  const relatedVideos = allVideos
+    .map((v: any, originalIndex: number) => ({ ...v, originalIndex }))
+    .filter((v: any) => v._id?.toString() !== currentVideo._id?.toString());
 
   const { videoSchema, breadcrumbSchema } = generateVideoJsonLd(
     model,
     currentVideo,
+    currentIndex
   );
 
   const videoTitle =
@@ -228,7 +245,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/video/${prevVideo._id || prevVideo.order}`}
+                      href={`/model/${model.slug}/video/${getMediaSlug(prevVideo, "video", currentIndex - 1)}`}
                     >
                       <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Video
                     </Link>
@@ -252,7 +269,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/video/${nextVideo._id || nextVideo.order}`}
+                      href={`/model/${model.slug}/video/${getMediaSlug(nextVideo, "video", currentIndex + 1)}`}
                     >
                       Next Video <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Link>
@@ -324,9 +341,7 @@ export default async function ModelVideoPage({ params }: Props) {
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400 font-medium">Format:</span>
                   <span className="font-bold text-slate-900">
-                    {currentVideo.isExternal
-                      ? "Redirect Stream"
-                      : "Direct HD Video"}
+                    {currentVideo.isExternal ? "Redirect Stream" : "Direct HD Video"}
                   </span>
                 </div>
               </div>
@@ -345,10 +360,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     {model.name}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {
-                      (model.media || []).filter((m: any) => m.type === "photo")
-                        .length
-                    }{" "}
+                    {(model.media || []).filter((m: any) => m.type === "photo").length}{" "}
                     Photos • {allVideos.length} Videos
                   </p>
                 </div>
@@ -381,8 +393,7 @@ export default async function ModelVideoPage({ params }: Props) {
                   More Videos of {model.name}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Browse the complete video collection ({allVideos.length}{" "}
-                  total)
+                  Browse the complete video collection ({allVideos.length} total)
                 </p>
               </div>
 
@@ -395,13 +406,16 @@ export default async function ModelVideoPage({ params }: Props) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {relatedVideos.slice(0, 8).map((vid: any, idx: number) => {
+              {relatedVideos.slice(0, 8).map((vid: any) => {
                 const vidPoster =
-                  vid.thumbnail || model.profileImage || model.coverImage || "";
+                  vid.thumbnail ||
+                  model.profileImage ||
+                  model.coverImage ||
+                  "";
                 return (
                   <Link
-                    key={vid._id?.toString() || idx}
-                    href={`/model/${model.slug}/video/${vid._id || vid.order}`}
+                    key={vid._id?.toString() || vid.originalIndex}
+                    href={`/model/${model.slug}/video/${getMediaSlug(vid, "video", vid.originalIndex)}`}
                     className="group relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs hover:shadow-lg transition-all transform hover:-translate-y-1 block"
                   >
                     {vidPoster ? (
@@ -426,7 +440,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     </div>
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
                       <p className="text-xs font-bold text-white truncate">
-                        {vid.title || `Video Clip #${idx + 1}`}
+                        {vid.title || `Video Clip #${vid.originalIndex + 1}`}
                       </p>
                     </div>
                   </Link>

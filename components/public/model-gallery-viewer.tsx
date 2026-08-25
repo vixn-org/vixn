@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
+import { getMediaSlug } from "@/lib/seo";
 import {
   Image as ImageIcon,
   Video as VideoIcon,
@@ -139,11 +140,11 @@ export default function ModelGalleryViewer({
     const posterSrc = item.thumbnail || (item.type === "photo" ? item.url : "");
 
     const photoHref = modelSlug
-      ? `/model/${modelSlug}/photo/${item._id || item.order || globalIndex}`
+      ? `/model/${modelSlug}/photo/${getMediaSlug(item, "photo", globalIndex)}`
       : null;
 
     const videoHref = modelSlug
-      ? `/model/${modelSlug}/video/${item._id || item.order || globalIndex}`
+      ? `/model/${modelSlug}/video/${getMediaSlug(item, "video", globalIndex)}`
       : null;
 
     return (

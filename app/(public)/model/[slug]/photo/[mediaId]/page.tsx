@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import { generatePhotoMetadata, generatePhotoJsonLd } from "@/lib/seo";
+import { generatePhotoMetadata, generatePhotoJsonLd, getMediaSlug } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,10 +14,6 @@ import {
   Image as ImageIcon,
   Sparkles,
   Maximize2,
-  Share2,
-  Calendar,
-  Layers,
-  Flame,
 } from "lucide-react";
 
 interface Props {
@@ -25,6 +21,29 @@ interface Props {
 }
 
 export const dynamic = "force-dynamic";
+
+function findPhotoIndex(photos: any[], param: string): number {
+  if (!photos || photos.length === 0) return -1;
+  const decoded = decodeURIComponent(param);
+
+  // 1. Match exact ID or order
+  let idx = photos.findIndex(
+    (m: any) => m._id?.toString() === decoded || m.order?.toString() === decoded
+  );
+  if (idx !== -1) return idx;
+
+  // 2. Match slug with ID suffix (e.g. "...-65f1234abc")
+  idx = photos.findIndex((m: any, i: number) => {
+    const mId = m._id?.toString();
+    const mOrder = m.order?.toString();
+    if (mId && (decoded.endsWith(`-${mId}`) || decoded === mId)) return true;
+    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder)) return true;
+    const mediaSlug = getMediaSlug(m, "photo", i);
+    return mediaSlug === decoded;
+  });
+
+  return idx;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, mediaId } = await params;
@@ -37,15 +56,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!model) return { title: "Photo Not Found | VIXN" };
 
-    const mediaItem = (model.media || []).find(
-      (m: any) => m._id?.toString() === mediaId || m.order?.toString() === mediaId
-    );
+    const allPhotos = (model.media || []).filter((m: any) => m.type === "photo");
+    const photoIndex = findPhotoIndex(allPhotos, mediaId);
 
-    if (!mediaItem || mediaItem.type !== "photo") {
+    if (photoIndex === -1) {
       return { title: `${model.name} Photo | VIXN` };
     }
 
-    return generatePhotoMetadata(model, mediaItem);
+    const mediaItem = allPhotos[photoIndex];
+    return generatePhotoMetadata(model, mediaItem, photoIndex);
   } catch {
     return { title: "VIXN Model Photo" };
   }
@@ -65,9 +84,7 @@ export default async function ModelPhotoPage({ params }: Props) {
   }
 
   const allPhotos = (model.media || []).filter((m: any) => m.type === "photo");
-  const currentIndex = allPhotos.findIndex(
-    (m: any) => m._id?.toString() === mediaId || m.order?.toString() === mediaId
-  );
+  const currentIndex = findPhotoIndex(allPhotos, mediaId);
 
   if (currentIndex === -1) {
     notFound();
@@ -79,13 +96,14 @@ export default async function ModelPhotoPage({ params }: Props) {
     currentIndex < allPhotos.length - 1 ? allPhotos[currentIndex + 1] : null;
 
   // Other related photos from the same model (excluding current)
-  const relatedPhotos = allPhotos.filter(
-    (p: any) => p._id?.toString() !== currentPhoto._id?.toString()
-  );
+  const relatedPhotos = allPhotos
+    .map((p: any, originalIndex: number) => ({ ...p, originalIndex }))
+    .filter((p: any) => p._id?.toString() !== currentPhoto._id?.toString());
 
   const { imageSchema, breadcrumbSchema } = generatePhotoJsonLd(
     model,
-    currentPhoto
+    currentPhoto,
+    currentIndex
   );
 
   const photoTitle =
@@ -164,7 +182,7 @@ export default async function ModelPhotoPage({ params }: Props) {
               {/* Prev Button Overlay */}
               {prevPhoto && (
                 <Link
-                  href={`/model/${model.slug}/photo/${prevPhoto._id || prevPhoto.order}`}
+                  href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
                   title="Previous Photo"
                 >
@@ -175,7 +193,7 @@ export default async function ModelPhotoPage({ params }: Props) {
               {/* Next Button Overlay */}
               {nextPhoto && (
                 <Link
-                  href={`/model/${model.slug}/photo/${nextPhoto._id || nextPhoto.order}`}
+                  href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
                   className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
                   title="Next Photo"
                 >
@@ -202,7 +220,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/photo/${prevPhoto._id || prevPhoto.order}`}
+                      href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
                     >
                       <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Photo
                     </Link>
@@ -226,7 +244,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/photo/${nextPhoto._id || nextPhoto.order}`}
+                      href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
                     >
                       Next Photo <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Link>
@@ -358,10 +376,10 @@ export default async function ModelPhotoPage({ params }: Props) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {relatedPhotos.slice(0, 12).map((photo: any, idx: number) => (
+              {relatedPhotos.slice(0, 12).map((photo: any) => (
                 <Link
-                  key={photo._id?.toString() || idx}
-                  href={`/model/${model.slug}/photo/${photo._id || photo.order}`}
+                  key={photo._id?.toString() || photo.originalIndex}
+                  href={`/model/${model.slug}/photo/${getMediaSlug(photo, "photo", photo.originalIndex)}`}
                   className="group relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs hover:shadow-lg transition-all transform hover:-translate-y-1 block"
                 >
                   <img
@@ -372,7 +390,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
                     <span className="text-[11px] font-bold text-white truncate">
-                      {photo.title || `Photo #${idx + 1}`}
+                      {photo.title || `Photo #${photo.originalIndex + 1}`}
                     </span>
                   </div>
                 </Link>

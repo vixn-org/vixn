@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
+import { getMediaSlug } from "@/lib/seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
@@ -56,20 +57,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const mediaEntries: MetadataRoute.Sitemap = [];
     models.forEach((model) => {
-      (model.media || []).forEach((item: any) => {
-        const mediaId = item._id?.toString() || item.order;
-        if (!mediaId) return;
-
+      (model.media || []).forEach((item: any, idx: number) => {
         if (item.type === "photo") {
+          const mediaSlug = getMediaSlug(item, "photo", idx);
           mediaEntries.push({
-            url: `${SITE_URL}/model/${model.slug}/photo/${mediaId}`,
+            url: `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`,
             lastModified: model.updatedAt || new Date(),
             changeFrequency: "monthly" as const,
             priority: 0.7,
           });
         } else if (item.type === "video") {
+          const mediaSlug = getMediaSlug(item, "video", idx);
           mediaEntries.push({
-            url: `${SITE_URL}/model/${model.slug}/video/${mediaId}`,
+            url: `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`,
             lastModified: model.updatedAt || new Date(),
             changeFrequency: "monthly" as const,
             priority: 0.75,

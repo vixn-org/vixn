@@ -291,13 +291,21 @@ export function generateBlogJsonLd(blog: any) {
   return { articleSchema, breadcrumbSchema };
 }
 
-export function generatePhotoMetadata(model: any, mediaItem: any): Metadata {
+export function getMediaSlug(item: any, type: "photo" | "video" = "photo", fallbackIndex: number = 0): string {
+  const baseTitle = item.title || item.alt || `${type}-${fallbackIndex + 1}`;
+  const cleanTitleSlug = slugify(baseTitle);
+  const idPart = item._id?.toString() || item.order?.toString() || `${fallbackIndex + 1}`;
+  return cleanTitleSlug ? `${cleanTitleSlug}-${idPart}` : idPart;
+}
+
+export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
   const photoTitle = mediaItem.title || `${model.name} HD Photo`;
   const title = `${photoTitle} | ${model.name} Gallery | ${SITE_NAME}`;
   const description =
     mediaItem.alt ||
     `View exclusive high-definition photo of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
-  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaItem._id}`;
+  const mediaSlug = getMediaSlug(mediaItem, "photo", fallbackIndex);
+  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
   const ogImage = mediaItem.url || model.profileImage || "";
   const robots = model.robotsDirective || "index, follow";
 
@@ -339,8 +347,9 @@ export function generatePhotoMetadata(model: any, mediaItem: any): Metadata {
   };
 }
 
-export function generatePhotoJsonLd(model: any, mediaItem: any) {
-  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaItem._id}`;
+export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
+  const mediaSlug = getMediaSlug(mediaItem, "photo", fallbackIndex);
+  const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
   const photoTitle = mediaItem.title || `${model.name} HD Photo`;
 
   const imageSchema = {
@@ -405,13 +414,14 @@ export function generatePhotoJsonLd(model: any, mediaItem: any) {
   return { imageSchema, breadcrumbSchema };
 }
 
-export function generateVideoMetadata(model: any, mediaItem: any): Metadata {
+export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
   const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
   const title = `${videoTitle} | ${model.name} Videos | ${SITE_NAME}`;
   const description =
     mediaItem.alt ||
     `Watch exclusive high-definition video of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
-  const url = `${SITE_URL}/model/${model.slug}/video/${mediaItem._id}`;
+  const mediaSlug = getMediaSlug(mediaItem, "video", fallbackIndex);
+  const url = `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`;
   const thumbnail = mediaItem.thumbnail || model.profileImage || "";
   const robots = model.robotsDirective || "index, follow";
 
@@ -453,8 +463,9 @@ export function generateVideoMetadata(model: any, mediaItem: any): Metadata {
   };
 }
 
-export function generateVideoJsonLd(model: any, mediaItem: any) {
-  const url = `${SITE_URL}/model/${model.slug}/video/${mediaItem._id}`;
+export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
+  const mediaSlug = getMediaSlug(mediaItem, "video", fallbackIndex);
+  const url = `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`;
   const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
   const thumbnail = mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
 
@@ -517,6 +528,7 @@ export function generateVideoJsonLd(model: any, mediaItem: any) {
 }
 
 export { SITE_URL, SITE_NAME };
+
 
 
 
