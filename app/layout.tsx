@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import MonetagScript from "@/components/ads/monetag-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -186,13 +186,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {/* Monetag MultiTag Monetization Script */}
-        <Script
-          src="https://quge5.com/88/tag.min.js"
-          data-zone="273213"
-          strategy="afterInteractive"
-          data-cfasync="false"
-        />
+        {/* Monetag Monetization (excluded on /admin) */}
+        <MonetagScript />
         <Analytics />
         <SpeedInsights />
       </body>
