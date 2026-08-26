@@ -16,6 +16,7 @@ import {
   Play,
   ExternalLink,
 } from "lucide-react";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -288,9 +289,10 @@ export default async function ModelVideoPage({ params }: Props) {
 
               <div className="flex items-center gap-2">
                 <a
-                  href="https://omg10.com/4/11653141"
+                  href={currentVideo.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  download
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -394,6 +396,9 @@ export default async function ModelVideoPage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {/* In-page Video Detail Banner Ad */}
+        <ExoclickBanner label />
 
         {/* Related Videos of Same Model Grid (SEO Internal Linking) */}
         {relatedVideos.length > 0 && (

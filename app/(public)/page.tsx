@@ -7,6 +7,7 @@ import {
   generateHomepageItemListJsonLd,
 } from "@/lib/seo";
 import FAQAccordion, { type FAQItem } from "@/components/public/faq-accordion";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 import {
   Sparkles,
   ArrowRight,
@@ -247,6 +248,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Top Banner Ad */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ExoclickBanner label />
+      </div>
 
       {/* Featured Creators Section */}
       {featuredModels.length > 0 && (
@@ -529,6 +535,11 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* Middle Banner Ad */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <ExoclickBanner label />
+      </div>
 
       {/* Fast-Crawl Internal Linking & Tags Hub */}
       <section

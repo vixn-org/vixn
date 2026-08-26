@@ -23,6 +23,7 @@ import {
   Video as VideoIcon,
   Layers,
 } from "lucide-react";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -284,13 +285,21 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       )}
 
+      {/* Top Article Banner Ad */}
+      <div className="max-w-5xl mx-auto">
+        <ExoclickBanner label />
+      </div>
+
       {/* Content Layout Grid (Article + Sidebar TOC) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto mt-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-5xl mx-auto mt-6">
         {/* Main Article Body */}
         <article className="lg:col-span-8 space-y-4">
           <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed font-sans">
             {renderFormattedContent(blog.content)}
           </div>
+
+          {/* In-Article Bottom Banner Ad */}
+          <ExoclickBanner label />
 
           {/* Tags */}
           {blog.tags && blog.tags.length > 0 && (

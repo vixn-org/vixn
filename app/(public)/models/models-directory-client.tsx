@@ -12,6 +12,7 @@ import {
   ArrowUpDown,
   Layers,
 } from "lucide-react";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 
 interface ModelItem {
   _id: string;
@@ -143,6 +144,9 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
           })}
         </div>
       </div>
+
+      {/* Directory Top Banner Ad */}
+      <ExoclickBanner label />
 
       {/* Results Header */}
       <div className="flex items-center justify-between">

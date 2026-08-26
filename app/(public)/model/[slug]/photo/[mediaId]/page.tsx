@@ -15,6 +15,7 @@ import {
   Sparkles,
   Maximize2,
 } from "lucide-react";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -263,9 +264,10 @@ export default async function ModelPhotoPage({ params }: Props) {
 
               <div className="flex items-center gap-2">
                 <a
-                  href="https://omg10.com/4/11653141"
+                  href={currentPhoto.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  download
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -365,7 +367,10 @@ export default async function ModelPhotoPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Related Photos of Same Model Grid (SEO Internal Linking) */}
+        {/* In-page Banner Ad */}
+        <ExoclickBanner label />
+
+        {/* More Photos from Same Model */}
         {relatedPhotos.length > 0 && (
           <section className="pt-12 border-t border-slate-200 space-y-6">
             <div className="flex items-center justify-between">

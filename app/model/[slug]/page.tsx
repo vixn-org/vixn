@@ -8,6 +8,7 @@ import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
 import ModelInfoAccordion from "@/components/public/model-info-accordion";
 import HeaderSearch from "@/components/public/header-search";
 import PublicFooter from "@/components/public/footer";
+import ExoclickBanner from "@/components/ads/exoclick-banner";
 import {
   ChevronRight,
   Home,
@@ -308,6 +309,9 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
+        {/* Profile Banner Ad */}
+        <ExoclickBanner label />
+
         {/* Media Gallery Section */}
         <section className="space-y-6 mb-16">
           <div className="flex items-center justify-between">
@@ -335,6 +339,9 @@ export default async function ModelPage({ params }: Props) {
             modelName={model.name}
           />
         </section>
+
+        {/* Bottom Profile Banner Ad */}
+        <ExoclickBanner label />
 
         {/* Related Models / Internal Linking Section */}
         {relatedModels && relatedModels.length > 0 && (
