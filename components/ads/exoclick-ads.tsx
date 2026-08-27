@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
+import { triggerExoclickServe } from "@/lib/exoclick";
 
 declare global {
   interface Window {
@@ -44,15 +45,7 @@ export default function ExoclickGlobal() {
 
   useEffect(() => {
     if (pathname?.startsWith("/admin")) return;
-
-    try {
-      if (typeof window !== "undefined") {
-        window.AdProvider = window.AdProvider || [];
-        window.AdProvider.push({ serve: {} });
-      }
-    } catch (e) {
-      console.error("ExoClick serve error:", e);
-    }
+    triggerExoclickServe();
   }, [pathname]);
 
   // Disable ads on admin pages completely
