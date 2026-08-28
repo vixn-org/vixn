@@ -23,7 +23,8 @@ import {
   Video as VideoIcon,
   Layers,
 } from "lucide-react";
-import ExoclickBanner from "@/components/ads/exoclick-banner";
+import AdsterraBanner from "@/components/ads/adsterra-banner";
+import AdsterraNativeBanner from "@/components/ads/adsterra-native";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -287,7 +288,8 @@ export default async function BlogPostPage({ params }: Props) {
 
       {/* Top Article Banner Ad */}
       <div className="max-w-5xl mx-auto">
-        <ExoclickBanner label />
+        <AdsterraBanner size="728x90" label />
+        <AdsterraNativeBanner />
       </div>
 
       {/* Content Layout Grid (Article + Sidebar TOC) */}
@@ -299,7 +301,8 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
 
           {/* In-Article Bottom Banner Ad */}
-          <ExoclickBanner label />
+          <AdsterraBanner size="300x250" label />
+          <AdsterraNativeBanner />
 
           {/* Tags */}
           {blog.tags && blog.tags.length > 0 && (
@@ -406,6 +409,11 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
             )}
 
+            {/* Sidebar Adsterra Banners (160x600 Skyscraper, 160x300, 300x250) */}
+            <AdsterraBanner size="160x600" label />
+            <AdsterraBanner size="160x300" />
+            <AdsterraBanner size="300x250" />
+
             {/* Back to Blog Button */}
             <div className="pt-2">
               <Button
@@ -420,6 +428,14 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* Bottom Article Full Banner Row */}
+      <div className="max-w-5xl mx-auto mt-12 space-y-3">
+        <AdsterraBanner size="728x90" label />
+        <AdsterraBanner size="468x60" />
+        <AdsterraBanner size="320x50" />
+        <AdsterraNativeBanner />
       </div>
 
       {/* Bottom Related Articles Section */}

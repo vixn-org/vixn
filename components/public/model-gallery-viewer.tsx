@@ -500,10 +500,9 @@ export default function ModelGalleryViewer({
 
             <div className="flex items-center gap-2">
               <a
-                href={currentItem.url}
+                href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
                 target="_blank"
                 rel="noopener noreferrer"
-                download
                 className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
                 title="Download Ultra HD 4K"
               >

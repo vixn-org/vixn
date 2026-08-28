@@ -16,7 +16,9 @@ import {
   Play,
   ExternalLink,
 } from "lucide-react";
-import ExoclickBanner from "@/components/ads/exoclick-banner";
+import AdsterraBanner from "@/components/ads/adsterra-banner";
+import AdsterraNativeBanner from "@/components/ads/adsterra-native";
+import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -117,6 +119,9 @@ export default async function ModelVideoPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Side Ads (160x600 Skyscrapers) */}
+      <AdsterraSidebars />
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -289,10 +294,9 @@ export default async function ModelVideoPage({ params }: Props) {
 
               <div className="flex items-center gap-2">
                 <a
-                  href={currentVideo.url}
+                  href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
                   target="_blank"
                   rel="noopener noreferrer"
-                  download
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -422,11 +426,18 @@ export default async function ModelVideoPage({ params }: Props) {
                 </Link>
               </Button>
             </div>
+
+            {/* Sidebar Banner Ads (300x250 & 160x600 Skyscraper) */}
+            <AdsterraBanner size="300x250" label />
+            <AdsterraBanner size="160x600" label />
           </div>
         </div>
 
-        {/* In-page Video Detail Banner Ad */}
-        <ExoclickBanner label />
+        {/* In-page Full Banner Set */}
+        <AdsterraBanner size="728x90" label />
+        <AdsterraBanner size="468x60" label />
+        <AdsterraBanner size="320x50" label />
+        <AdsterraNativeBanner />
 
         {/* Related Videos of Same Model Grid (SEO Internal Linking) */}
         {relatedVideos.length > 0 && (

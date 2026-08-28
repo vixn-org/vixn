@@ -12,7 +12,8 @@ import {
   ArrowUpDown,
   Layers,
 } from "lucide-react";
-import ExoclickBanner from "@/components/ads/exoclick-banner";
+import AdsterraBanner from "@/components/ads/adsterra-banner";
+import AdsterraNativeBanner from "@/components/ads/adsterra-native";
 
 interface ModelItem {
   _id: string;
@@ -38,9 +39,9 @@ interface Props {
 export default function ModelsDirectoryClient({ models, categories }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<"newest" | "photos" | "videos" | "alpha">(
-    "newest"
-  );
+  const [sortBy, setSortBy] = useState<
+    "newest" | "photos" | "videos" | "alpha"
+  >("newest");
 
   // Filter and sort models
   const filteredModels = useMemo(() => {
@@ -65,7 +66,9 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         if (sortBy === "videos") return b.videoCount - a.videoCount;
         if (sortBy === "alpha") return a.name.localeCompare(b.name);
         // default: newest
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       });
   }, [models, selectedCategory, searchQuery, sortBy]);
 
@@ -147,8 +150,16 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         </div>
       </div>
 
-      {/* Directory Top Banner Ad */}
-      <ExoclickBanner label />
+      {/* Directory Top Banner Ads (All formats) */}
+      <div className="space-y-3">
+        <AdsterraBanner size="728x90" label />
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <AdsterraBanner size="468x60" />
+          <AdsterraBanner size="320x50" />
+          <AdsterraBanner size="300x250" />
+        </div>
+        <AdsterraNativeBanner />
+      </div>
 
       {/* Results Header */}
       <div className="flex items-center justify-between">
@@ -161,7 +172,9 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
       {filteredModels.length === 0 ? (
         <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
           <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-slate-800">No models match your criteria</h3>
+          <h3 className="text-lg font-bold text-slate-800">
+            No models match your criteria
+          </h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
             Try adjusting your search query or switching category filters.
           </p>
