@@ -190,97 +190,97 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredModels.map((model) => (
-            <Link
-              key={model._id}
-              href={`/model/${model.slug}`}
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1"
-            >
-              {/* Media Preview / Cover */}
-              <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
-                {model.profileImage || model.coverImage ? (
-                  <img
-                    src={model.profileImage || model.coverImage}
-                    alt={model.name}
-                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-4xl">
-                    {model.name.charAt(0)}
-                  </div>
-                )}
-
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-
-                {/* Category Badge */}
-                {model.category && (
-                  <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-rose-600 shadow-xs border border-white/50">
-                    {model.category}
-                  </span>
-                )}
-
-                {/* Media Counts */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                  <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                    <ImageIcon className="w-3 h-3 text-rose-400" />
-                    {model.photoCount}
-                  </span>
-                  <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                    <VideoIcon className="w-3 h-3 text-violet-400" />
-                    {model.videoCount}
-                  </span>
-                </div>
-              </div>
-
-              {/* Body Content */}
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
-                      {model.name}
-                    </h2>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  </div>
-
-                  {model.bio && (
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
-                      {model.bio}
-                    </p>
+          {filteredModels.map((model, idx) => (
+            <div key={model._id} className="contents">
+              <Link
+                href={`/model/${model.slug}`}
+                className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1"
+              >
+                {/* Media Preview / Cover */}
+                <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
+                  {model.profileImage || model.coverImage ? (
+                    <img
+                      src={model.profileImage || model.coverImage}
+                      alt={model.name}
+                      className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-4xl">
+                      {model.name.charAt(0)}
+                    </div>
                   )}
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                  {/* Category Badge */}
+                  {model.category && (
+                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-rose-600 shadow-xs border border-white/50">
+                      {model.category}
+                    </span>
+                  )}
+
+                  {/* Media Counts */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                    <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
+                      <ImageIcon className="w-3 h-3 text-rose-400" />
+                      {model.photoCount}
+                    </span>
+                    <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
+                      <VideoIcon className="w-3 h-3 text-violet-400" />
+                      {model.videoCount}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Tags preview */}
-                {model.tags && model.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {model.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                    {model.tags.length > 3 && (
-                      <span className="text-[10px] font-medium text-slate-400 self-center">
-                        +{model.tags.length - 3}
-                      </span>
+                {/* Body Content */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
+                        {model.name}
+                      </h2>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    </div>
+
+                    {model.bio && (
+                      <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
+                        {model.bio}
+                      </p>
                     )}
                   </div>
-                )}
 
-                {/* View Folder Button */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
-                  <span className="flex items-center gap-1.5">
-                    <FolderOpen className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
-                    Open Folder
-                  </span>
-                  <span className="text-slate-400 group-hover:translate-x-1 group-hover:text-rose-600 transition-all font-black">
-                    →
-                  </span>
+                  {/* View Folder Button */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
+                    <span className="flex items-center gap-1.5">
+                      <FolderOpen className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
+                      Open Folder
+                    </span>
+                    <span className="text-slate-400 group-hover:translate-x-1 group-hover:text-rose-600 transition-all font-black">
+                      →
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+
+              {/* In-Grid Sponsored High-CPM Ad Card */}
+              {(idx === 2 || idx === 6 || idx === 14) && (
+                <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-900 text-white border border-rose-500/40 shadow-xl">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-rose-400 mb-2">
+                    ⚡ Sponsored 4K Premium
+                  </span>
+                  <AdsterraBanner size="300x250" className="my-0" />
+                  <a
+                    href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 w-full py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-black text-center rounded-xl transition-all shadow-md"
+                  >
+                    Unlock VIP 4K Vault →
+                  </a>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
