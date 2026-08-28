@@ -357,6 +357,34 @@ export default async function ModelVideoPage({ params }: Props) {
                     {currentVideo.isExternal ? "Redirect Stream" : "Direct HD Video"}
                   </span>
                 </div>
+
+                {(() => {
+                  const videoKeywords: string[] = Array.isArray(currentVideo.keywords)
+                    ? currentVideo.keywords.filter(Boolean)
+                    : typeof currentVideo.keywords === "string" && currentVideo.keywords.trim()
+                    ? currentVideo.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+                    : [];
+
+                  if (videoKeywords.length === 0) return null;
+
+                  return (
+                    <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        SEO Tags &amp; Keywords
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {videoKeywords.map((kw, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-medium text-slate-500 bg-white hover:bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70 transition-colors"
+                          >
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

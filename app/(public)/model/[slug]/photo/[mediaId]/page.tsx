@@ -326,6 +326,34 @@ export default async function ModelPhotoPage({ params }: Props) {
                     4K Ultra HD
                   </span>
                 </div>
+
+                {(() => {
+                  const photoKeywords: string[] = Array.isArray(currentPhoto.keywords)
+                    ? currentPhoto.keywords.filter(Boolean)
+                    : typeof currentPhoto.keywords === "string" && currentPhoto.keywords.trim()
+                    ? currentPhoto.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+                    : [];
+
+                  if (photoKeywords.length === 0) return null;
+
+                  return (
+                    <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                        SEO Tags &amp; Keywords
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {photoKeywords.map((kw, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] font-medium text-slate-500 bg-white hover:bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70 transition-colors"
+                          >
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

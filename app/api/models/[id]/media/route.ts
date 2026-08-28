@@ -22,12 +22,23 @@ export async function POST(
       return NextResponse.json({ error: "Model not found" }, { status: 404 });
     }
 
+    let keywords: string[] = [];
+    if (Array.isArray(body.keywords)) {
+      keywords = body.keywords.map((k: any) => String(k).trim()).filter(Boolean);
+    } else if (typeof body.keywords === "string" && body.keywords.trim()) {
+      keywords = body.keywords
+        .split(/\r?\n|,/)
+        .map((k: string) => k.trim())
+        .filter(Boolean);
+    }
+
     const newMedia = {
       type: body.type || "photo",
       url: body.url,
       thumbnail: body.thumbnail || "",
       title: body.title || "",
       alt: body.alt || "",
+      keywords,
       order: model.media.length,
       isExternal: Boolean(body.isExternal),
     };

@@ -24,6 +24,7 @@ export interface MediaItemProps {
   thumbnail?: string;
   title?: string;
   alt?: string;
+  keywords?: string[];
   order?: number;
   isExternal?: boolean;
 }

@@ -93,6 +93,7 @@ export default async function ModelPage({ params }: Props) {
     thumbnail: m.thumbnail || "",
     title: m.title || "",
     alt: m.alt || "",
+    keywords: m.keywords || [],
     order: m.order || 0,
     isExternal: Boolean(m.isExternal),
   }));

@@ -309,9 +309,20 @@ export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex:
   const ogImage = mediaItem.url || model.profileImage || "";
   const robots = model.robotsDirective || "index, follow";
 
-  const keywords = model.metaKeywords?.length
+  const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
+    ? mediaItem.keywords.filter(Boolean)
+    : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
+    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+    : [];
+  const mediaKeywordsStr = mediaKeywordsList.join(", ");
+
+  const baseKeywords = model.metaKeywords?.length
     ? `${model.metaKeywords.join(", ")}, ${model.name} photo, ${model.name} picture, HD photo`
     : `${model.name}, ${model.name} photo, model photo, HD photo, vixn`;
+
+  const keywords = mediaKeywordsStr
+    ? `${baseKeywords}, ${mediaKeywordsStr}`
+    : baseKeywords;
 
   return {
     title,
@@ -352,6 +363,13 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
   const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
   const photoTitle = mediaItem.title || `${model.name} HD Photo`;
 
+  const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
+    ? mediaItem.keywords.filter(Boolean)
+    : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
+    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+    : [];
+  const mediaKeywordsStr = mediaKeywordsList.join(", ");
+
   const imageSchema = {
     "@context": "https://schema.org",
     "@type": "ImageObject",
@@ -360,6 +378,7 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
     name: photoTitle,
     caption: mediaItem.alt || photoTitle,
     description: mediaItem.alt || `${photoTitle} - ${model.name}`,
+    ...(mediaKeywordsStr ? { keywords: mediaKeywordsStr } : {}),
     author: {
       "@type": "Person",
       name: model.name,
@@ -425,9 +444,20 @@ export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex:
   const thumbnail = mediaItem.thumbnail || model.profileImage || "";
   const robots = model.robotsDirective || "index, follow";
 
-  const keywords = model.metaKeywords?.length
+  const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
+    ? mediaItem.keywords.filter(Boolean)
+    : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
+    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+    : [];
+  const mediaKeywordsStr = mediaKeywordsList.join(", ");
+
+  const baseKeywords = model.metaKeywords?.length
     ? `${model.metaKeywords.join(", ")}, ${model.name} video, ${model.name} clip, 4K streaming`
     : `${model.name}, ${model.name} video, model video, HD stream, vixn`;
+
+  const keywords = mediaKeywordsStr
+    ? `${baseKeywords}, ${mediaKeywordsStr}`
+    : baseKeywords;
 
   return {
     title,
@@ -469,6 +499,13 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
   const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
   const thumbnail = mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
 
+  const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
+    ? mediaItem.keywords.filter(Boolean)
+    : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
+    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
+    : [];
+  const mediaKeywordsStr = mediaKeywordsList.join(", ");
+
   const videoSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
@@ -477,6 +514,7 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
     thumbnailUrl: [thumbnail],
     uploadDate: new Date().toISOString(),
     contentUrl: mediaItem.url,
+    ...(mediaKeywordsStr ? { keywords: mediaKeywordsStr } : {}),
     actor: {
       "@type": "Person",
       name: model.name,

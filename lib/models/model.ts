@@ -7,6 +7,7 @@ export interface IMediaItem {
   thumbnail?: string;
   title: string;
   alt: string;
+  keywords?: string[];
   order: number;
   isExternal?: boolean;
 }
@@ -64,6 +65,7 @@ const MediaItemSchema = new Schema<IMediaItem>(
     thumbnail: { type: String, default: "" },
     title: { type: String, default: "" },
     alt: { type: String, default: "" },
+    keywords: { type: [String], default: [] },
     order: { type: Number, default: 0 },
     isExternal: { type: Boolean, default: false },
   },

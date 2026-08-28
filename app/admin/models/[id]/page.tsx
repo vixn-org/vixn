@@ -72,6 +72,7 @@ interface MediaItem {
   thumbnail?: string;
   title: string;
   alt: string;
+  keywords?: string[];
   order: number;
   isExternal?: boolean;
 }
@@ -128,6 +129,7 @@ export default function ModelManagementPage() {
     thumbnail: "",
     title: "",
     alt: "",
+    keywords: "",
     isExternal: false,
   });
 
@@ -261,6 +263,7 @@ export default function ModelManagementPage() {
         thumbnail: "",
         title: "",
         alt: "",
+        keywords: "",
         isExternal: false,
       });
       setMediaDialogOpen(false);
@@ -1197,6 +1200,23 @@ export default function ModelManagementPage() {
                           className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                         />
                       </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                          <span>SEO Keywords</span>
+                          <span className="text-[10px] text-slate-400 font-normal">
+                            Comma-separated (appends to model SEO)
+                          </span>
+                        </Label>
+                        <Input
+                          value={newMedia.keywords}
+                          onChange={(e) =>
+                            setNewMedia({ ...newMedia, keywords: e.target.value })
+                          }
+                          placeholder="e.g. aditi mistry bikini, 4k shoot, exclusive clip"
+                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
+                        />
+                      </div>
                     </div>
                     <DialogFooter>
                       <Button
@@ -1273,6 +1293,23 @@ export default function ModelManagementPage() {
                         <p className="text-[10px] text-slate-500 truncate mt-0.5">
                           {item.alt || "No SEO alt text set"}
                         </p>
+                        {item.keywords && item.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {item.keywords.slice(0, 3).map((kw, ki) => (
+                              <span
+                                key={ki}
+                                className="text-[9px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded"
+                              >
+                                #{kw}
+                              </span>
+                            ))}
+                            {item.keywords.length > 3 && (
+                              <span className="text-[9px] text-slate-400 font-medium">
+                                +{item.keywords.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => handleDeleteMedia(item._id)}
