@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import AdsterraBanner from "./adsterra-banner";
 import { X } from "lucide-react";
+import { ADS_ENABLED } from "@/lib/ads-config";
 
 /**
  * AdsterraStickyFooter
@@ -14,8 +15,7 @@ export default function AdsterraStickyFooter() {
   const pathname = usePathname();
   const [closed, setClosed] = useState(false);
 
-  if (closed) return null;
-  if (pathname?.startsWith("/admin")) return null;
+  if (!ADS_ENABLED || closed || pathname?.startsWith("/admin")) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-md border-t border-slate-800 shadow-2xl py-1.5 flex flex-col items-center justify-center transition-all">

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { ADS_ENABLED } from "@/lib/ads-config";
 
 /**
  * Adsterra Native Banner Ad
@@ -13,6 +14,7 @@ export default function AdsterraNativeBanner({ className = "" }: { className?: s
   const loaded = useRef(false);
 
   useEffect(() => {
+    if (!ADS_ENABLED) return;
     if (pathname?.startsWith("/admin")) return;
     if (loaded.current) return;
     loaded.current = true;
@@ -25,7 +27,7 @@ export default function AdsterraNativeBanner({ className = "" }: { className?: s
     containerRef.current?.parentElement?.appendChild(script);
   }, [pathname]);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (!ADS_ENABLED || pathname?.startsWith("/admin")) return null;
 
   return (
     <div className={`my-4 flex flex-col items-center ${className}`}>

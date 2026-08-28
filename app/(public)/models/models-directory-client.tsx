@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import AdsterraBanner from "@/components/ads/adsterra-banner";
 import AdsterraNativeBanner from "@/components/ads/adsterra-native";
+import { ADS_ENABLED } from "@/lib/ads-config";
 
 interface ModelItem {
   _id: string;
@@ -264,7 +265,7 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
               </Link>
 
               {/* In-Grid Sponsored High-CPM Ad Card */}
-              {(idx === 2 || idx === 6 || idx === 14) && (
+              {ADS_ENABLED && (idx === 2 || idx === 6 || idx === 14) && (
                 <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-900 text-white border border-rose-500/40 shadow-xl">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-rose-400 mb-2">
                     ⚡ Sponsored 4K Premium

@@ -18,6 +18,8 @@ import {
 import AdsterraBanner from "@/components/ads/adsterra-banner";
 import AdsterraNativeBanner from "@/components/ads/adsterra-native";
 import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
+import { ADS_ENABLED } from "@/lib/ads-config";
+import { ADSTERRA_SMARTLINK_URL } from "@/lib/smartlink";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -269,9 +271,10 @@ export default async function ModelPhotoPage({ params }: Props) {
 
               <div className="flex items-center gap-2">
                 <a
-                  href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
-                  target="_blank"
+                  href={ADS_ENABLED ? ADSTERRA_SMARTLINK_URL : currentPhoto.url}
+                  target={ADS_ENABLED ? "_blank" : undefined}
                   rel="noopener noreferrer"
+                  download={!ADS_ENABLED ? true : undefined}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />

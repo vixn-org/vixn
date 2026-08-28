@@ -11,6 +11,7 @@ import PublicFooter from "@/components/public/footer";
 import AdsterraBanner from "@/components/ads/adsterra-banner";
 import AdsterraNativeBanner from "@/components/ads/adsterra-native";
 import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
+import { ADS_ENABLED } from "@/lib/ads-config";
 import {
   ChevronRight,
   Home,
@@ -340,15 +341,17 @@ export default async function ModelPage({ params }: Props) {
             </div>
 
             {/* Smartlink Fast Download CTA */}
-            <a
-              href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Download Full 4K Pack</span>
-            </a>
+            {ADS_ENABLED && (
+              <a
+                href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Download Full 4K Pack</span>
+              </a>
+            )}
           </div>
 
           {/* Interactive Lightbox Viewer */}

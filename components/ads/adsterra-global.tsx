@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import AdsterraStickyFooter from "./adsterra-sticky-footer";
 import { ADSTERRA_SMARTLINK_URL } from "@/lib/smartlink";
+import { ADS_ENABLED } from "@/lib/ads-config";
 
 /**
  * Adsterra Global Ads (Max Revenue Configuration)
@@ -15,6 +16,7 @@ export default function AdsterraGlobal() {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!ADS_ENABLED) return;
     if (typeof window === "undefined") return;
     if (pathname?.startsWith("/admin")) return;
 
@@ -81,7 +83,7 @@ export default function AdsterraGlobal() {
     };
   }, [pathname]);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (!ADS_ENABLED || pathname?.startsWith("/admin")) return null;
 
   return (
     <>

@@ -10,6 +10,7 @@ import FAQAccordion, { type FAQItem } from "@/components/public/faq-accordion";
 import AdsterraBanner from "@/components/ads/adsterra-banner";
 import AdsterraNativeBanner from "@/components/ads/adsterra-native";
 import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
+import { ADS_ENABLED } from "@/lib/ads-config";
 import {
   Sparkles,
   ArrowRight,
@@ -262,29 +263,31 @@ export default async function HomePage() {
         <AdsterraNativeBanner />
 
         {/* Smartlink Promotional CTA Banner */}
-        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+        {ADS_ENABLED && (
+          <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 rounded-2xl p-4 text-white flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-black tracking-wide">
+                  🔥 UNLOCK UNLIMITED 4K ULTRA HD STREAMING &amp; FULL PACKS
+                </p>
+                <p className="text-[11px] text-rose-100">
+                  Direct high speed download — no buffering, 100% free instant access
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs sm:text-sm font-black tracking-wide">
-                🔥 UNLOCK UNLIMITED 4K ULTRA HD STREAMING &amp; FULL PACKS
-              </p>
-              <p className="text-[11px] text-rose-100">
-                Direct high speed download — no buffering, 100% free instant access
-              </p>
-            </div>
+            <a
+              href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2 rounded-xl bg-white text-rose-600 hover:bg-slate-100 text-xs font-black shrink-0 transition-all shadow-sm"
+            >
+              Instant 4K Access →
+            </a>
           </div>
-          <a
-            href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-2 rounded-xl bg-white text-rose-600 hover:bg-slate-100 text-xs font-black shrink-0 transition-all shadow-sm"
-          >
-            Instant 4K Access →
-          </a>
-        </div>
+        )}
       </div>
 
       {/* Featured Creators Section */}

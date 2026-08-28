@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { ADS_ENABLED } from "@/lib/ads-config";
 
 export type BannerSize =
   | "728x90"
@@ -65,7 +66,7 @@ export default function AdsterraBanner({
   const pathname = usePathname();
   const config = BANNER_CONFIG[size];
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (!ADS_ENABLED || pathname?.startsWith("/admin")) return null;
 
   const iframeSrcDoc = `
     <!DOCTYPE html>
