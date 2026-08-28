@@ -225,6 +225,12 @@ export default async function ModelPage({ params }: Props) {
                       {model.category}
                     </span>
                   )}
+                  {model.country && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
+                      <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                      {model.country}
+                    </span>
+                  )}
                   <span className="flex items-center gap-1 text-slate-500">
                     <Calendar className="w-3.5 h-3.5" />
                     Member since {createdDate}

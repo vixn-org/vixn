@@ -74,6 +74,7 @@ interface ModelItem {
   reviewed?: boolean;
   media: { _id: string }[];
   tags: string[];
+  country?: string;
   createdAt: string;
   profileImage: string;
 }
@@ -98,12 +99,14 @@ export default function AdminModelsPage() {
   const [newModel, setNewModel] = useState<{
     name: string;
     slug: string;
+    country: string;
     metaTitle: string;
     metaDescription: string;
     status: "draft" | "published";
   }>({
     name: "",
     slug: "",
+    country: "",
     metaTitle: "",
     metaDescription: "",
     status: "draft",
@@ -165,6 +168,7 @@ export default function AdminModelsPage() {
       setNewModel({
         name: "",
         slug: "",
+        country: "",
         metaTitle: "",
         metaDescription: "",
         status: "draft",
@@ -280,6 +284,18 @@ export default function AdminModelsPage() {
                     className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Country / Region</Label>
+                <Input
+                  placeholder="e.g. India, United States, Brazil"
+                  value={newModel.country}
+                  onChange={(e) =>
+                    setNewModel({ ...newModel, country: e.target.value })
+                  }
+                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
+                />
               </div>
 
               <div className="space-y-1.5">

@@ -20,6 +20,7 @@ interface ModelItem {
   slug: string;
   bio?: string;
   category?: string;
+  country?: string;
   tags?: string[];
   profileImage?: string;
   coverImage?: string;
@@ -53,6 +54,7 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         const matchesSearch =
           !query ||
           model.name.toLowerCase().includes(query) ||
+          model.country?.toLowerCase().includes(query) ||
           model.tags?.some((t) => t.toLowerCase().includes(query)) ||
           model.category?.toLowerCase().includes(query);
 

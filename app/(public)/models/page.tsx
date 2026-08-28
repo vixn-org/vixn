@@ -58,6 +58,7 @@ interface SerializedModel {
   slug: string;
   bio?: string;
   category?: string;
+  country?: string;
   tags?: string[];
   profileImage?: string;
   coverImage?: string;
@@ -82,6 +83,7 @@ export default async function ModelsPage() {
       slug: m.slug,
       bio: m.bio || "",
       category: m.category || "",
+      country: m.country || "",
       tags: m.tags || [],
       profileImage: m.profileImage || "",
       coverImage: m.coverImage || "",

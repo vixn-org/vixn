@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         { name: { $regex: searchRegex } },
         { slug: { $regex: searchRegex } },
         { category: { $regex: searchRegex } },
+        { country: { $regex: searchRegex } },
         { tags: { $in: [searchRegex] } },
         { metaKeywords: { $in: [searchRegex] } },
       ];
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
     const isFastSearch = search.length > 0 && limit <= 10;
 
     const findPromise = Model.find(query)
-      .select("name slug profileImage coverImage category tags media createdAt status featured")
+      .select("name slug profileImage coverImage category country tags media createdAt status featured")
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit)

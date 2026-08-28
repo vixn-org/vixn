@@ -101,6 +101,7 @@ interface ModelData {
   media: MediaItem[];
   tags: string[];
   category: string;
+  country?: string;
   status: "draft" | "published";
   featured: boolean;
   reviewed?: boolean;
@@ -475,14 +476,29 @@ export default function ModelManagementPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Category</Label>
-                    <Input
-                      value={model.category}
-                      onChange={(e) => updateField("category", e.target.value)}
-                      placeholder="e.g. Glamour, Fashion, Lifestyle, Fitness"
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-700">Category</Label>
+                      <Input
+                        value={model.category}
+                        onChange={(e) => updateField("category", e.target.value)}
+                        placeholder="e.g. Glamour, Fashion, Lifestyle, Fitness"
+                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                        <span>Country / Associated Region</span>
+                        <span className="text-[10px] text-slate-400 font-normal">e.g. India, USA</span>
+                      </Label>
+                      <Input
+                        value={model.country || ""}
+                        onChange={(e) => updateField("country", e.target.value)}
+                        placeholder="e.g. India, United States, Brazil"
+                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1.5">

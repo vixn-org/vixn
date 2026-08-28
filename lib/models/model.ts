@@ -43,6 +43,7 @@ export interface IModel extends Document {
   // Categorization
   tags: string[];
   category: string;
+  country?: string;
 
   // Status
   status: "draft" | "published";
@@ -111,6 +112,7 @@ const ModelSchema = new Schema<IModel>(
     // Categorization
     tags: { type: [String], default: [] },
     category: { type: String, default: "" },
+    country: { type: String, default: "" },
 
     // Status
     status: {

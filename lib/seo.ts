@@ -76,6 +76,14 @@ export function generateModelJsonLd(model: IModel) {
     url,
     image: model.profileImage || undefined,
     description: model.metaDescription || model.bio?.substring(0, 200) || undefined,
+    ...(model.country
+      ? {
+          nationality: {
+            "@type": "Country",
+            name: model.country,
+          },
+        }
+      : {}),
   };
 
   const imageGallerySchema = {
