@@ -22,11 +22,6 @@ import {
   Flame,
   Film,
 } from "lucide-react";
-import AdsterraBanner from "@/components/ads/adsterra-banner";
-import AdsterraNativeBanner from "@/components/ads/adsterra-native";
-import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
-import { ADS_ENABLED } from "@/lib/ads-config";
-import { ADSTERRA_SMARTLINK_URL } from "@/lib/smartlink";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -84,9 +79,6 @@ export default async function ModelVideosPage({ params }: Props) {
 
   return (
     <article itemScope itemType="https://schema.org/CollectionPage" className="min-h-screen bg-slate-50 text-slate-900 pb-20 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Side Ads (160x600 Skyscrapers) */}
-      <AdsterraSidebars />
-
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -226,11 +218,6 @@ export default async function ModelVideosPage({ params }: Props) {
           </div>
         )}
 
-        {/* Top Banner Ad */}
-        <div className="w-full flex justify-center py-2">
-          <AdsterraBanner size="728x90" label />
-        </div>
-
         {/* Video Showcase Grid */}
         {videos.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 space-y-4">
@@ -345,14 +332,6 @@ export default async function ModelVideosPage({ params }: Props) {
             </div>
           </div>
         )}
-
-        {/* Bottom Banner Ads */}
-        <div className="pt-6 space-y-4">
-          <AdsterraNativeBanner />
-          <div className="flex justify-center">
-            <AdsterraBanner size="728x90" label />
-          </div>
-        </div>
 
         {/* Related Models */}
         {relatedModels.length > 0 && (

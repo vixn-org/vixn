@@ -12,9 +12,6 @@ import {
   ArrowUpDown,
   Layers,
 } from "lucide-react";
-import AdsterraBanner from "@/components/ads/adsterra-banner";
-import AdsterraNativeBanner from "@/components/ads/adsterra-native";
-import { ADS_ENABLED } from "@/lib/ads-config";
 
 interface ModelItem {
   _id: string;
@@ -151,17 +148,6 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         </div>
       </div>
 
-      {/* Directory Top Banner Ads (All formats) */}
-      <div className="space-y-3">
-        <AdsterraBanner size="728x90" label />
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          <AdsterraBanner size="468x60" />
-          <AdsterraBanner size="320x50" />
-          <AdsterraBanner size="300x250" />
-        </div>
-        <AdsterraNativeBanner />
-      </div>
-
       {/* Results Header */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -263,24 +249,6 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
                   </div>
                 </div>
               </Link>
-
-              {/* In-Grid Sponsored High-CPM Ad Card */}
-              {ADS_ENABLED && (idx === 2 || idx === 6 || idx === 14) && (
-                <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-900 text-white border border-rose-500/40 shadow-xl">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-rose-400 mb-2">
-                    ⚡ Sponsored 4K Premium
-                  </span>
-                  <AdsterraBanner size="300x250" className="my-0" />
-                  <a
-                    href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 w-full py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-black text-center rounded-xl transition-all shadow-md"
-                  >
-                    Unlock VIP 4K Vault →
-                  </a>
-                </div>
-              )}
             </div>
           ))}
         </div>

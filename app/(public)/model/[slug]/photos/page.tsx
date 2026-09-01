@@ -23,11 +23,6 @@ import {
   ExternalLink,
   Flame,
 } from "lucide-react";
-import AdsterraBanner from "@/components/ads/adsterra-banner";
-import AdsterraNativeBanner from "@/components/ads/adsterra-native";
-import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
-import { ADS_ENABLED } from "@/lib/ads-config";
-import { ADSTERRA_SMARTLINK_URL } from "@/lib/smartlink";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -85,9 +80,6 @@ export default async function ModelPhotosPage({ params }: Props) {
 
   return (
     <article itemScope itemType="https://schema.org/ImageGallery" className="min-h-screen bg-slate-50 text-slate-900 pb-20 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Side Ads (160x600 Skyscrapers) */}
-      <AdsterraSidebars />
-
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -222,11 +214,6 @@ export default async function ModelPhotosPage({ params }: Props) {
           </div>
         )}
 
-        {/* Top Banner Ad */}
-        <div className="w-full flex justify-center py-2">
-          <AdsterraBanner size="728x90" label />
-        </div>
-
         {/* Photo Gallery Grid */}
         {photos.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 space-y-4">
@@ -291,27 +278,12 @@ export default async function ModelPhotosPage({ params }: Props) {
                         #{index + 1}
                       </div>
                     </Link>
-
-                    {/* Insert native ad banner inside grid at index 3 and 7 */}
-                    {(index === 3 || index === 7) && (
-                      <div className="col-span-2 sm:col-span-3 lg:col-span-4 my-2">
-                        <AdsterraNativeBanner />
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
           </div>
         )}
-
-        {/* Bottom Banner Ads */}
-        <div className="pt-6 space-y-4">
-          <AdsterraNativeBanner />
-          <div className="flex justify-center">
-            <AdsterraBanner size="728x90" label />
-          </div>
-        </div>
 
         {/* Related Models */}
         {relatedModels.length > 0 && (

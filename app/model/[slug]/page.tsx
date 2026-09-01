@@ -8,10 +8,6 @@ import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
 import ModelInfoAccordion from "@/components/public/model-info-accordion";
 import HeaderSearch from "@/components/public/header-search";
 import PublicFooter from "@/components/public/footer";
-import AdsterraBanner from "@/components/ads/adsterra-banner";
-import AdsterraNativeBanner from "@/components/ads/adsterra-native";
-import AdsterraSidebars from "@/components/ads/adsterra-sidebars";
-import { ADS_ENABLED } from "@/lib/ads-config";
 import {
   ChevronRight,
   Home,
@@ -116,8 +112,6 @@ export default async function ModelPage({ params }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Side Ads (160x600 Skyscrapers) */}
-      <AdsterraSidebars />
 
       {/* Top Search Bar (Transparent Overlay) */}
       <header className="absolute top-0 left-0 right-0 z-30 bg-transparent pointer-events-auto">
@@ -323,12 +317,6 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
-        {/* Profile Top Banner Ads */}
-        <AdsterraBanner size="728x90" label />
-        <AdsterraBanner size="468x60" />
-        <AdsterraBanner size="320x50" />
-        <AdsterraNativeBanner />
-
         {/* Media Gallery Section */}
         <section className="space-y-6 mb-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -340,19 +328,6 @@ export default async function ModelPage({ params }: Props) {
                 High resolution photo captures and streaming video footage
               </p>
             </div>
-
-            {/* Smartlink Fast Download CTA */}
-            {ADS_ENABLED && (
-              <a
-                href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all self-start sm:self-auto"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Download Full 4K Pack</span>
-              </a>
-            )}
           </div>
 
           {/* Sub-Pages Quick Switcher */}
@@ -394,15 +369,6 @@ export default async function ModelPage({ params }: Props) {
             modelName={model.name}
           />
         </section>
-
-        {/* Bottom Profile Banner Ads */}
-        <div className="flex flex-wrap items-center justify-center gap-4 my-6">
-          <AdsterraBanner size="300x250" label />
-          <AdsterraBanner size="160x600" label />
-          <AdsterraBanner size="160x300" label />
-        </div>
-        <AdsterraBanner size="728x90" label />
-        <AdsterraNativeBanner />
 
         {/* Related Models / Internal Linking Section */}
         {relatedModels && relatedModels.length > 0 && (

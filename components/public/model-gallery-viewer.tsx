@@ -16,8 +16,6 @@ import {
   Play,
   ExternalLink,
 } from "lucide-react";
-import { ADS_ENABLED } from "@/lib/ads-config";
-import { ADSTERRA_SMARTLINK_URL } from "@/lib/smartlink";
 
 export interface MediaItemProps {
   _id?: string;
@@ -502,10 +500,10 @@ export default function ModelGalleryViewer({
 
             <div className="flex items-center gap-2">
               <a
-                href={ADS_ENABLED ? ADSTERRA_SMARTLINK_URL : currentItem.url}
-                target={ADS_ENABLED ? "_blank" : undefined}
+                href={currentItem.url}
+                target="_blank"
                 rel="noopener noreferrer"
-                download={!ADS_ENABLED ? true : undefined}
+                download
                 className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
                 title="Download Ultra HD 4K"
               >
