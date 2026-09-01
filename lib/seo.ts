@@ -378,6 +378,7 @@ export function generateWebsiteJsonLd() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
+    alternateName: [SITE_NAME, "Vixn", "VIXN.fun", "vixn.fun", "Vixn.Fun"],
     url: SITE_URL,
     description: `${SITE_NAME} - Premium Model Gallery`,
     potentialAction: {
@@ -396,6 +397,7 @@ export function generateOrganizationJsonLd() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: SITE_NAME,
+    alternateName: [SITE_NAME, "VIXN.fun", "Vixn"],
     url: SITE_URL,
     logo: {
       "@type": "ImageObject",

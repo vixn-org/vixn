@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import PopunderAds from "@/components/public/popunder-ads";
 import FloatingBanner from "@/components/public/floating-banner";
+import { generateWebsiteJsonLd, generateOrganizationJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,8 +22,8 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    template: "%s | Hot Girl XXX Videos & Nude Photos | Free HD on Vixn.fun",
-    default: "Hot Girl XXX Videos & Nude Photos | Free HD on Vixn.fun",
+    template: "%s | VIXN",
+    default: "VIXN - Hot Girl XXX Videos & Nude Photos | Free HD",
   },
   description:
     "Watch free hot girl XXX videos, nude photos and sex videos in HD. Explore Indian hot girls, sexy desi girls, college girls and exclusive hot content on Vixn.fun – updated daily.",
@@ -195,11 +196,24 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  const websiteJsonLd = generateWebsiteJsonLd();
+  const organizationJsonLd = generateOrganizationJsonLd();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <FloatingBanner />
