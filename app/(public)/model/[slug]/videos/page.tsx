@@ -16,11 +16,11 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   Video as VideoIcon,
-  Sparkles,
   Play,
   ExternalLink,
   Flame,
   Film,
+  ChevronDown,
 } from "lucide-react";
 
 interface Props {
@@ -205,19 +205,6 @@ export default async function ModelVideosPage({ params }: Props) {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Optional SEO Intro Content */}
-        {model.videosSeo?.introText && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-rose-600 font-bold text-xs uppercase tracking-wider">
-              <Sparkles className="w-4 h-4" />
-              <span>About This Video Collection</span>
-            </div>
-            <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-sans">
-              {model.videosSeo.introText}
-            </p>
-          </div>
-        )}
-
         {/* Video Showcase Grid */}
         {videos.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 space-y-4">
@@ -331,6 +318,25 @@ export default async function ModelVideosPage({ params }: Props) {
               })}
             </div>
           </div>
+        )}
+
+        {/* Optional SEO Content Accordion */}
+        {model.videosSeo?.introText && (
+          <details className="group bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs transition-all [&::-webkit-details-marker]:hidden">
+            <summary className="flex items-center justify-between cursor-pointer list-none select-none gap-4">
+              <span className="text-slate-900 font-bold text-sm">About This Video Collection</span>
+              <div className="flex items-center gap-2 text-slate-400 group-hover:text-rose-600 transition-colors shrink-0">
+                <div className="w-7 h-7 rounded-full bg-slate-100/80 border border-slate-200/80 flex items-center justify-center group-open:rotate-180 transition-transform duration-200">
+                  <ChevronDown className="w-4 h-4 text-slate-600 group-hover:text-rose-600" />
+                </div>
+              </div>
+            </summary>
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line font-sans">
+                {model.videosSeo.introText}
+              </p>
+            </div>
+          </details>
         )}
 
         {/* Related Models */}
