@@ -15,7 +15,9 @@ export default function PublicFooter() {
               />
             </div>
             <p className="text-sm text-slate-600 max-w-md leading-relaxed">
-              The premier model discovery platform featuring high-definition photo galleries, exclusive videos, biographical data, and structured creator portfolios.
+              The premier model discovery platform featuring high-definition
+              photo galleries, exclusive videos, biographical data, and
+              structured creator portfolios.
             </p>
             <div className="flex items-center gap-3 text-xs text-slate-500 pt-2">
               <span className="flex items-center gap-1 text-emerald-600 font-medium">
@@ -34,22 +36,34 @@ export default function PublicFooter() {
             </h4>
             <ul className="space-y-2 text-sm text-slate-600">
               <li>
-                <Link href="/models" className="hover:text-rose-600 transition-colors">
+                <Link
+                  href="/models"
+                  className="hover:text-rose-600 transition-colors"
+                >
                   All Models Directory
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-rose-600 transition-colors font-medium text-rose-600">
+                <Link
+                  href="/blog"
+                  className="hover:text-rose-600 transition-colors font-medium text-rose-600"
+                >
                   Blog &amp; Insights
                 </Link>
               </li>
               <li>
-                <Link href="/#featured-models" className="hover:text-rose-600 transition-colors">
+                <Link
+                  href="/#featured-models"
+                  className="hover:text-rose-600 transition-colors"
+                >
                   Featured Creators
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-rose-600 transition-colors">
+                <Link
+                  href="/faq"
+                  className="hover:text-rose-600 transition-colors"
+                >
                   Platform FAQ
                 </Link>
               </li>
@@ -62,12 +76,18 @@ export default function PublicFooter() {
             </h4>
             <ul className="space-y-2 text-sm text-slate-600">
               <li>
-                <Link href="/sitemap.xml" className="hover:text-rose-600 transition-colors">
+                <Link
+                  href="/sitemap.xml"
+                  className="hover:text-rose-600 transition-colors"
+                >
                   XML Sitemap
                 </Link>
               </li>
               <li>
-                <Link href="/robots.txt" className="hover:text-rose-600 transition-colors">
+                <Link
+                  href="/robots.txt"
+                  className="hover:text-rose-600 transition-colors"
+                >
                   Robots.txt Directives
                 </Link>
               </li>

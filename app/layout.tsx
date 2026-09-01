@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import PopunderAds from "@/components/public/popunder-ads";
+import FloatingBanner from "@/components/public/floating-banner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -200,6 +202,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <FloatingBanner />
+        <PopunderAds />
         <Analytics />
         <SpeedInsights />
       </body>
