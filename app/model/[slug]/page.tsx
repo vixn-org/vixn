@@ -38,9 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     await connectDB();
     
-    // Case-insensitive query
+    // Case-insensitive query — only published models get full SEO metadata
     const model = await Model.findOne({
       slug: { $regex: new RegExp(`^${slug}$`, "i") },
+      status: "published",
     });
 
     if (!model) {
@@ -330,7 +331,7 @@ export default async function ModelPage({ params }: Props) {
 
         {/* Media Gallery Section */}
         <section className="space-y-6 mb-16">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-black text-slate-900">
                 Media Folder &amp; Galleries
@@ -346,11 +347,36 @@ export default async function ModelPage({ params }: Props) {
                 href="https://www.profitableratecpmnetwork.com/mbhhhzyzh?key=e3577dc8038eab2cc7d5221531c0f23f"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-all self-start sm:self-auto"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Download Full 4K Pack</span>
               </a>
+            )}
+          </div>
+
+          {/* Sub-Pages Quick Switcher */}
+          <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit border border-slate-200/80 overflow-x-auto no-scrollbar">
+            <span className="px-4 py-2 rounded-xl text-xs font-black bg-slate-900 text-white shadow-xs">
+              All Media ({serializedMedia.length})
+            </span>
+            {photos.length > 0 && (
+              <Link
+                href={`/model/${model.slug}/photos`}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-white transition-all flex items-center gap-1.5"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Photos Hub ({photos.length})</span>
+              </Link>
+            )}
+            {videos.length > 0 && (
+              <Link
+                href={`/model/${model.slug}/videos`}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-white transition-all flex items-center gap-1.5"
+              >
+                <VideoIcon className="w-3.5 h-3.5 text-rose-600" />
+                <span>Videos Hub ({videos.length})</span>
+              </Link>
             )}
           </div>
 

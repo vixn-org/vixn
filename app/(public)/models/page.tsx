@@ -41,12 +41,21 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/models`,
     siteName: "VIXN",
     type: "website",
+    images: [
+      {
+        url: `${SITE_URL}/logo.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "All Models & Creators Directory - VIXN",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "All Models & Creators Directory | VIXN",
     description:
       "Explore our complete verified directory of top models and creators on VIXN.fun.",
+    images: [`${SITE_URL}/logo.jpg`],
   },
 };
 

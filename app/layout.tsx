@@ -142,12 +142,25 @@ export const metadata: Metadata = {
     title: "VIXN - Premium Model Gallery",
     description:
       "Discover exclusive photo galleries and video collections of premium models on VIXN.",
+    images: [
+      {
+        url: `${SITE_URL}/logo.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "VIXN - Hot Girl XXX Videos & Nude Photos",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "VIXN - Premium Model Gallery",
     description:
       "Discover exclusive photo galleries and video collections of premium models on VIXN.",
+    images: [`${SITE_URL}/logo.jpg`],
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
   },
   robots: {
     index: true,

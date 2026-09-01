@@ -159,6 +159,13 @@ export default async function ModelPhotoPage({ params }: Props) {
               {model.name}
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <Link
+              href={`/model/${model.slug}/photos`}
+              className="hover:text-rose-600 transition-colors"
+            >
+              Photos
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-rose-600 font-bold truncate max-w-[160px]">
               Photo #{currentIndex + 1}
             </span>

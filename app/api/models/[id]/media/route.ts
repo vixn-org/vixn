@@ -40,7 +40,12 @@ export async function POST(
       alt: body.alt || "",
       keywords,
       order: model.media.length,
-      isExternal: Boolean(body.isExternal),
+      isExternal:
+        body.type === "video"
+          ? body.isExternal !== undefined
+            ? Boolean(body.isExternal)
+            : true
+          : Boolean(body.isExternal),
     };
 
     model.media.push(newMedia);

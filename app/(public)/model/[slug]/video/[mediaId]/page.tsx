@@ -163,6 +163,13 @@ export default async function ModelVideoPage({ params }: Props) {
               {model.name}
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <Link
+              href={`/model/${model.slug}/videos`}
+              className="hover:text-rose-600 transition-colors"
+            >
+              Videos
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-violet-600 font-bold truncate max-w-[160px]">
               Video #{currentIndex + 1}
             </span>

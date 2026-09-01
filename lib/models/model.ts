@@ -12,11 +12,19 @@ export interface IMediaItem {
   isExternal?: boolean;
 }
 
+export interface ISubPageSeo {
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string[];
+  heading?: string;
+  introText?: string;
+}
+
 export interface IModel extends Document {
   name: string;
   slug: string;
 
-  // SEO Fields
+  // Main Page SEO Fields
   metaTitle: string;
   metaDescription: string;
   metaKeywords: string[];
@@ -30,6 +38,10 @@ export interface IModel extends Document {
   robotsDirective: string;
   focusKeyphrase: string;
   cornerstone: boolean;
+
+  // Sub-Pages Specific SEO
+  photosSeo?: ISubPageSeo;
+  videosSeo?: ISubPageSeo;
 
   // Content
   bio: string;
@@ -73,6 +85,17 @@ const MediaItemSchema = new Schema<IMediaItem>(
   { _id: true }
 );
 
+const SubPageSeoSchema = new Schema<ISubPageSeo>(
+  {
+    metaTitle: { type: String, default: "" },
+    metaDescription: { type: String, default: "" },
+    metaKeywords: { type: [String], default: [] },
+    heading: { type: String, default: "" },
+    introText: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const ModelSchema = new Schema<IModel>(
   {
     name: { type: String, required: true, trim: true },
@@ -85,7 +108,7 @@ const ModelSchema = new Schema<IModel>(
       index: true,
     },
 
-    // SEO
+    // Main SEO
     metaTitle: { type: String, default: "" },
     metaDescription: { type: String, default: "" },
     metaKeywords: { type: [String], default: [] },
@@ -99,6 +122,10 @@ const ModelSchema = new Schema<IModel>(
     robotsDirective: { type: String, default: "index, follow" },
     focusKeyphrase: { type: String, default: "" },
     cornerstone: { type: Boolean, default: false },
+
+    // Sub-Pages Specific SEO
+    photosSeo: { type: SubPageSeoSchema, default: () => ({}) },
+    videosSeo: { type: SubPageSeoSchema, default: () => ({}) },
 
     // Content
     bio: { type: String, default: "" },

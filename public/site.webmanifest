@@ -1,6 +1,10 @@
 {
-  "name": "VIXN",
+  "name": "VIXN - Hot Girl Videos & Photos",
   "short_name": "VIXN",
+  "description": "Watch free hot girl XXX videos, nude photos and HD galleries on Vixn.fun",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -13,7 +17,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#000000",
+  "theme_color": "#0f172a",
   "background_color": "#ffffff",
   "display": "standalone"
 }

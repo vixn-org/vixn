@@ -48,12 +48,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .lean(),
     ]);
 
-    const modelEntries: MetadataRoute.Sitemap = models.map((model) => ({
-      url: `${SITE_URL}/model/${model.slug}`,
-      lastModified: model.updatedAt || new Date(),
-      changeFrequency: "weekly" as const,
-      priority: model.featured ? 0.9 : 0.8,
-    }));
+    const modelEntries: MetadataRoute.Sitemap = [];
+    models.forEach((model) => {
+      // Main Model Profile Page
+      modelEntries.push({
+        url: `${SITE_URL}/model/${model.slug}`,
+        lastModified: model.updatedAt || new Date(),
+        changeFrequency: "weekly" as const,
+        priority: model.featured ? 0.9 : 0.8,
+      });
+
+      const hasPhotos = (model.media || []).some((m: any) => m.type === "photo");
+      const hasVideos = (model.media || []).some((m: any) => m.type === "video");
+
+      // Dedicated Photos Hub Page
+      if (hasPhotos) {
+        modelEntries.push({
+          url: `${SITE_URL}/model/${model.slug}/photos`,
+          lastModified: model.updatedAt || new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.85,
+        });
+      }
+
+      // Dedicated Videos Hub Page
+      if (hasVideos) {
+        modelEntries.push({
+          url: `${SITE_URL}/model/${model.slug}/videos`,
+          lastModified: model.updatedAt || new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.85,
+        });
+      }
+    });
 
     const mediaEntries: MetadataRoute.Sitemap = [];
     models.forEach((model) => {

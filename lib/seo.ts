@@ -116,7 +116,7 @@ export function generateModelJsonLd(model: IModel) {
         "@type": "ListItem",
         position: 2,
         name: "Models",
-        item: `${SITE_URL}`,
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -128,6 +128,249 @@ export function generateModelJsonLd(model: IModel) {
   };
 
   return { personSchema, imageGallerySchema, breadcrumbSchema };
+}
+
+export function generateModelPhotosMetadata(model: any): Metadata {
+  const custom = model.photosSeo;
+  const photoCount =
+    model.media?.filter((m: any) => m.type === "photo").length || 0;
+
+  const title =
+    custom?.metaTitle?.trim() ||
+    `${model.name} Photos, HD Galleries & Pictures (${photoCount}) | ${SITE_NAME}`;
+
+  const description =
+    custom?.metaDescription?.trim() ||
+    `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on ${SITE_NAME}. Free 4K HD photo collection.`;
+
+  const url = `${SITE_URL}/model/${model.slug}/photos`;
+  const ogImage = model.ogImage || model.coverImage || model.profileImage || "";
+  const robots = model.robotsDirective || "index, follow";
+
+  const keywords =
+    custom?.metaKeywords && custom.metaKeywords.length > 0
+      ? custom.metaKeywords.join(", ")
+      : `${model.name} photos, ${model.name} pictures, ${model.name} photoshoot, ${model.name} hd gallery, ${model.name} images`;
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: SITE_NAME,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: `${model.name} Photos & Pictures - ${SITE_NAME}`,
+            },
+          ]
+        : [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImage ? [ogImage] : [],
+    },
+    robots,
+  };
+}
+
+export function generateModelPhotosJsonLd(model: any) {
+  const url = `${SITE_URL}/model/${model.slug}/photos`;
+  const photos = model.media?.filter((m: any) => m.type === "photo") || [];
+
+  const imageGallerySchema = {
+    "@context": "https://schema.org",
+    "@type": "ImageGallery",
+    name: model.photosSeo?.heading || `${model.name} Photo Sets & Gallery`,
+    url,
+    description:
+      model.photosSeo?.metaDescription ||
+      `HD Photo collection of ${model.name}`,
+    author: {
+      "@type": "Person",
+      name: model.name,
+      url: `${SITE_URL}/model/${model.slug}`,
+    },
+    image: photos.map((m: any, idx: number) => ({
+      "@type": "ImageObject",
+      url: m.url,
+      name: m.title || `${model.name} photo ${idx + 1}`,
+      description: m.alt || `Photo of ${model.name}`,
+    })),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Models",
+        item: `${SITE_URL}/models`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: model.name,
+        item: `${SITE_URL}/model/${model.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: "Photos",
+        item: url,
+      },
+    ],
+  };
+
+  return { imageGallerySchema, breadcrumbSchema };
+}
+
+export function generateModelVideosMetadata(model: any): Metadata {
+  const custom = model.videosSeo;
+  const videoCount =
+    model.media?.filter((m: any) => m.type === "video").length || 0;
+
+  const title =
+    custom?.metaTitle?.trim() ||
+    `${model.name} Videos, 4K Clips & Streaming (${videoCount}) | ${SITE_NAME}`;
+
+  const description =
+    custom?.metaDescription?.trim() ||
+    `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on ${SITE_NAME}.`;
+
+  const url = `${SITE_URL}/model/${model.slug}/videos`;
+  const firstVideo = model.media?.find((m: any) => m.type === "video");
+  const ogImage =
+    firstVideo?.thumbnail ||
+    model.coverImage ||
+    model.profileImage ||
+    "";
+  const robots = model.robotsDirective || "index, follow";
+
+  const keywords =
+    custom?.metaKeywords && custom.metaKeywords.length > 0
+      ? custom.metaKeywords.join(", ")
+      : `${model.name} videos, ${model.name} clips, ${model.name} 4k video, ${model.name} stream, ${model.name} watch online`;
+
+  return {
+    title,
+    description,
+    keywords,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: SITE_NAME,
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1280,
+              height: 720,
+              alt: `${model.name} Videos & Clips - ${SITE_NAME}`,
+            },
+          ]
+        : [],
+      type: "video.other",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImage ? [ogImage] : [],
+    },
+    robots,
+  };
+}
+
+export function generateModelVideosJsonLd(model: any) {
+  const url = `${SITE_URL}/model/${model.slug}/videos`;
+  const videos = model.media?.filter((m: any) => m.type === "video") || [];
+
+  const videoCollectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: model.videosSeo?.heading || `${model.name} Video Showcase & Clips`,
+    url,
+    description:
+      model.videosSeo?.metaDescription ||
+      `Video collection of ${model.name}`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: videos.map((v: any, idx: number) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        item: {
+          "@type": "VideoObject",
+          name: v.title || `${model.name} Video Clip ${idx + 1}`,
+          description: v.alt || `${model.name} streaming video`,
+          thumbnailUrl: [
+            v.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`,
+          ],
+          contentUrl: v.url,
+          uploadDate: model.createdAt
+            ? new Date(model.createdAt).toISOString()
+            : new Date().toISOString(),
+        },
+      })),
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Models",
+        item: `${SITE_URL}/models`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: model.name,
+        item: `${SITE_URL}/model/${model.slug}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: "Videos",
+        item: url,
+      },
+    ],
+  };
+
+  return { videoCollectionSchema, breadcrumbSchema };
 }
 
 export function generateWebsiteJsonLd() {
@@ -144,6 +387,21 @@ export function generateWebsiteJsonLd() {
         urlTemplate: `${SITE_URL}/?search={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
+    },
+  };
+}
+
+export function generateOrganizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/logo.jpg`,
+      width: 512,
+      height: 512,
     },
   };
 }
@@ -432,6 +690,12 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 4,
+        name: "Photos",
+        item: `${SITE_URL}/model/${model.slug}/photos`,
+      },
+      {
+        "@type": "ListItem",
+        position: 5,
         name: photoTitle,
         item: url,
       },
@@ -520,7 +784,11 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
     name: videoTitle,
     description: mediaItem.alt || `${videoTitle} - ${model.name}`,
     thumbnailUrl: [thumbnail],
-    uploadDate: new Date().toISOString(),
+    uploadDate: model.updatedAt
+      ? new Date(model.updatedAt).toISOString()
+      : model.createdAt
+        ? new Date(model.createdAt).toISOString()
+        : new Date().toISOString(),
     contentUrl: mediaItem.url,
     ...(mediaKeywordsStr ? { keywords: mediaKeywordsStr } : {}),
     actor: {
@@ -564,6 +832,12 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 4,
+        name: "Videos",
+        item: `${SITE_URL}/model/${model.slug}/videos`,
+      },
+      {
+        "@type": "ListItem",
+        position: 5,
         name: videoTitle,
         item: url,
       },

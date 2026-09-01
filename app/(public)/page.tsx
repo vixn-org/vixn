@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import {
   generateWebsiteJsonLd,
+  generateOrganizationJsonLd,
   generateFaqJsonLd,
   generateHomepageItemListJsonLd,
 } from "@/lib/seo";
@@ -149,6 +150,7 @@ export default async function HomePage() {
   ) as string[];
 
   const websiteJsonLd = generateWebsiteJsonLd();
+  const organizationJsonLd = generateOrganizationJsonLd();
   const faqSchema = generateFaqJsonLd(faqsList);
   const itemListSchema = generateHomepageItemListJsonLd(
     models.map((m) => ({ name: m.name, slug: m.slug })),
@@ -163,6 +165,10 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
       <script
         type="application/ld+json"

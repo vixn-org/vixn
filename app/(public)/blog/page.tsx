@@ -41,6 +41,21 @@ export const metadata: Metadata = {
     url: `${SITE_URL}/blog`,
     siteName: "VIXN",
     type: "website",
+    images: [
+      {
+        url: `${SITE_URL}/logo.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "VIXN Blog & Creator Insights",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog & Creator Insights | VIXN Articles",
+    description:
+      "Explore in-depth articles, modeling guides, photography highlights, and industry trends on VIXN.",
+    images: [`${SITE_URL}/logo.jpg`],
   },
 };
 
@@ -60,6 +75,7 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
 
   await connectDB();
 
+  // Query filter
   const query: Record<string, any> = { status: "published" };
   if (category && category !== "all") {
     query.category = category;
@@ -72,19 +88,21 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
     ];
   }
 
-  const [blogs, total, featuredBlog] = await Promise.all([
+  const [blogs, totalBlogs, featuredBlog] = await Promise.all([
     BlogPost.find(query)
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
+      .select("title slug excerpt category coverImage publishedAt readTime tags featured")
       .lean(),
     BlogPost.countDocuments(query),
     BlogPost.findOne({ status: "published", featured: true })
       .sort({ publishedAt: -1 })
+      .select("title slug excerpt category coverImage publishedAt readTime tags")
       .lean(),
   ]);
 
-  const totalPages = Math.ceil(total / limit) || 1;
+  const totalPages = Math.ceil(totalBlogs / limit);
 
   // Categories list
   const categories = [
@@ -115,12 +133,36 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
     },
   };
 
+  // BreadcrumbList JSON-LD schema
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${SITE_URL}/blog`,
+      },
+    ],
+  };
+
   return (
     <div className="space-y-12 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
       {/* Breadcrumb Navigation */}
