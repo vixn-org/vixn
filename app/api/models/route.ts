@@ -83,6 +83,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only admins can create models" },
+        { status: 403 }
+      );
+    }
+
     await connectDB();
     const body = await request.json();
 

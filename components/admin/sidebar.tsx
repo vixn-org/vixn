@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -21,30 +22,39 @@ import {
   Flame,
   Globe,
   BookOpen,
+  ShieldCheck,
+  UserCheck,
 } from "lucide-react";
 import { useState } from "react";
 
-const navItems = [
+const allNavItems = [
   {
     title: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
+    adminOnly: true,
   },
   {
     title: "Models Management",
     href: "/admin/models",
     icon: Users,
+    adminOnly: false,
   },
   {
     title: "Blog & SEO Articles",
     href: "/admin/blogs",
     icon: BookOpen,
+    adminOnly: true,
   },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+
+  const role = session?.user?.role || "admin";
+  const navItems = allNavItems.filter((item) => !item.adminOnly || role === "admin");
 
   return (
     <aside
@@ -135,7 +145,28 @@ export function AdminSidebar() {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t border-slate-100 p-3">
+      <div className="border-t border-slate-100 p-3 space-y-2">
+        {!collapsed && session?.user && (
+          <div className="px-2 py-1.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+            <div className="truncate mr-2">
+              <p className="text-xs font-semibold text-slate-800 truncate">
+                {session.user.email}
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0",
+                role === "admin"
+                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : "bg-blue-50 text-blue-700 border-blue-200"
+              )}
+            >
+              {role}
+            </Badge>
+          </div>
+        )}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

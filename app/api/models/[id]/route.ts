@@ -84,6 +84,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only admins can delete models" },
+        { status: 403 }
+      );
+    }
+
     await connectDB();
     const { id } = await ctx.params;
 

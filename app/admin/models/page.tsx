@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +89,8 @@ interface Pagination {
 
 export default function AdminModelsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "admin";
   const [models, setModels] = useState<ModelItem[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
@@ -242,22 +245,23 @@ export default function AdminModelsPage() {
           </p>
         </div>
 
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl shadow-xs">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Model Route
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="border-slate-200 bg-white text-slate-900 sm:max-w-lg rounded-2xl shadow-xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-slate-900">
-                Create New Model Route
-              </DialogTitle>
-              <DialogDescription className="text-slate-500 text-xs">
-                Creates an SEO-ready route at /model/[slug]. You can add media and tune tags in the editor.
-              </DialogDescription>
-            </DialogHeader>
+        {isAdmin && (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl shadow-xs">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Model Route
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="border-slate-200 bg-white text-slate-900 sm:max-w-lg rounded-2xl shadow-xl">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold text-slate-900">
+                  Create New Model Route
+                </DialogTitle>
+                <DialogDescription className="text-slate-500 text-xs">
+                  Creates an SEO-ready route at /model/[slug]. You can add media and tune tags in the editor.
+                </DialogDescription>
+              </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700">Model Name *</Label>
@@ -393,6 +397,7 @@ export default function AdminModelsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Filters Bar */}
@@ -594,40 +599,42 @@ export default function AdminModelsPage() {
                               View Public Route
                             </Link>
                           </DropdownMenuItem>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer font-medium text-xs"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                                Delete Model
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-lg font-bold">
-                                  Delete &quot;{model.name}&quot;?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-slate-500 text-xs">
-                                  This will permanently remove the route /model/{model.slug}, along with all uploaded photos, videos, and associated metadata.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
-                                  Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    handleDelete(model._id, model.name)
-                                  }
-                                  className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
+                          {isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  className="text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer font-medium text-xs"
+                                  onSelect={(e) => e.preventDefault()}
                                 >
-                                  Delete Permanently
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                  Delete Model
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-lg font-bold">
+                                    Delete &quot;{model.name}&quot;?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-slate-500 text-xs">
+                                    This will permanently remove the route /model/{model.slug}, along with all uploaded photos, videos, and associated metadata.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() =>
+                                      handleDelete(model._id, model.name)
+                                    }
+                                    className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
+                                  >
+                                    Delete Permanently
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

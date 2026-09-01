@@ -44,6 +44,13 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only admins can edit blogs" },
+        { status: 403 }
+      );
+    }
+
     await connectDB();
     const { id } = await params;
     const body = await request.json();
@@ -105,6 +112,13 @@ export async function DELETE(
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Only admins can delete blogs" },
+        { status: 403 }
+      );
     }
 
     await connectDB();

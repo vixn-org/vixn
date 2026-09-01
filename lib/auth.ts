@@ -1,7 +1,24 @@
-import NextAuth from "next-auth";
+import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import connectDB from "@/lib/db";
+import User, { type UserRole } from "@/lib/models/user";
+import { verifyPassword } from "@/lib/password";
+import { authConfig } from "@/lib/auth.config";
+
+declare module "next-auth" {
+  interface User {
+    role?: UserRole;
+  }
+  interface Session {
+    user: {
+      id: string;
+      role?: UserRole;
+    } & DefaultSession["user"];
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "Admin Login",
@@ -10,65 +27,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const adminPassword = process.env.ADMIN_PASSWORD;
-
-        if (
-          credentials?.email === adminEmail &&
-          credentials?.password === adminPassword
-        ) {
-          return {
-            id: "admin",
-            name: "Admin",
-            email: adminEmail,
-          };
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        return null;
+
+        try {
+          await connectDB();
+          const email = (credentials.email as string).toLowerCase().trim();
+          const password = credentials.password as string;
+
+          const user = await User.findOne({ email });
+          if (!user) {
+            return null;
+          }
+
+          const isValid = await verifyPassword(password, user.password);
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: user._id.toString(),
+            name: user.name || user.email,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Authorize error:", error);
+          return null;
+        }
       },
     }),
   ],
-  pages: {
-    signIn: "/admin/login",
-  },
-  session: {
-    strategy: "jwt",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
-    async authorized({ auth: session, request }) {
-      const isLoggedIn = !!session?.user;
-      const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-      const isLoginPage = request.nextUrl.pathname === "/admin/login";
-      const isApiRoute = request.nextUrl.pathname.startsWith("/api");
-
-      // Don't protect API routes here (they handle their own auth)
-      if (isApiRoute) return true;
-
-      // Allow login page access
-      if (isLoginPage) {
-        if (isLoggedIn) {
-          return Response.redirect(new URL("/admin", request.nextUrl));
-        }
-        return true;
-      }
-
-      // Protect admin routes
-      if (isAdminRoute) {
-        return isLoggedIn;
-      }
-
-      return true;
-    },
-  },
 });

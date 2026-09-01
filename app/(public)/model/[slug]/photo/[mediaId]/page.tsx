@@ -3,7 +3,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import { generatePhotoMetadata, generatePhotoJsonLd, getMediaSlug } from "@/lib/seo";
+import {
+  generatePhotoMetadata,
+  generatePhotoJsonLd,
+  getMediaSlug,
+} from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,7 +32,8 @@ function findPhotoIndex(photos: any[], param: string): number {
 
   // 1. Match exact ID or order
   let idx = photos.findIndex(
-    (m: any) => m._id?.toString() === decoded || m.order?.toString() === decoded
+    (m: any) =>
+      m._id?.toString() === decoded || m.order?.toString() === decoded,
   );
   if (idx !== -1) return idx;
 
@@ -37,7 +42,8 @@ function findPhotoIndex(photos: any[], param: string): number {
     const mId = m._id?.toString();
     const mOrder = m.order?.toString();
     if (mId && (decoded.endsWith(`-${mId}`) || decoded === mId)) return true;
-    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder)) return true;
+    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder))
+      return true;
     const mediaSlug = getMediaSlug(m, "photo", i);
     return mediaSlug === decoded;
   });
@@ -56,7 +62,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!model) return { title: "Photo Not Found | VIXN" };
 
-    const allPhotos = (model.media || []).filter((m: any) => m.type === "photo");
+    const allPhotos = (model.media || []).filter(
+      (m: any) => m.type === "photo",
+    );
     const photoIndex = findPhotoIndex(allPhotos, mediaId);
 
     if (photoIndex === -1) {
@@ -103,7 +111,7 @@ export default async function ModelPhotoPage({ params }: Props) {
   const { imageSchema, breadcrumbSchema } = generatePhotoJsonLd(
     model,
     currentPhoto,
-    currentIndex
+    currentIndex,
   );
 
   const photoTitle =
@@ -112,7 +120,6 @@ export default async function ModelPhotoPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-white">
-
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -335,11 +342,17 @@ export default async function ModelPhotoPage({ params }: Props) {
                 </div>
 
                 {(() => {
-                  const photoKeywords: string[] = Array.isArray(currentPhoto.keywords)
+                  const photoKeywords: string[] = Array.isArray(
+                    currentPhoto.keywords,
+                  )
                     ? currentPhoto.keywords.filter(Boolean)
-                    : typeof currentPhoto.keywords === "string" && currentPhoto.keywords.trim()
-                    ? currentPhoto.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-                    : [];
+                    : typeof currentPhoto.keywords === "string" &&
+                        currentPhoto.keywords.trim()
+                      ? currentPhoto.keywords
+                          .split(",")
+                          .map((k: string) => k.trim())
+                          .filter(Boolean)
+                      : [];
 
                   if (photoKeywords.length === 0) return null;
 
@@ -378,7 +391,10 @@ export default async function ModelPhotoPage({ params }: Props) {
                   </h3>
                   <p className="text-xs text-slate-500">
                     {allPhotos.length} Photos •{" "}
-                    {(model.media || []).filter((m: any) => m.type === "video").length}{" "}
+                    {
+                      (model.media || []).filter((m: any) => m.type === "video")
+                        .length
+                    }{" "}
                     Videos
                   </p>
                 </div>
@@ -411,7 +427,8 @@ export default async function ModelPhotoPage({ params }: Props) {
                   More Photos of {model.name}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Browse the complete photo collection ({allPhotos.length} total)
+                  Browse the complete photo collection ({allPhotos.length}{" "}
+                  total)
                 </p>
               </div>
 

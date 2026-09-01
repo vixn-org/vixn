@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,11 +127,26 @@ interface ModelData {
 export default function ModelManagementPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "admin";
   const modelId = params.id as string;
 
   const [model, setModel] = useState<ModelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("media");
+
+  useEffect(() => {
+    if (session?.user) {
+      const role = (session.user as any).role;
+      if (role === "admin") {
+        setActiveTab("general");
+      } else {
+        setActiveTab("media");
+      }
+    }
+  }, [session]);
+
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [photoKeywordInput, setPhotoKeywordInput] = useState("");
@@ -723,36 +739,40 @@ export default function ModelManagementPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="general" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl shadow-xs flex flex-wrap gap-1">
-          <TabsTrigger
-            value="general"
-            className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <FileText className="mr-1.5 h-3.5 w-3.5" />
-            General Information
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <Search className="mr-1.5 h-3.5 w-3.5" />
-            Main SEO &amp; Tags
-          </TabsTrigger>
-          <TabsTrigger
-            value="photos-seo"
-            className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <Camera className="mr-1.5 h-3.5 w-3.5 text-indigo-500 group-data-[state=active]:text-white" />
-            Photos Page SEO
-          </TabsTrigger>
-          <TabsTrigger
-            value="videos-seo"
-            className="data-[state=active]:bg-rose-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <Film className="mr-1.5 h-3.5 w-3.5 text-rose-500 group-data-[state=active]:text-white" />
-            Videos Page SEO
-          </TabsTrigger>
+          {isAdmin && (
+            <>
+              <TabsTrigger
+                value="general"
+                className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
+              >
+                <FileText className="mr-1.5 h-3.5 w-3.5" />
+                General Information
+              </TabsTrigger>
+              <TabsTrigger
+                value="seo"
+                className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
+              >
+                <Search className="mr-1.5 h-3.5 w-3.5" />
+                Main SEO &amp; Tags
+              </TabsTrigger>
+              <TabsTrigger
+                value="photos-seo"
+                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
+              >
+                <Camera className="mr-1.5 h-3.5 w-3.5 text-indigo-500 group-data-[state=active]:text-white" />
+                Photos Page SEO
+              </TabsTrigger>
+              <TabsTrigger
+                value="videos-seo"
+                className="data-[state=active]:bg-rose-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
+              >
+                <Film className="mr-1.5 h-3.5 w-3.5 text-rose-500 group-data-[state=active]:text-white" />
+                Videos Page SEO
+              </TabsTrigger>
+            </>
+          )}
           <TabsTrigger
             value="media"
             className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
@@ -762,8 +782,10 @@ export default function ModelManagementPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ========== GENERAL TAB ========== */}
-        <TabsContent value="general">
+        {isAdmin && (
+          <>
+            {/* ========== GENERAL TAB ========== */}
+            <TabsContent value="general">
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
@@ -1035,53 +1057,60 @@ export default function ModelManagementPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-red-100 bg-red-50/40 rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-red-700 text-xs font-bold uppercase tracking-wider">
-                    Delete Route
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full border-red-200 text-red-600 hover:bg-red-100/70 rounded-xl text-xs font-bold"
-                      >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                        Delete Model Profile
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-lg font-bold">
-                          Delete &quot;{model.name}&quot;?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-500 text-xs">
-                          This will permanently delete this model and all related media assets.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={async () => {
-                            await fetch(`/api/models/${modelId}`, {
-                              method: "DELETE",
-                            });
-                            toast.success("Model deleted");
-                            router.push("/admin/models");
-                          }}
-                          className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
+              {isAdmin && (
+                <Card className="border-red-100 bg-red-50/40 rounded-2xl shadow-xs">
+                  <CardHeader>
+                    <CardTitle className="text-red-700 text-xs font-bold uppercase tracking-wider">
+                      Delete Route
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full border-red-200 text-red-600 hover:bg-red-100/70 rounded-xl text-xs font-bold"
                         >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </CardContent>
-              </Card>
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                          Delete Model Profile
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-lg font-bold">
+                            Delete &quot;{model.name}&quot;?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-slate-500 text-xs">
+                            This will permanently delete this model and all related media assets.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              const res = await fetch(`/api/models/${modelId}`, {
+                                method: "DELETE",
+                              });
+                              if (!res.ok) {
+                                const data = await res.json();
+                                toast.error(data.error || "Failed to delete");
+                                return;
+                              }
+                              toast.success("Model deleted");
+                              router.push("/admin/models");
+                            }}
+                            className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -1750,10 +1779,12 @@ export default function ModelManagementPage() {
               </Card>
             </div>
           </div>
-        </TabsContent>
+          </TabsContent>
+        </>
+      )}
 
-        {/* ========== MEDIA TAB ========== */}
-        <TabsContent value="media">
+      {/* ========== MEDIA TAB ========== */}
+      <TabsContent value="media">
           <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
             <CardHeader className="flex-row items-center justify-between border-b border-slate-100 pb-4">
               <div>
