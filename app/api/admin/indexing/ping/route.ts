@@ -32,14 +32,78 @@ export async function POST(request: Request) {
       }
     }
 
-    // If no specific URLs provided, build URLs for all published models
+    // If no specific URLs provided, build comprehensive URLs for all published content
     let targetUrls = urls || [];
     if (targetUrls.length === 0) {
       await connectDB();
+      const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
+
+      // 1. Static Pages
+      targetUrls.push(
+        SITE_URL,
+        `${SITE_URL}/models`,
+        `${SITE_URL}/blog`,
+        `${SITE_URL}/faq`
+      );
+
+      // 2. Models & All Media Items & Tags
       const models = await Model.find({ status: "published" })
-        .select("slug")
+        .select("slug tags metaKeywords photosSeo videosSeo media")
         .lean();
-      targetUrls = models.flatMap((m) => buildModelAffectedUrls(m.slug));
+
+      const tagSet = new Set<string>();
+
+      for (const m of models) {
+        // Model profile, photos hub, videos hub
+        targetUrls.push(
+          `${SITE_URL}/model/${m.slug}`,
+          `${SITE_URL}/model/${m.slug}/photos`,
+          `${SITE_URL}/model/${m.slug}/videos`
+        );
+
+        // Individual photos and videos
+        (m.media || []).forEach((mediaItem: any, idx: number) => {
+          const type = mediaItem.type === "video" ? "video" : "photo";
+          const mediaTitle = mediaItem.title || mediaItem.alt || `${type}-${idx + 1}`;
+          const cleanSlug = mediaTitle
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, "")
+            .replace(/[\s_]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+            .trim();
+          const idPart = mediaItem._id?.toString() || `${idx + 1}`;
+          const mediaSlug = cleanSlug ? `${cleanSlug}-${idPart}` : idPart;
+
+          targetUrls.push(`${SITE_URL}/model/${m.slug}/${type}/${mediaSlug}`);
+
+          // Collect media keywords
+          if (Array.isArray(mediaItem.keywords)) {
+            mediaItem.keywords.forEach((k: string) => k && tagSet.add(k));
+          }
+        });
+
+        // Collect model tags
+        (m.tags || []).forEach((t: string) => t && tagSet.add(t));
+        (m.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
+        (m.photosSeo?.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
+        (m.videosSeo?.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
+      }
+
+      // Add all unique tag hub URLs
+      tagSet.forEach((t) => {
+        const cleanTag = t
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, "")
+          .replace(/[\s_]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .trim();
+        if (cleanTag) {
+          targetUrls.push(`${SITE_URL}/tag/${cleanTag}`);
+        }
+      });
+
+      // Deduplicate
+      targetUrls = Array.from(new Set(targetUrls));
     }
 
     const result = await triggerIndexingPipeline(targetUrls);
