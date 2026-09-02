@@ -272,6 +272,29 @@ export default async function ModelPhotosPage({ params }: Props) {
           </div>
         )}
 
+        {/* Tags & Keyword Hubs */}
+        {model.tags && model.tags.length > 0 && (
+          <div className="bg-slate-50/80 rounded-3xl p-5 border border-slate-200/80 space-y-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Explore Related Photo Tags
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {model.tags.map((tag: string) => {
+                const tagSlug = tag.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
+                return (
+                  <Link
+                    key={tag}
+                    href={`/tag/${tagSlug}`}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-rose-700 border border-rose-100 hover:bg-rose-50 hover:border-rose-200 transition-colors shadow-xs"
+                  >
+                    #{tag}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Optional SEO Content Accordion */}
         {model.photosSeo?.introText && (
           <details className="group bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs transition-all [&::-webkit-details-marker]:hidden">

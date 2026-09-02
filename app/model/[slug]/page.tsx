@@ -67,13 +67,39 @@ export default async function ModelPage({ params }: Props) {
     }).lean();
 
     if (model) {
-      relatedModels = await Model.find({
+      // Priority: models sharing same tags or category for content-relevant internal linking silo
+      const relatedQuery: Record<string, any> = {
         _id: { $ne: model._id },
         status: "published",
-      })
-        .limit(4)
-        .select("name slug profileImage coverImage category media")
+      };
+
+      if (model.tags?.length > 0 || model.category) {
+        relatedQuery.$or = [];
+        if (model.tags?.length > 0) {
+          relatedQuery.$or.push({ tags: { $in: model.tags } });
+        }
+        if (model.category) {
+          relatedQuery.$or.push({ category: model.category });
+        }
+      }
+
+      relatedModels = await Model.find(relatedQuery)
+        .limit(8)
+        .select("name slug profileImage coverImage category media tags")
         .lean();
+
+      // If not enough related models, backfill with other published models
+      if (relatedModels.length < 4) {
+        const existingIds = [model._id, ...relatedModels.map((r: any) => r._id)];
+        const backfill = await Model.find({
+          _id: { $nin: existingIds },
+          status: "published",
+        })
+          .limit(4 - relatedModels.length)
+          .select("name slug profileImage coverImage category media tags")
+          .lean();
+        relatedModels = [...relatedModels, ...backfill];
+      }
     }
   } catch (error) {
     console.error("ModelPage DB error:", error);
@@ -294,25 +320,33 @@ export default async function ModelPage({ params }: Props) {
                 <Tag className="w-3 h-3" />
                 Tags:
               </span>
-              {model.tags?.map((tag: string) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100"
-                >
-                  #{tag}
-                </span>
-              ))}
+              {model.tags?.map((tag: string) => {
+                const tagSlug = tag.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
+                return (
+                  <Link
+                    key={tag}
+                    href={`/tag/${tagSlug}`}
+                    className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100 hover:border-rose-200 transition-colors"
+                  >
+                    #{tag}
+                  </Link>
+                );
+              })}
               {model.metaKeywords
                 ?.filter((kw: string) => !model.tags?.includes(kw))
                 .slice(0, 4)
-                .map((kw: string) => (
-                  <span
-                    key={kw}
-                    className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200"
-                  >
-                    {kw}
-                  </span>
-                ))}
+                .map((kw: string) => {
+                  const kwSlug = kw.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
+                  return (
+                    <Link
+                      key={kw}
+                      href={`/tag/${kwSlug}`}
+                      className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 hover:border-slate-300 transition-colors"
+                    >
+                      {kw}
+                    </Link>
+                  );
+                })}
             </div>
           )}
         </div>

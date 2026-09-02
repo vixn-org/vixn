@@ -159,7 +159,7 @@ const ModelSchema = new Schema<IModel>(
 ModelSchema.index({ status: 1, createdAt: -1 });
 ModelSchema.index({ status: 1, name: 1 });
 ModelSchema.index({ status: 1, category: 1 });
-ModelSchema.index({ status: 1, featured: 1 });
+ModelSchema.index({ status: 1, tags: 1 });
 
 // Text index for search
 ModelSchema.index({ name: "text", metaTitle: "text", metaDescription: "text", tags: "text" });

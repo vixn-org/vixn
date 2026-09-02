@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import { auth } from "@/lib/auth";
+import { triggerIndexingPipeline, buildModelAffectedUrls } from "@/lib/indexing";
 
 export async function GET(request: Request) {
   try {
@@ -102,7 +104,38 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check for duplicate metaDescription (SEO guardrail)
+    if (body.metaDescription && body.metaDescription.trim().length > 0) {
+      const dupDesc = await Model.findOne({
+        metaDescription: body.metaDescription.trim(),
+      });
+      if (dupDesc) {
+        return NextResponse.json(
+          {
+            error: `Duplicate meta description — already used by model "${dupDesc.name}". Each model must have a unique meta description for SEO.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const model = await Model.create(body);
+
+    // Trigger auto-indexing pipeline for published models (non-blocking)
+    if (model.status === "published") {
+      const affectedUrls = buildModelAffectedUrls(model.slug);
+      triggerIndexingPipeline(affectedUrls).catch(console.error);
+
+      // Revalidate sitemap ISR cache
+      try {
+        revalidatePath("/sitemap.xml");
+        revalidatePath("/sitemaps/models-1");
+        revalidatePath("/sitemaps/videos-1");
+        revalidatePath("/sitemaps/photos-1");
+      } catch (_) {
+        // Non-critical — sitemaps will refresh within ISR window
+      }
+    }
 
     return NextResponse.json({ model }, { status: 201 });
   } catch (error) {

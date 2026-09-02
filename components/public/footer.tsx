@@ -1,7 +1,37 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Tag } from "lucide-react";
+import connectDB from "@/lib/db";
+import Model from "@/lib/models/model";
+import { slugify } from "@/lib/seo";
 
-export default function PublicFooter() {
+export default async function PublicFooter() {
+  let topTags: string[] = [];
+  try {
+    await connectDB();
+    const models = await Model.find({ status: "published" })
+      .select("tags")
+      .limit(100)
+      .lean();
+    
+    const tagCount = new Map<string, number>();
+    models.forEach((m) => {
+      m.tags?.forEach((t: string) => {
+        if (!t || typeof t !== "string") return;
+        const cleaned = t.trim();
+        if (cleaned) {
+          tagCount.set(cleaned, (tagCount.get(cleaned) || 0) + 1);
+        }
+      });
+    });
+
+    topTags = Array.from(tagCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([tag]) => tag);
+  } catch {
+    // Non-critical fallback
+  }
+
   return (
     <footer className="border-t border-slate-200 bg-slate-50 mt-16">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -80,7 +110,15 @@ export default function PublicFooter() {
                   href="/sitemap.xml"
                   className="hover:text-rose-600 transition-colors"
                 >
-                  XML Sitemap
+                  XML Sitemap Index
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/sitemaps/tags"
+                  className="hover:text-rose-600 transition-colors"
+                >
+                  Keyword Tags Index
                 </Link>
               </li>
               <li>
@@ -94,6 +132,30 @@ export default function PublicFooter() {
             </ul>
           </div>
         </div>
+
+        {/* Global Popular Keyword Hubs for Internal Linking */}
+        {topTags.length > 0 && (
+          <div className="py-6 border-b border-slate-200">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-rose-500" />
+              Popular Search Tags &amp; Collections
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {topTags.map((tag) => {
+                const tagSlug = slugify(tag);
+                return (
+                  <Link
+                    key={tag}
+                    href={`/tag/${tagSlug}`}
+                    className="text-xs font-medium text-slate-600 bg-white hover:text-rose-600 hover:border-rose-200 px-3 py-1 rounded-full border border-slate-200 transition-colors shadow-xs"
+                  >
+                    #{tag}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} VIXN.fun. All rights reserved.</p>

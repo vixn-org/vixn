@@ -362,14 +362,18 @@ export default async function ModelPhotoPage({ params }: Props) {
                         SEO Tags &amp; Keywords
                       </span>
                       <div className="flex flex-wrap gap-1">
-                        {photoKeywords.map((kw, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px] font-medium text-slate-500 bg-white hover:bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/70 transition-colors"
-                          >
-                            #{kw}
-                          </span>
-                        ))}
+                        {photoKeywords.map((kw, i) => {
+                          const kwSlug = kw.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
+                          return (
+                            <Link
+                              key={i}
+                              href={`/tag/${kwSlug}`}
+                              className="text-[10px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-md border border-rose-100 transition-colors"
+                            >
+                              #{kw}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   );

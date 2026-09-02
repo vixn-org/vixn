@@ -150,6 +150,81 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Real-time SEO & Automated Indexing Command Center */}
+      <Card className="border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-900 to-rose-950 text-white rounded-2xl shadow-md overflow-hidden">
+        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Badge className="bg-rose-500/20 text-rose-300 border-rose-500/30 text-xs font-bold uppercase tracking-wider">
+                Real-Time SEO Indexing
+              </Badge>
+            </div>
+            <h2 className="text-xl font-black tracking-tight text-white">
+              Dynamic Sitemap &amp; Search Engine Indexing Pipeline
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Auto-partitioned Sitemap Index (`/sitemap.xml`) with IndexNow protocol for instant Bing/Yandex crawling, Google sitemap ping, and programmatic `/tag/[keyword]` hubs.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-2 text-xs">
+              <a
+                href="/sitemap.xml"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-slate-300 hover:text-white bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 transition-colors"
+              >
+                <span>/sitemap.xml</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href="/sitemaps/models-1"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-slate-300 hover:text-white bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 transition-colors"
+              >
+                <span>/sitemaps/models-1</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href="/sitemaps/tags"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-slate-300 hover:text-white bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 transition-colors"
+              >
+                <span>/sitemaps/tags</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0">
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/admin/indexing/ping", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ revalidateSitemaps: true }),
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    alert(`✅ Indexing Pipeline Triggered!\nSubmitted ${data.urlCount} URLs to search engine bots.`);
+                  } else {
+                    alert(`⚠️ Indexing Error: ${data.error || "Failed"}`);
+                  }
+                } catch (e) {
+                  alert("Failed to reach indexing API");
+                }
+              }}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg border border-rose-500/50"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Trigger Global Indexing Ping
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       {/* Recent Models List */}
       <Card className="border border-slate-200 bg-white rounded-2xl shadow-xs overflow-hidden">
         <CardHeader className="flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 py-4 px-6">
