@@ -6,12 +6,21 @@ import BlogPost from "@/lib/models/blog";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
 
-// ISR: revalidate every 1 hour
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
-export async function GET() {
+function getBaseUrl(request: Request): string {
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
+}
+
+export async function GET(request: Request) {
   try {
     await connectDB();
+    const siteUrl = getBaseUrl(request);
 
     const [modelCount, blogCount] = await Promise.all([
       Model.countDocuments({ status: "published" }),
@@ -49,7 +58,7 @@ export async function GET() {
     // Static pages sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/static</loc>
+    <loc>${siteUrl}/sitemaps/static</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
     );
@@ -58,7 +67,7 @@ export async function GET() {
     for (let i = 1; i <= modelChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/models-${i}</loc>
+    <loc>${siteUrl}/sitemaps/models-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
       );
@@ -68,7 +77,7 @@ export async function GET() {
     for (let i = 1; i <= videoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/videos-${i}</loc>
+    <loc>${siteUrl}/sitemaps/videos-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
       );
@@ -78,7 +87,7 @@ export async function GET() {
     for (let i = 1; i <= photoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/photos-${i}</loc>
+    <loc>${siteUrl}/sitemaps/photos-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
       );
@@ -88,7 +97,7 @@ export async function GET() {
     for (let i = 1; i <= blogChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/blogs-${i}</loc>
+    <loc>${siteUrl}/sitemaps/blogs-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
       );
@@ -97,7 +106,7 @@ export async function GET() {
     // Tags (keyword hub pages) sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/tags</loc>
+    <loc>${siteUrl}/sitemaps/tags</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`
     );
