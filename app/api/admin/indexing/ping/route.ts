@@ -112,6 +112,7 @@ export async function POST(request: Request) {
       message: "Indexing pipeline triggered",
       urlCount: targetUrls.length,
       sitemapsRevalidated: revalidateSitemaps !== false,
+      google: result.google,
       indexNow: result.indexNow,
       googlePing: result.googlePing,
       timestamp: new Date().toISOString(),

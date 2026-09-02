@@ -208,7 +208,13 @@ export default function AdminDashboard() {
                   });
                   const data = await res.json();
                   if (res.ok) {
-                    alert(`✅ Indexing Pipeline Triggered!\nSubmitted ${data.urlCount} URLs to search engine bots.`);
+                    const gInfo = data.google?.succeeded !== undefined
+                      ? `\nGoogle Indexing API: ${data.google.succeeded} dispatched`
+                      : "";
+                    const inInfo = data.indexNow?.status
+                      ? `\nIndexNow (Bing/Yandex): Status ${data.indexNow.status} (Accepted)`
+                      : "";
+                    alert(`✅ Indexing Pipeline Triggered!\nSubmitted ${data.urlCount} URLs across the site.${gInfo}${inInfo}\nGooglebot Sitemap: Pinged`);
                   } else {
                     alert(`⚠️ Indexing Error: ${data.error || "Failed"}`);
                   }
