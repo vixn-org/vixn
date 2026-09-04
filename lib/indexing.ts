@@ -63,7 +63,10 @@ export async function notifyIndexNow(urls: string[]): Promise<{
   }
 
   try {
-    const host = new URL(SITE_URL).host;
+    // Derive host from the first URL to ensure host matches urlList perfectly (www vs non-www)
+    const firstUrl = urls[0];
+    const host = firstUrl ? new URL(firstUrl).host : new URL(SITE_URL).host;
+
     const response = await fetch("https://api.indexnow.org/indexnow", {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
