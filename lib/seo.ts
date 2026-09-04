@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { IModel } from "@/lib/models/model";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.vixn.fun";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "VIXN";
 
 export function slugify(text: string): string {
