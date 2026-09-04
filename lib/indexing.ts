@@ -9,7 +9,7 @@
 import { google } from "googleapis";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
-const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "ed7c125f718315b5b4d997c99aed3a75";
+const INDEXNOW_KEY = process.env.INDEXNOW_KEY || "a56dd7571fdf49c294154aaaec83acb0";
 
 // ── Google Indexing API ─────────────────────────────────────────────
 export async function notifyGoogleIndex(
