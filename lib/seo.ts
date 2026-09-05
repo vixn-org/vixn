@@ -125,7 +125,9 @@ export function generateModelMetadata(model: IModel): Metadata {
       ? model.metaKeywords.join(", ")
       : `${model.name}, model, photos, videos, gallery`,
     alternates: {
-      canonical: model.canonicalUrl || url,
+      canonical: model.canonicalUrl
+        ? model.canonicalUrl.replace(/^https?:\/\/www\./i, "https://").trim()
+        : url,
     },
     openGraph: {
       title,
@@ -553,7 +555,9 @@ export function generateBlogMetadata(blog: any): Metadata {
       ? blog.metaKeywords.join(", ")
       : `${blog.title}, ${blog.category}, blog, vixn`,
     alternates: {
-      canonical: blog.canonicalUrl || url,
+      canonical: blog.canonicalUrl
+        ? blog.canonicalUrl.replace(/^https?:\/\/www\./i, "https://").trim()
+        : url,
     },
     openGraph: {
       title,
