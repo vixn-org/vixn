@@ -37,13 +37,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const blog = await BlogPost.findOne({ slug, status: "published" }).lean();
     if (!blog) {
       return {
-        title: "Article Not Found | VIXN Blog",
+        title: { absolute: "Article Not Found | VIXN Blog" },
       };
     }
     return generateBlogMetadata(blog);
   } catch {
     return {
-      title: "VIXN Blog Article",
+      title: { absolute: "VIXN Blog Article | VIXN" },
     };
   }
 }

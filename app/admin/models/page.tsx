@@ -152,7 +152,7 @@ export default function AdminModelsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newModel,
-          metaTitle: newModel.metaTitle || `${newModel.name} - Photos & Videos | VIXN`,
+          metaTitle: newModel.metaTitle || `${newModel.name} - Photos & Videos`,
           metaDescription:
             newModel.metaDescription ||
             `Explore ${newModel.name}'s exclusive photo gallery and video collection on VIXN.`,
@@ -227,7 +227,7 @@ export default function AdminModelsPage() {
       ...newModel,
       name,
       slug: slugify(name),
-      metaTitle: `${name} - Photos & Videos | VIXN`,
+      metaTitle: `${name} - Photos & Videos`,
       metaDescription: `Explore ${name}'s exclusive photo gallery and video collection on VIXN.`,
     });
   };
@@ -259,12 +259,12 @@ export default function AdminModelsPage() {
                   Create New Model Route
                 </DialogTitle>
                 <DialogDescription className="text-slate-500 text-xs">
-                  Creates an SEO-ready route at /model/[slug]. You can add media and tune tags in the editor.
+                  Creates a new model directory and establishes canonical URL /model/[slug].
                 </DialogDescription>
               </DialogHeader>
-            <div className="space-y-4 py-3">
+            <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Model Name *</Label>
+                <Label className="text-xs font-bold text-slate-700">Model Full Name *</Label>
                 <Input
                   placeholder="e.g. Aditi Mistry"
                   value={newModel.name}
@@ -274,26 +274,25 @@ export default function AdminModelsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">URL Route Slug *</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2.5 py-2 rounded-xl border border-slate-200">
-                    /model/
-                  </span>
-                  <Input
-                    placeholder="aditi-mistry"
+                <Label className="text-xs font-bold text-slate-700">Custom URL Slug *</Label>
+                <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                  <span className="text-slate-400">/model/</span>
+                  <input
+                    type="text"
                     value={newModel.slug}
                     onChange={(e) =>
                       setNewModel({ ...newModel, slug: slugify(e.target.value) })
                     }
-                    className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono"
+                    className="flex-1 bg-transparent text-slate-900 focus:outline-hidden font-mono text-xs"
+                    placeholder="aditi-mistry"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Country / Region</Label>
+                <Label className="text-xs font-bold text-slate-700">Country / Origin</Label>
                 <Input
-                  placeholder="e.g. India, United States, Brazil"
+                  placeholder="e.g. India, United States"
                   value={newModel.country}
                   onChange={(e) =>
                     setNewModel({ ...newModel, country: e.target.value })
@@ -305,30 +304,53 @@ export default function AdminModelsPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">Meta Title (SEO)</Label>
-                  <span className="text-[11px] text-slate-400">
-                    {newModel.metaTitle.length}/60
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      newModel.metaTitle.length === 0
+                        ? "text-slate-400"
+                        : newModel.metaTitle.length <= 60
+                        ? "text-emerald-600"
+                        : "text-red-500 font-bold"
+                    }`}
+                  >
+                    {newModel.metaTitle.length}/60 {newModel.metaTitle.length > 60 ? "(Too long!)" : newModel.metaTitle.length >= 25 ? "(Optimal)" : ""}
                   </span>
                 </div>
                 <Input
-                  placeholder="SEO title for Google SERP"
+                  placeholder="SEO title for Google SERP (max 60 chars)"
                   value={newModel.metaTitle}
+                  maxLength={60}
                   onChange={(e) =>
                     setNewModel({ ...newModel, metaTitle: e.target.value })
                   }
                   className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                 />
+                <p className="text-[11px] text-slate-400">
+                  Max 60 chars. Do NOT add &quot;| VIXN&quot; (added automatically).
+                </p>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-slate-700">Meta Description</Label>
-                  <span className="text-[11px] text-slate-400">
-                    {newModel.metaDescription.length}/155
+                  <span
+                    className={`text-[11px] font-semibold ${
+                      newModel.metaDescription.length === 0
+                        ? "text-slate-400"
+                        : newModel.metaDescription.length < 50
+                        ? "text-amber-500"
+                        : newModel.metaDescription.length <= 155
+                        ? "text-emerald-600"
+                        : "text-red-500 font-bold"
+                    }`}
+                  >
+                    {newModel.metaDescription.length}/155 {newModel.metaDescription.length > 155 ? "(Too long!)" : newModel.metaDescription.length >= 120 ? "(Optimal)" : ""}
                   </span>
                 </div>
                 <Textarea
-                  placeholder="Compelling description for search snippets"
+                  placeholder="Compelling description for search snippets (max 155 chars)"
                   value={newModel.metaDescription}
+                  maxLength={155}
                   onChange={(e) =>
                     setNewModel({
                       ...newModel,
@@ -338,6 +360,9 @@ export default function AdminModelsPage() {
                   className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
                   rows={3}
                 />
+                <p className="text-[11px] text-slate-400">
+                  Strict limit: 155 characters for Bing and Google Snippets.
+                </p>
               </div>
 
               <div className="space-y-1.5">
@@ -367,7 +392,7 @@ export default function AdminModelsPage() {
                   Google Search Snippet Preview
                 </p>
                 <p className="text-sm font-semibold text-blue-600 truncate hover:underline">
-                  {newModel.metaTitle || "Model Name - Photos & Videos | VIXN"}
+                  {newModel.metaTitle ? `${newModel.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN` : `${newModel.name || "Model Name"} - Photos & Videos | VIXN`}
                 </p>
                 <p className="text-xs text-emerald-700 font-mono truncate">
                   https://vixn.fun/model/{newModel.slug || "model-slug"}

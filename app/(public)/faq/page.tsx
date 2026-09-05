@@ -14,9 +14,9 @@ import FAQAccordion, { FAQItem } from "@/components/public/faq-accordion";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
 export const metadata: Metadata = {
-  title: "Frequently Asked Questions (FAQ) | VIXN",
+  title: { absolute: "Frequently Asked Questions (FAQ) | VIXN" },
   description:
-    "Find answers to frequently asked questions about VIXN.fun. Learn about video streaming, 4K photo sets, model discovery, safety, and requesting new models.",
+    "Find answers to frequently asked questions about VIXN. Learn about video streaming, 4K photo sets, model discovery, safety, and requesting new models.",
   keywords: [
     "vixn faq",
     "frequently asked questions",

@@ -9,7 +9,8 @@ const CHUNK_SIZE = 45000;
 export const dynamic = "force-dynamic";
 
 function getBaseUrl(request: Request): string {
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const host =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
   const proto = request.headers.get("x-forwarded-proto") || "https";
   if (host) {
     return `${proto}://${host}`;
@@ -39,10 +40,8 @@ export async function GET(request: Request) {
       },
     ]);
 
-    const videosCount =
-      mediaAgg.find((a) => a._id === "video")?.count || 0;
-    const photosCount =
-      mediaAgg.find((a) => a._id === "photo")?.count || 0;
+    const videosCount = mediaAgg.find((a) => a._id === "video")?.count || 0;
+    const photosCount = mediaAgg.find((a) => a._id === "photo")?.count || 0;
 
     // Each model generates 3 URLs (profile + /photos + /videos hubs)
     const modelUrlCount = modelCount * 3;
@@ -60,7 +59,7 @@ export async function GET(request: Request) {
       `  <sitemap>
     <loc>${siteUrl}/sitemaps/static</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
     );
 
     // Model profile sitemaps
@@ -69,7 +68,7 @@ export async function GET(request: Request) {
         `  <sitemap>
     <loc>${siteUrl}/sitemaps/models-${i}</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
       );
     }
 
@@ -79,7 +78,7 @@ export async function GET(request: Request) {
         `  <sitemap>
     <loc>${siteUrl}/sitemaps/videos-${i}</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
       );
     }
 
@@ -89,7 +88,7 @@ export async function GET(request: Request) {
         `  <sitemap>
     <loc>${siteUrl}/sitemaps/photos-${i}</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
       );
     }
 
@@ -99,7 +98,7 @@ export async function GET(request: Request) {
         `  <sitemap>
     <loc>${siteUrl}/sitemaps/blogs-${i}</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
       );
     }
 
@@ -108,7 +107,7 @@ export async function GET(request: Request) {
       `  <sitemap>
     <loc>${siteUrl}/sitemaps/tags</loc>
     <lastmod>${now}</lastmod>
-  </sitemap>`
+  </sitemap>`,
     );
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

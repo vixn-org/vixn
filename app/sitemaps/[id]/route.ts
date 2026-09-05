@@ -9,7 +9,8 @@ const CHUNK_SIZE = 45000;
 export const dynamic = "force-dynamic";
 
 function getBaseUrl(request: Request): string {
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  const host =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
   const proto = request.headers.get("x-forwarded-proto") || "https";
   if (host) {
     return `${proto}://${host}`;
@@ -30,7 +31,7 @@ function urlEntry(
   url: string,
   lastmod: string,
   changefreq: string,
-  priority: number
+  priority: number,
 ): string {
   return `  <url>
     <loc>${escapeXml(url)}</loc>
@@ -71,7 +72,10 @@ async function buildStaticSitemap(siteUrl: string): Promise<string[]> {
 }
 
 // ─── Model Profiles + /photos + /videos hub pages ───
-async function buildModelsSitemap(chunkIndex: number, siteUrl: string): Promise<string[]> {
+async function buildModelsSitemap(
+  chunkIndex: number,
+  siteUrl: string,
+): Promise<string[]> {
   const modelsPerChunk = Math.floor(CHUNK_SIZE / 3);
   const skip = (chunkIndex - 1) * modelsPerChunk;
 
@@ -89,7 +93,9 @@ async function buildModelsSitemap(chunkIndex: number, siteUrl: string): Promise<
     const prio = model.featured ? 0.95 : 0.9;
 
     // Model profile page
-    entries.push(urlEntry(`${siteUrl}/model/${model.slug}`, lastmod, "weekly", prio));
+    entries.push(
+      urlEntry(`${siteUrl}/model/${model.slug}`, lastmod, "weekly", prio),
+    );
 
     const hasPhotos = (model.media || []).some((m: any) => m.type === "photo");
     const hasVideos = (model.media || []).some((m: any) => m.type === "video");
@@ -97,14 +103,24 @@ async function buildModelsSitemap(chunkIndex: number, siteUrl: string): Promise<
     // Photos hub
     if (hasPhotos) {
       entries.push(
-        urlEntry(`${siteUrl}/model/${model.slug}/photos`, lastmod, "weekly", 0.85)
+        urlEntry(
+          `${siteUrl}/model/${model.slug}/photos`,
+          lastmod,
+          "weekly",
+          0.85,
+        ),
       );
     }
 
     // Videos hub
     if (hasVideos) {
       entries.push(
-        urlEntry(`${siteUrl}/model/${model.slug}/videos`, lastmod, "weekly", 0.85)
+        urlEntry(
+          `${siteUrl}/model/${model.slug}/videos`,
+          lastmod,
+          "weekly",
+          0.85,
+        ),
       );
     }
   }
@@ -113,7 +129,10 @@ async function buildModelsSitemap(chunkIndex: number, siteUrl: string): Promise<
 }
 
 // ─── Individual Video Pages ───
-async function buildVideosSitemap(chunkIndex: number, siteUrl: string): Promise<string[]> {
+async function buildVideosSitemap(
+  chunkIndex: number,
+  siteUrl: string,
+): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const results = await Model.aggregate([
@@ -140,13 +159,16 @@ async function buildVideosSitemap(chunkIndex: number, siteUrl: string): Promise<
       `${siteUrl}/model/${r.slug}/video/${mediaSlug}`,
       lastmod,
       "monthly",
-      0.75
+      0.75,
     );
   });
 }
 
 // ─── Individual Photo Pages ───
-async function buildPhotosSitemap(chunkIndex: number, siteUrl: string): Promise<string[]> {
+async function buildPhotosSitemap(
+  chunkIndex: number,
+  siteUrl: string,
+): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const results = await Model.aggregate([
@@ -173,13 +195,16 @@ async function buildPhotosSitemap(chunkIndex: number, siteUrl: string): Promise<
       `${siteUrl}/model/${r.slug}/photo/${mediaSlug}`,
       lastmod,
       "monthly",
-      0.7
+      0.7,
     );
   });
 }
 
 // ─── Blog Posts ───
-async function buildBlogsSitemap(chunkIndex: number, siteUrl: string): Promise<string[]> {
+async function buildBlogsSitemap(
+  chunkIndex: number,
+  siteUrl: string,
+): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const blogs = await BlogPost.find({ status: "published" })
@@ -206,7 +231,7 @@ async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
 
   for (const m of models) {
     const lastmod = m.updatedAt || new Date();
-    
+
     // 1. Root model tags & metaKeywords
     const allKeywords: string[] = [
       ...extractKeywords(m.tags),
@@ -222,7 +247,12 @@ async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
 
     for (const t of allKeywords) {
       if (!t || typeof t !== "string") continue;
-      const cleanSlug = t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
+      const cleanSlug = t
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .trim();
       if (!cleanSlug) continue;
 
       const existingDate = tagMap.get(cleanSlug);
@@ -234,7 +264,9 @@ async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
 
   const entries: string[] = [];
   tagMap.forEach((date, tagSlug) => {
-    entries.push(urlEntry(`${siteUrl}/tag/${tagSlug}`, toIso(date), "daily", 0.8));
+    entries.push(
+      urlEntry(`${siteUrl}/tag/${tagSlug}`, toIso(date), "daily", 0.8),
+    );
   });
 
   return entries;
@@ -243,7 +275,7 @@ async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
 // ─── Main Route Handler ───
 export async function GET(
   request: Request,
-  ctx: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();

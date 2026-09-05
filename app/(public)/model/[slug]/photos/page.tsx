@@ -7,6 +7,7 @@ import {
   generateModelPhotosMetadata,
   generateModelPhotosJsonLd,
   getMediaSlug,
+  slugify,
 } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ import {
   ExternalLink,
   Flame,
   ChevronDown,
+  Tag,
 } from "lucide-react";
 
 interface Props {
@@ -39,11 +41,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       status: "published",
     }).lean();
 
-    if (!model) return { title: "Photos Not Found | VIXN" };
+    if (!model) return { title: { absolute: "Photos Not Found | VIXN" } };
 
     return generateModelPhotosMetadata(model);
   } catch {
-    return { title: `${slug} Photos & HD Gallery | VIXN` };
+    return { title: { absolute: `${slug} Photos | VIXN` } };
   }
 }
 
@@ -71,6 +73,49 @@ export default async function ModelPhotosPage({ params }: Props) {
     .limit(4)
     .select("name slug profileImage category media")
     .lean();
+
+  // Aggregate all photo-related tags and keywords (deduplicated)
+  const tagMap = new Map<string, string>();
+  if (model.name) tagMap.set(slugify(model.name), model.name);
+  (model.tags || []).forEach((t: string) => {
+    if (t && typeof t === "string") {
+      const s = slugify(t);
+      if (s && !tagMap.has(s)) tagMap.set(s, t.trim());
+    }
+  });
+  (model.photosSeo?.metaKeywords || []).forEach((kw: string) => {
+    if (kw && typeof kw === "string") {
+      const s = slugify(kw);
+      if (s && !tagMap.has(s)) tagMap.set(s, kw.trim());
+    }
+  });
+  (model.metaKeywords || []).forEach((kw: string) => {
+    if (kw && typeof kw === "string") {
+      const s = slugify(kw);
+      if (s && !tagMap.has(s)) tagMap.set(s, kw.trim());
+    }
+  });
+  photos.forEach((p: any) => {
+    const kws = Array.isArray(p.keywords)
+      ? p.keywords
+      : typeof p.keywords === "string"
+      ? p.keywords.split(",")
+      : [];
+    kws.forEach((kw: string) => {
+      if (kw && typeof kw === "string") {
+        const s = slugify(kw);
+        if (s && !tagMap.has(s)) tagMap.set(s, kw.trim());
+      }
+    });
+  });
+  if (model.category) {
+    const s = slugify(model.category);
+    if (s && !tagMap.has(s)) tagMap.set(s, model.category.trim());
+  }
+  const allPhotoTags = Array.from(tagMap.entries()).map(([slug, label]) => ({
+    slug,
+    label,
+  }));
 
   const { imageGallerySchema, breadcrumbSchema } =
     generateModelPhotosJsonLd(model);
@@ -272,26 +317,29 @@ export default async function ModelPhotosPage({ params }: Props) {
           </div>
         )}
 
-        {/* Tags & Keyword Hubs */}
-        {model.tags && model.tags.length > 0 && (
-          <div className="bg-slate-50/80 rounded-3xl p-5 border border-slate-200/80 space-y-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Explore Related Photo Tags
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {model.tags.map((tag: string) => {
-                const tagSlug = tag.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
-                return (
-                  <Link
-                    key={tag}
-                    href={`/tag/${tagSlug}`}
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-rose-700 border border-rose-100 hover:bg-rose-50 hover:border-rose-200 transition-colors shadow-xs"
-                  >
-                    #{tag}
-                  </Link>
-                );
-              })}
+        {/* Cross-Link Banner to Videos Hub */}
+        {videos.length > 0 && (
+          <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 rounded-3xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <span className="text-xs font-bold uppercase tracking-wider text-rose-100 flex items-center justify-center sm:justify-start gap-1">
+                <VideoIcon className="w-3.5 h-3.5" />
+                Streaming Videos
+              </span>
+              <h3 className="text-lg sm:text-xl font-black">
+                Watch All {videos.length} Videos of {model.name}
+              </h3>
+              <p className="text-xs text-rose-100 max-w-xl">
+                Stream 4K high-definition video clips, exclusive scenes, and uncut streams.
+              </p>
             </div>
+            <Button
+              asChild
+              className="bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800 font-black rounded-xl text-xs shadow-md shrink-0"
+            >
+              <Link href={`/model/${model.slug}/videos`}>
+                Go to Videos Hub →
+              </Link>
+            </Button>
           </div>
         )}
 
@@ -314,7 +362,7 @@ export default async function ModelPhotosPage({ params }: Props) {
           </details>
         )}
 
-        {/* Related Models */}
+        {/* Related Models (Bidirectional Internal Linking - Placed Above Tags) */}
         {relatedModels.length > 0 && (
           <div className="pt-8 border-t border-slate-200/80 space-y-4">
             <div className="flex items-center justify-between">
@@ -328,35 +376,77 @@ export default async function ModelPhotosPage({ params }: Props) {
                 asChild
                 className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
               >
-                <Link href="/models">View All</Link>
+                <Link href="/models">View All Models</Link>
               </Button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {relatedModels.map((m: any) => (
+              {relatedModels.map((m: any) => {
+                const mPhotoCount = (m.media || []).filter((x: any) => x.type === "photo").length;
+                const mVideoCount = (m.media || []).filter((x: any) => x.type === "video").length;
+                return (
+                  <div
+                    key={m._id}
+                    className="group bg-white rounded-2xl p-3 border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <Link href={`/model/${m.slug}`} className="block overflow-hidden rounded-xl mb-2">
+                        <img
+                          src={m.profileImage || "/logo.jpg"}
+                          alt={m.name}
+                          className="w-full aspect-square object-cover rounded-xl group-hover:scale-105 transition-transform"
+                        />
+                      </Link>
+                      <Link
+                        href={`/model/${m.slug}`}
+                        className="text-xs font-bold text-slate-900 hover:text-rose-600 transition-colors truncate block"
+                      >
+                        {m.name}
+                      </Link>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold">
+                      <Link
+                        href={`/model/${m.slug}/photos`}
+                        className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                      >
+                        <ImageIcon className="w-3 h-3" />
+                        <span>{mPhotoCount} Photos</span>
+                      </Link>
+                      <Link
+                        href={`/model/${m.slug}/videos`}
+                        className="text-slate-500 hover:text-rose-600 flex items-center gap-1"
+                      >
+                        <VideoIcon className="w-3 h-3" />
+                        <span>{mVideoCount} Videos</span>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tags & Keyword Hubs (Crawlable Mesh - Placed at the Bottom) */}
+        {allPhotoTags.length > 0 && (
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-rose-500" />
+                Explore Related Photo Tags ({allPhotoTags.length})
+              </h3>
+              <span className="text-[11px] text-slate-400">
+                Discover related collections
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allPhotoTags.map((t) => (
                 <Link
-                  key={m._id}
-                  href={`/model/${m.slug}/photos`}
-                  className="group block bg-white rounded-2xl p-3 border border-slate-200 shadow-xs hover:shadow-md transition-all"
+                  key={t.slug}
+                  href={`/tag/${t.slug}`}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100 hover:border-rose-200 transition-colors shadow-2xs"
                 >
-                  <img
-                    src={m.profileImage || "/logo.jpg"}
-                    alt={m.name}
-                    className="w-full aspect-square object-cover rounded-xl mb-2 group-hover:scale-105 transition-transform"
-                  />
-                  <p className="text-xs font-bold text-slate-900 truncate">
-                    {m.name}
-                  </p>
-                  <p className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                    <ImageIcon className="w-3 h-3 text-indigo-600" />
-                    <span>
-                      {
-                        (m.media || []).filter((x: any) => x.type === "photo")
-                          .length
-                      }{" "}
-                      Photos
-                    </span>
-                  </p>
+                  #{t.label}
                 </Link>
               ))}
             </div>

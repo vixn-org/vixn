@@ -21,9 +21,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Blog & Creator Insights | VIXN Articles",
+  title: { absolute: "Blog & Creator Insights | VIXN" },
   description:
-    "Explore in-depth articles, modeling guides, photography highlights, and industry trends on the official VIXN Blog.",
+    "Explore in-depth articles, modeling guides, photography highlights, and creator insights on the official VIXN Blog. Tips and trends updated regularly.",
   keywords: [
     "modeling blog",
     "creator guides",

@@ -208,12 +208,79 @@ export default function ModelManagementPage() {
 
   const handleSave = async () => {
     if (!model) return;
+
+    // Strict SEO limits validation
+    if (model.metaTitle && model.metaTitle.length > 60) {
+      toast.error(`Meta title is too long (${model.metaTitle.length}/60 chars). Maximum allowed for Bing & Google is 60.`);
+      return;
+    }
+    if (model.metaDescription && model.metaDescription.length > 155) {
+      toast.error(`Meta description is too long (${model.metaDescription.length}/155 chars). Maximum allowed is 155.`);
+      return;
+    }
+    if (model.photosSeo?.metaTitle && model.photosSeo.metaTitle.length > 60) {
+      toast.error(`Photos meta title is too long (${model.photosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`);
+      return;
+    }
+    if (model.photosSeo?.metaDescription && model.photosSeo.metaDescription.length > 155) {
+      toast.error(`Photos meta description is too long (${model.photosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`);
+      return;
+    }
+    if (model.videosSeo?.metaTitle && model.videosSeo.metaTitle.length > 60) {
+      toast.error(`Videos meta title is too long (${model.videosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`);
+      return;
+    }
+    if (model.videosSeo?.metaDescription && model.videosSeo.metaDescription.length > 155) {
+      toast.error(`Videos meta description is too long (${model.videosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`);
+      return;
+    }
+
+    if (model.ogTitle && model.ogTitle.length > 60) {
+      toast.error(`OG title is too long (${model.ogTitle.length}/60 chars). Maximum allowed is 60.`);
+      return;
+    }
+    if (model.ogDescription && model.ogDescription.length > 155) {
+      toast.error(`OG description is too long (${model.ogDescription.length}/155 chars). Maximum allowed is 155.`);
+      return;
+    }
+    if (model.photosSeo?.heading && model.photosSeo.heading.length > 80) {
+      toast.error(`Photos heading is too long (${model.photosSeo.heading.length}/80 chars). Maximum allowed is 80.`);
+      return;
+    }
+    if (model.videosSeo?.heading && model.videosSeo.heading.length > 80) {
+      toast.error(`Videos heading is too long (${model.videosSeo.heading.length}/80 chars). Maximum allowed is 80.`);
+      return;
+    }
+
     setSaving(true);
     try {
+      // Auto-strip trailing duplicate site suffix if entered
+      const cleanedModel = {
+        ...model,
+        metaTitle: model.metaTitle
+          ? model.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
+          : model.metaTitle,
+        ogTitle: model.ogTitle
+          ? model.ogTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
+          : model.ogTitle,
+        photosSeo: model.photosSeo ? {
+          ...model.photosSeo,
+          metaTitle: model.photosSeo.metaTitle
+            ? model.photosSeo.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
+            : model.photosSeo.metaTitle,
+        } : model.photosSeo,
+        videosSeo: model.videosSeo ? {
+          ...model.videosSeo,
+          metaTitle: model.videosSeo.metaTitle
+            ? model.videosSeo.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
+            : model.videosSeo.metaTitle,
+        } : model.videosSeo,
+      };
+
       const res = await fetch(`/api/models/${modelId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(model),
+        body: JSON.stringify(cleanedModel),
       });
 
       if (!res.ok) {
@@ -222,6 +289,7 @@ export default function ModelManagementPage() {
         return;
       }
 
+      setModel(cleanedModel);
       toast.success("All changes saved successfully!");
     } catch {
       toast.error("Failed to save model changes");
@@ -1146,41 +1214,65 @@ export default function ModelManagementPage() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Meta Title</Label>
+                      <Label className="text-xs font-bold text-slate-700">Meta Title (Search Engine Snippet)</Label>
                       <span
-                        className={`text-[11px] ${model.metaTitle.length > 60 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          model.metaTitle.length === 0
+                            ? "text-slate-400"
+                            : model.metaTitle.length < 25
+                            ? "text-amber-500"
+                            : model.metaTitle.length <= 60
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {model.metaTitle.length}/60
+                        {model.metaTitle.length}/60 {model.metaTitle.length > 60 ? "(Too long!)" : model.metaTitle.length >= 25 ? "(Optimal)" : model.metaTitle.length > 0 ? "(Min 25 chars)" : ""}
                       </span>
                     </div>
                     <Input
                       value={model.metaTitle}
+                      maxLength={60}
                       onChange={(e) =>
                         updateField("metaTitle", e.target.value)
                       }
-                      placeholder="Title tag for search engines"
+                      placeholder="Title tag for search engines (max 60 chars)"
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Optimal length: 25–60 characters. Bing and Google truncate titles longer than 60–70 chars. Do NOT append &quot;| VIXN&quot; (it is added automatically).
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Meta Description</Label>
+                      <Label className="text-xs font-bold text-slate-700">Meta Description (Search Snippet)</Label>
                       <span
-                        className={`text-[11px] ${model.metaDescription.length > 155 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          model.metaDescription.length === 0
+                            ? "text-slate-400"
+                            : model.metaDescription.length < 50
+                            ? "text-amber-500"
+                            : model.metaDescription.length <= 155
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {model.metaDescription.length}/155
+                        {model.metaDescription.length}/155 {model.metaDescription.length > 155 ? "(Too long!)" : model.metaDescription.length >= 120 ? "(Optimal: 120-155)" : model.metaDescription.length >= 50 ? "(Good)" : model.metaDescription.length > 0 ? "(Min 50 chars)" : ""}
                       </span>
                     </div>
                     <Textarea
                       value={model.metaDescription}
+                      maxLength={155}
                       onChange={(e) =>
                         updateField("metaDescription", e.target.value)
                       }
-                      placeholder="Search snippet description (optimal 120-155 characters)"
+                      placeholder="Search snippet description (strict limit: 50–155 characters)"
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
                       rows={3}
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Strict limit: 155 characters. Bing explicitly flags descriptions exceeding 160 characters. Write high-intent natural sentences; avoid lists of comma keywords.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1301,25 +1393,37 @@ export default function ModelManagementPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">OG Title</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700">OG Title</Label>
+                      <span className="text-[11px] text-slate-400">
+                        {(model.ogTitle || "").length}/60
+                      </span>
+                    </div>
                     <Input
                       value={model.ogTitle}
+                      maxLength={60}
                       onChange={(e) =>
                         updateField("ogTitle", e.target.value)
                       }
-                      placeholder={model.metaTitle || "Open Graph title"}
+                      placeholder={model.metaTitle || "Open Graph title (max 60 chars)"}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">OG Description</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700">OG Description</Label>
+                      <span className="text-[11px] text-slate-400">
+                        {(model.ogDescription || "").length}/155
+                      </span>
+                    </div>
                     <Textarea
                       value={model.ogDescription}
+                      maxLength={155}
                       onChange={(e) =>
                         updateField("ogDescription", e.target.value)
                       }
-                      placeholder={model.metaDescription || "Open Graph description"}
+                      placeholder={model.metaDescription || "Open Graph description (max 155 chars)"}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                       rows={2}
                     />
@@ -1345,20 +1449,20 @@ export default function ModelManagementPage() {
               <Card className="border-slate-200 bg-white rounded-2xl shadow-xs sticky top-6">
                 <CardHeader>
                   <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    Google Snippet Preview
+                    Google &amp; Bing Snippet Preview
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
                     <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.metaTitle || `${model.name} - Photos & Videos | VIXN`}
+                      {model.metaTitle || `${model.name} - Photos & Videos`} | VIXN
                     </p>
                     <p className="text-xs text-emerald-700 font-mono truncate">
                       vixn.fun › model › {model.slug}
                     </p>
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
                       {model.metaDescription ||
-                        `Explore ${model.name}'s exclusive photo gallery and video collection on VIXN.`}
+                        `Watch exclusive ${model.name} HD photos, 4K streaming videos and viral leaks on VIXN.`}
                     </p>
                   </div>
                 </CardContent>
@@ -1367,37 +1471,35 @@ export default function ModelManagementPage() {
               <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
                 <CardHeader>
                   <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    SEO Health Checklist
+                    Bing &amp; Google SEO Health Checklist
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   {[
                     {
-                      label: "Meta title specified",
-                      ok: model.metaTitle.length > 0,
+                      label: "Meta title length (25–60 chars)",
+                      ok: model.metaTitle.length >= 25 && model.metaTitle.length <= 60,
                     },
                     {
-                      label: "Title ≤ 60 characters",
+                      label: "No duplicate branding (| VIXN)",
+                      ok: !/(?:[|\-–—:]|\bon\b)\s*vixn/i.test(model.metaTitle),
+                    },
+                    {
+                      label: "Description optimal (50–155 chars)",
                       ok:
-                        model.metaTitle.length > 0 &&
-                        model.metaTitle.length <= 60,
+                        model.metaDescription.length >= 50 &&
+                        model.metaDescription.length <= 155,
                     },
                     {
-                      label: "Meta description specified",
-                      ok: model.metaDescription.length > 0,
-                    },
-                    {
-                      label: "Description optimal length",
-                      ok:
-                        model.metaDescription.length >= 100 &&
-                        model.metaDescription.length <= 160,
+                      label: "No keyword stuffing / spam",
+                      ok: (model.metaDescription.match(/,/g) || []).length <= 4 && !model.metaDescription.toLowerCase().includes("sohail khan"),
                     },
                     {
                       label: "Focus keyphrase configured",
                       ok: model.focusKeyphrase.length > 0,
                     },
                     {
-                      label: "OG Image set",
+                      label: "OG Image set (1200x630)",
                       ok: (model.ogImage || model.profileImage).length > 0,
                     },
                   ].map((item) => (
@@ -1444,9 +1546,15 @@ export default function ModelManagementPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
+                      <span className="text-[11px] text-slate-400">
+                        {(model.photosSeo?.heading || "").length}/80
+                      </span>
+                    </div>
                     <Input
                       value={model.photosSeo?.heading || ""}
+                      maxLength={80}
                       onChange={(e) => updatePhotosSeo("heading", e.target.value)}
                       placeholder={`e.g. ${model.name} High-Definition Photo Sets & Exclusive Galleries`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
@@ -1462,35 +1570,57 @@ export default function ModelManagementPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-slate-700">Photos Page Meta Title</Label>
                       <span
-                        className={`text-[11px] ${(model.photosSeo?.metaTitle || "").length > 60 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          (model.photosSeo?.metaTitle || "").length === 0
+                            ? "text-slate-400"
+                            : (model.photosSeo?.metaTitle || "").length <= 60
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {(model.photosSeo?.metaTitle || "").length}/60
+                        {(model.photosSeo?.metaTitle || "").length}/60 {(model.photosSeo?.metaTitle || "").length > 60 ? "(Too long!)" : (model.photosSeo?.metaTitle || "").length >= 25 ? "(Optimal)" : ""}
                       </span>
                     </div>
                     <Input
                       value={model.photosSeo?.metaTitle || ""}
+                      maxLength={60}
                       onChange={(e) => updatePhotosSeo("metaTitle", e.target.value)}
-                      placeholder={`e.g. ${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
+                      placeholder={`e.g. ${model.name} Photos, HD Galleries & Pictures | VIXN`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Max 60 chars. Do NOT include &quot;| VIXN&quot; (added automatically).
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-slate-700">Photos Page Meta Description</Label>
                       <span
-                        className={`text-[11px] ${(model.photosSeo?.metaDescription || "").length > 155 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          (model.photosSeo?.metaDescription || "").length === 0
+                            ? "text-slate-400"
+                            : (model.photosSeo?.metaDescription || "").length < 50
+                            ? "text-amber-500"
+                            : (model.photosSeo?.metaDescription || "").length <= 155
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {(model.photosSeo?.metaDescription || "").length}/155
+                        {(model.photosSeo?.metaDescription || "").length}/155 {(model.photosSeo?.metaDescription || "").length > 155 ? "(Too long!)" : (model.photosSeo?.metaDescription || "").length >= 120 ? "(Optimal)" : ""}
                       </span>
                     </div>
                     <Textarea
                       value={model.photosSeo?.metaDescription || ""}
+                      maxLength={155}
                       onChange={(e) => updatePhotosSeo("metaDescription", e.target.value)}
                       placeholder={`e.g. Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on VIXN.`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
                       rows={3}
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Strict limit: 155 characters. Bing flags descriptions over 160 characters.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1585,8 +1715,9 @@ export default function ModelManagementPage() {
                 <CardContent>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
                     <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.photosSeo?.metaTitle ||
-                        `${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
+                      {model.photosSeo?.metaTitle
+                        ? `${model.photosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                        : `${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
                     </p>
                     <p className="text-xs text-emerald-700 font-mono truncate">
                       vixn.fun › model › {model.slug} › photos
@@ -1623,9 +1754,15 @@ export default function ModelManagementPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
+                      <span className="text-[11px] text-slate-400">
+                        {(model.videosSeo?.heading || "").length}/80
+                      </span>
+                    </div>
                     <Input
                       value={model.videosSeo?.heading || ""}
+                      maxLength={80}
                       onChange={(e) => updateVideosSeo("heading", e.target.value)}
                       placeholder={`e.g. ${model.name} 4K Video Clips, Streams & Exclusive Reels`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
@@ -1641,35 +1778,57 @@ export default function ModelManagementPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-slate-700">Videos Page Meta Title</Label>
                       <span
-                        className={`text-[11px] ${(model.videosSeo?.metaTitle || "").length > 60 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          (model.videosSeo?.metaTitle || "").length === 0
+                            ? "text-slate-400"
+                            : (model.videosSeo?.metaTitle || "").length <= 60
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {(model.videosSeo?.metaTitle || "").length}/60
+                        {(model.videosSeo?.metaTitle || "").length}/60 {(model.videosSeo?.metaTitle || "").length > 60 ? "(Too long!)" : (model.videosSeo?.metaTitle || "").length >= 25 ? "(Optimal)" : ""}
                       </span>
                     </div>
                     <Input
                       value={model.videosSeo?.metaTitle || ""}
+                      maxLength={60}
                       onChange={(e) => updateVideosSeo("metaTitle", e.target.value)}
-                      placeholder={`e.g. ${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
+                      placeholder={`e.g. ${model.name} Videos, 4K Clips & Streaming | VIXN`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Max 60 chars. Do NOT include &quot;| VIXN&quot; (added automatically).
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-slate-700">Videos Page Meta Description</Label>
                       <span
-                        className={`text-[11px] ${(model.videosSeo?.metaDescription || "").length > 155 ? "text-red-500 font-bold" : "text-slate-400"}`}
+                        className={`text-[11px] font-semibold ${
+                          (model.videosSeo?.metaDescription || "").length === 0
+                            ? "text-slate-400"
+                            : (model.videosSeo?.metaDescription || "").length < 50
+                            ? "text-amber-500"
+                            : (model.videosSeo?.metaDescription || "").length <= 155
+                            ? "text-emerald-600"
+                            : "text-red-500 font-bold"
+                        }`}
                       >
-                        {(model.videosSeo?.metaDescription || "").length}/155
+                        {(model.videosSeo?.metaDescription || "").length}/155 {(model.videosSeo?.metaDescription || "").length > 155 ? "(Too long!)" : (model.videosSeo?.metaDescription || "").length >= 120 ? "(Optimal)" : ""}
                       </span>
                     </div>
                     <Textarea
                       value={model.videosSeo?.metaDescription || ""}
+                      maxLength={155}
                       onChange={(e) => updateVideosSeo("metaDescription", e.target.value)}
                       placeholder={`e.g. Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on VIXN.`}
                       className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
                       rows={3}
                     />
+                    <p className="text-[11px] text-slate-400">
+                      Strict limit: 155 characters. Bing flags descriptions over 160 characters.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5">
@@ -1764,8 +1923,9 @@ export default function ModelManagementPage() {
                 <CardContent>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
                     <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.videosSeo?.metaTitle ||
-                        `${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
+                      {model.videosSeo?.metaTitle
+                        ? `${model.videosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                        : `${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
                     </p>
                     <p className="text-xs text-emerald-700 font-mono truncate">
                       vixn.fun › model › {model.slug} › videos

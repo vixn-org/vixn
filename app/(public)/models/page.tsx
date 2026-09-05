@@ -19,9 +19,9 @@ import ModelsDirectoryClient from "./models-directory-client";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
 export const metadata: Metadata = {
-  title: "All Models & Creators Directory | VIXN",
+  title: { absolute: "All Models & Creators Directory | VIXN" },
   description:
-    "Explore our complete verified directory of top models and creators. Browse HD photo collections, 4K streaming videos, and detailed portfolios on VIXN.fun.",
+    "Explore our verified directory of top models and creators. Browse HD photo collections, 4K streaming videos, and portfolios on VIXN, updated daily.",
   keywords: [
     "models directory",
     "pornstars list",

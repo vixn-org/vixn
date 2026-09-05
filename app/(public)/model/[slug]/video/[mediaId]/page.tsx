@@ -3,7 +3,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import { generateVideoMetadata, generateVideoJsonLd, getMediaSlug } from "@/lib/seo";
+import {
+  generateVideoMetadata,
+  generateVideoJsonLd,
+  getMediaSlug,
+  slugify,
+} from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,7 +16,9 @@ import {
   ChevronRight,
   Home,
   ArrowLeft,
+  Image as ImageIcon,
   Video as VideoIcon,
+  Tag,
   Sparkles,
   Play,
   ExternalLink,
@@ -55,19 +62,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       status: "published",
     }).lean();
 
-    if (!model) return { title: "Video Not Found | VIXN" };
+    if (!model) return { title: { absolute: "Video Not Found | VIXN" } };
 
     const allVideos = (model.media || []).filter((m: any) => m.type === "video");
     const videoIndex = findVideoIndex(allVideos, mediaId);
 
     if (videoIndex === -1) {
-      return { title: `${model.name} Video | VIXN` };
+      return { title: { absolute: `${model.name} Videos | VIXN` } };
     }
 
     const mediaItem = allVideos[videoIndex];
     return generateVideoMetadata(model, mediaItem, videoIndex);
   } catch {
-    return { title: "VIXN Model Video" };
+    return { title: { absolute: "Model Video | VIXN" } };
   }
 }
 
@@ -424,14 +431,41 @@ export default async function ModelVideoPage({ params }: Props) {
                 </p>
               )}
 
-              <Button
-                asChild
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-xs"
-              >
-                <Link href={`/model/${model.slug}`}>
-                  Explore {model.name}&apos;s Full Gallery
+              <div className="space-y-2 pt-1">
+                <Button
+                  asChild
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-xs"
+                >
+                  <Link href={`/model/${model.slug}`}>
+                    Explore {model.name}&apos;s Full Profile
+                  </Link>
+                </Button>
+
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <Link
+                    href={`/model/${model.slug}/videos`}
+                    className="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1 border border-rose-100 transition-colors"
+                  >
+                    <VideoIcon className="w-3 h-3" />
+                    <span>Videos ({allVideos.length})</span>
+                  </Link>
+                  <Link
+                    href={`/model/${model.slug}/photos`}
+                    className="py-2 px-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1 border border-indigo-100 transition-colors"
+                  >
+                    <ImageIcon className="w-3 h-3" />
+                    <span>Photos ({(model.media || []).filter((m: any) => m.type === "photo").length})</span>
+                  </Link>
+                </div>
+
+                <Link
+                  href={`/tag/${slugify(model.name)}`}
+                  className="w-full py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] flex items-center justify-center gap-1 transition-colors block text-center"
+                >
+                  <Tag className="w-3 h-3 text-rose-500" />
+                  <span>#{model.name} Tag Collection</span>
                 </Link>
-              </Button>
+              </div>
             </div>
           </div>
         </div>

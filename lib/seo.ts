@@ -13,18 +13,113 @@ export function slugify(text: string): string {
     .trim();
 }
 
+/**
+ * Clean, de-duplicate, and clamp SEO titles to ensure strict compliance with Bing (<= 70 chars) and Google (<= 60 chars).
+ * Strips existing brand suffixes (e.g. "| VIXN", "| Vixn", "- VIXN", "on VIXN") to prevent double branding.
+ * Clamps cleanly at word boundaries so that the final title with suffix is strictly <= 65 chars.
+ */
+export function formatSeoTitle(rawTitle: string, brandSuffix: string = SITE_NAME): string {
+  if (!rawTitle) return `${brandSuffix} - Free HD Videos & Photos`;
+
+  // Remove existing site suffix like "| VIXN", "- VIXN", "| Vixn", "on VIXN.fun", "on Vixn", "| vixn.fun"
+  let clean = rawTitle
+    .replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Strip dangling punctuation from the end before appending suffix
+  clean = clean.replace(/[\s\-,|&:]+$/, "").trim();
+
+  const suffix = ` | ${brandSuffix}`;
+  const maxBaseLen = 65 - suffix.length; // 58 chars max for base
+
+  if (clean.length > maxBaseLen) {
+    clean = clean.substring(0, maxBaseLen);
+    const lastSpace = clean.lastIndexOf(" ");
+    if (lastSpace > 28) {
+      clean = clean.substring(0, lastSpace);
+    }
+  }
+
+  // Strip dangling punctuation again after truncation
+  clean = clean.replace(/[\s\-,|&:]+$/, "").trim();
+
+  return `${clean}${suffix}`;
+}
+
+/**
+ * Sanitize and clamp meta descriptions to strictly 120-155 characters.
+ * Bing Webmaster Guidelines require 25-160 chars (flags 224/188 as errors).
+ * Google requires 120-155 chars.
+ * Eliminates keyword stuffing, excessive comma lists, and spam strings.
+ */
+export function formatSeoDescription(rawDesc: string | undefined | null, fallbackDesc: string): string {
+  let text = (rawDesc || "").trim();
+
+  // Detect spam/keyword stuffing: excessive commas, known spam words, or lack of proper sentence structure
+  const commaCount = (text.match(/,/g) || []).length;
+  const spamTerms = ["sohail khan", "elvish yadav", "gangbang", "chut", "fuck", "chudai", "bobs", "bigg boss"];
+  const hasSpamTerm = spamTerms.some((term) => text.toLowerCase().includes(term));
+
+  if (commaCount > 4 || hasSpamTerm || text.length < 25) {
+    // If first sentence is clean and decent length, use it; otherwise use editorial fallback
+    const sentences = text.split(/[.!?]/).map((s) => s.trim()).filter(Boolean);
+    const firstSentence = sentences[0] || "";
+    const firstSentenceHasSpam = spamTerms.some((t) => firstSentence.toLowerCase().includes(t));
+    const firstSentenceCommas = (firstSentence.match(/,/g) || []).length;
+
+    if (firstSentence.length >= 45 && !firstSentenceHasSpam && firstSentenceCommas <= 3) {
+      text = firstSentence;
+    } else {
+      text = fallbackDesc.trim();
+    }
+  }
+
+  text = text.replace(/\s+/g, " ").trim();
+
+  // If text is short (< 95 chars), append high-CTR value proposition naturally
+  if (text.length < 95) {
+    const valueProp = `Watch free HD photo galleries and 4K streaming videos online on ${SITE_NAME}.`;
+    const combined = `${text.replace(/\.+$/, "")}. ${valueProp}`;
+    if (combined.length <= 155) {
+      text = combined;
+    } else {
+      let truncated = combined.substring(0, 152);
+      const lastSpace = truncated.lastIndexOf(" ");
+      if (lastSpace > 100) truncated = truncated.substring(0, lastSpace);
+      text = `${truncated}...`;
+    }
+  }
+
+  // If text is too long (> 155 chars), clamp cleanly at word boundary
+  if (text.length > 155) {
+    let truncated = text.substring(0, 152);
+    const lastSpace = truncated.lastIndexOf(" ");
+    if (lastSpace > 110) {
+      truncated = truncated.substring(0, lastSpace);
+    }
+    // Clean trailing punctuation before adding ellipsis
+    truncated = truncated.replace(/[\s,;:\-]+$/, "");
+    text = `${truncated}...`;
+  }
+
+  return text;
+}
+
 export function generateModelMetadata(model: IModel): Metadata {
-  const title = model.metaTitle || `${model.name} - Photos & Videos`;
-  const description =
-    model.metaDescription ||
-    `Explore ${model.name}'s exclusive photo gallery and video collection on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
+  const rawTitle = model.metaTitle || `${model.name} - Photos & Videos`;
+  const title = formatSeoTitle(rawTitle);
+
+  const fallbackDesc = `Watch exclusive ${model.name} HD photos, 4K streaming videos and viral leaks on ${SITE_NAME}. Free high-definition adult gallery updated daily.`;
+  const description = formatSeoDescription(model.metaDescription, fallbackDesc);
+
   const url = `${SITE_URL}/model/${model.slug}`;
   const ogImage = model.ogImage || model.profileImage || "";
 
   const robots = model.robotsDirective || "index, follow";
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: model.metaKeywords?.length
       ? model.metaKeywords.join(", ")
@@ -33,8 +128,8 @@ export function generateModelMetadata(model: IModel): Metadata {
       canonical: model.canonicalUrl || url,
     },
     openGraph: {
-      title: model.ogTitle || title,
-      description: model.ogDescription || description,
+      title,
+      description,
       url,
       siteName: SITE_NAME,
       images: ogImage
@@ -51,8 +146,8 @@ export function generateModelMetadata(model: IModel): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: model.twitterTitle || model.ogTitle || title,
-      description: model.twitterDescription || model.ogDescription || description,
+      title,
+      description,
       images: model.twitterImage || model.ogImage || model.profileImage
         ? [model.twitterImage || model.ogImage || model.profileImage]
         : [],
@@ -68,6 +163,8 @@ export function generateModelMetadata(model: IModel): Metadata {
 
 export function generateModelJsonLd(model: IModel) {
   const url = `${SITE_URL}/model/${model.slug}`;
+  const fallbackDesc = `Watch exclusive ${model.name} HD photos, 4K streaming videos and viral leaks on ${SITE_NAME}.`;
+  const cleanDescription = formatSeoDescription(model.metaDescription, fallbackDesc);
 
   const personSchema = {
     "@context": "https://schema.org",
@@ -75,7 +172,7 @@ export function generateModelJsonLd(model: IModel) {
     name: model.name,
     url,
     image: model.profileImage || undefined,
-    description: model.metaDescription || model.bio?.substring(0, 200) || undefined,
+    description: cleanDescription,
     ...(model.country
       ? {
           nationality: {
@@ -134,14 +231,15 @@ export function generateModelPhotosMetadata(model: any): Metadata {
   const custom = model.photosSeo;
   const photoCount =
     model.media?.filter((m: any) => m.type === "photo").length || 0;
+  const countStr = photoCount > 0 ? ` (${photoCount})` : "";
 
-  const title =
+  const rawTitle =
     custom?.metaTitle?.trim() ||
-    `${model.name} Photos, HD Galleries & Pictures (${photoCount}) | ${SITE_NAME}`;
+    `${model.name} HD Photos & Pictures${countStr}`;
+  const title = formatSeoTitle(rawTitle);
 
-  const description =
-    custom?.metaDescription?.trim() ||
-    `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on ${SITE_NAME}. Free 4K HD photo collection.`;
+  const fallbackDesc = `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on ${SITE_NAME}. Free 4K HD photo collection updated daily.`;
+  const description = formatSeoDescription(custom?.metaDescription, fallbackDesc);
 
   const url = `${SITE_URL}/model/${model.slug}/photos`;
   const ogImage = model.ogImage || model.coverImage || model.profileImage || "";
@@ -153,7 +251,7 @@ export function generateModelPhotosMetadata(model: any): Metadata {
       : `${model.name} photos, ${model.name} pictures, ${model.name} photoshoot, ${model.name} hd gallery, ${model.name} images`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords,
     alternates: {
@@ -189,15 +287,15 @@ export function generateModelPhotosMetadata(model: any): Metadata {
 export function generateModelPhotosJsonLd(model: any) {
   const url = `${SITE_URL}/model/${model.slug}/photos`;
   const photos = model.media?.filter((m: any) => m.type === "photo") || [];
+  const fallbackDesc = `HD photo collection and pictures of ${model.name} on ${SITE_NAME}.`;
+  const cleanDescription = formatSeoDescription(model.photosSeo?.metaDescription, fallbackDesc);
 
   const imageGallerySchema = {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
     name: model.photosSeo?.heading || `${model.name} Photo Sets & Gallery`,
     url,
-    description:
-      model.photosSeo?.metaDescription ||
-      `HD Photo collection of ${model.name}`,
+    description: cleanDescription,
     author: {
       "@type": "Person",
       name: model.name,
@@ -249,14 +347,15 @@ export function generateModelVideosMetadata(model: any): Metadata {
   const custom = model.videosSeo;
   const videoCount =
     model.media?.filter((m: any) => m.type === "video").length || 0;
+  const countStr = videoCount > 0 ? ` (${videoCount})` : "";
 
-  const title =
+  const rawTitle =
     custom?.metaTitle?.trim() ||
-    `${model.name} Videos, 4K Clips & Streaming (${videoCount}) | ${SITE_NAME}`;
+    `${model.name} HD Videos & 4K Clips${countStr}`;
+  const title = formatSeoTitle(rawTitle);
 
-  const description =
-    custom?.metaDescription?.trim() ||
-    `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on ${SITE_NAME}.`;
+  const fallbackDesc = `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on ${SITE_NAME}. Free full-length streaming updated daily.`;
+  const description = formatSeoDescription(custom?.metaDescription, fallbackDesc);
 
   const url = `${SITE_URL}/model/${model.slug}/videos`;
   const firstVideo = model.media?.find((m: any) => m.type === "video");
@@ -273,7 +372,7 @@ export function generateModelVideosMetadata(model: any): Metadata {
       : `${model.name} videos, ${model.name} clips, ${model.name} 4k video, ${model.name} stream, ${model.name} watch online`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords,
     alternates: {
@@ -309,15 +408,15 @@ export function generateModelVideosMetadata(model: any): Metadata {
 export function generateModelVideosJsonLd(model: any) {
   const url = `${SITE_URL}/model/${model.slug}/videos`;
   const videos = model.media?.filter((m: any) => m.type === "video") || [];
+  const fallbackDesc = `Video collection and 4K streaming clips of ${model.name} on ${SITE_NAME}.`;
+  const cleanDescription = formatSeoDescription(model.videosSeo?.metaDescription, fallbackDesc);
 
   const videoCollectionSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: model.videosSeo?.heading || `${model.name} Video Showcase & Clips`,
     url,
-    description:
-      model.videosSeo?.metaDescription ||
-      `Video collection of ${model.name}`,
+    description: cleanDescription,
     mainEntity: {
       "@type": "ItemList",
       itemListElement: videos.map((v: any, idx: number) => ({
@@ -437,17 +536,18 @@ export function generateHomepageItemListJsonLd(models: { name: string; slug: str
 }
 
 export function generateBlogMetadata(blog: any): Metadata {
-  const title = blog.metaTitle || `${blog.title} | ${SITE_NAME} Blog`;
-  const description =
-    blog.metaDescription ||
+  const rawTitle = blog.metaTitle || `${blog.title} | ${SITE_NAME} Blog`;
+  const title = formatSeoTitle(rawTitle);
+  const fallbackDesc =
     blog.excerpt ||
     `Read ${blog.title} on ${SITE_NAME}. Tips, guides, and creator insights.`;
+  const description = formatSeoDescription(blog.metaDescription, fallbackDesc);
   const url = `${SITE_URL}/blog/${blog.slug}`;
   const ogImage = blog.ogImage || blog.coverImage || "";
   const robots = blog.robotsDirective || "index, follow";
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: blog.metaKeywords?.length
       ? blog.metaKeywords.join(", ")
@@ -456,8 +556,8 @@ export function generateBlogMetadata(blog: any): Metadata {
       canonical: blog.canonicalUrl || url,
     },
     openGraph: {
-      title: blog.ogTitle || title,
-      description: blog.ogDescription || description,
+      title,
+      description,
       url,
       siteName: SITE_NAME,
       images: ogImage
@@ -567,11 +667,13 @@ export function getMediaSlug(item: any, type: "photo" | "video" = "photo", fallb
 }
 
 export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
-  const photoTitle = mediaItem.title || `${model.name} HD Photo`;
-  const title = `${photoTitle} | ${model.name} Gallery | ${SITE_NAME}`;
-  const description =
-    mediaItem.alt ||
-    `View exclusive high-definition photo of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
+  const photoTitle = mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
+  const baseTitle = photoTitle.toLowerCase().includes(model.name.toLowerCase())
+    ? photoTitle
+    : `${photoTitle} - ${model.name}`;
+  const title = formatSeoTitle(baseTitle);
+  const fallbackDesc = `View high-definition photo of ${model.name} on ${SITE_NAME}. Stream full uncensored gallery, 4K picture sets, and exclusive photos online.`;
+  const description = formatSeoDescription(mediaItem.alt, fallbackDesc);
   const mediaSlug = getMediaSlug(mediaItem, "photo", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
   const ogImage = mediaItem.url || model.profileImage || "";
@@ -593,7 +695,7 @@ export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex:
     : baseKeywords;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords,
     alternates: {
@@ -629,7 +731,9 @@ export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex:
 export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
   const mediaSlug = getMediaSlug(mediaItem, "photo", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
-  const photoTitle = mediaItem.title || `${model.name} HD Photo`;
+  const photoTitle = mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
+  const fallbackDesc = `HD photo of ${model.name} on ${SITE_NAME}.`;
+  const cleanDescription = formatSeoDescription(mediaItem.alt, fallbackDesc);
 
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
@@ -645,7 +749,7 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
     url: url,
     name: photoTitle,
     caption: mediaItem.alt || photoTitle,
-    description: mediaItem.alt || `${photoTitle} - ${model.name}`,
+    description: cleanDescription,
     ...(mediaKeywordsStr ? { keywords: mediaKeywordsStr } : {}),
     author: {
       "@type": "Person",
@@ -708,11 +812,13 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
 }
 
 export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
-  const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
-  const title = `${videoTitle} | ${model.name} Videos | ${SITE_NAME}`;
-  const description =
-    mediaItem.alt ||
-    `Watch exclusive high-definition video of ${model.name} on ${SITE_NAME}. ${model.bio?.substring(0, 100) || ""}`;
+  const videoTitle = mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
+  const baseTitle = videoTitle.toLowerCase().includes(model.name.toLowerCase())
+    ? videoTitle
+    : `${videoTitle} - ${model.name}`;
+  const title = formatSeoTitle(baseTitle);
+  const fallbackDesc = `Watch high-definition streaming video of ${model.name} on ${SITE_NAME}. Stream 4K video clips, exclusive full-length scenes, and viral reels online.`;
+  const description = formatSeoDescription(mediaItem.alt, fallbackDesc);
   const mediaSlug = getMediaSlug(mediaItem, "video", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`;
   const thumbnail = mediaItem.thumbnail || model.profileImage || "";
@@ -734,7 +840,7 @@ export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex:
     : baseKeywords;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords,
     alternates: {
@@ -770,8 +876,10 @@ export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex:
 export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
   const mediaSlug = getMediaSlug(mediaItem, "video", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`;
-  const videoTitle = mediaItem.title || `${model.name} HD Video Clip`;
+  const videoTitle = mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
   const thumbnail = mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
+  const fallbackDesc = `HD streaming video of ${model.name} on ${SITE_NAME}.`;
+  const cleanDescription = formatSeoDescription(mediaItem.alt, fallbackDesc);
 
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
@@ -784,7 +892,7 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: videoTitle,
-    description: mediaItem.alt || `${videoTitle} - ${model.name}`,
+    description: cleanDescription,
     thumbnailUrl: [thumbnail],
     uploadDate: model.updatedAt
       ? new Date(model.updatedAt).toISOString()

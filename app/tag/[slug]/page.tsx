@@ -8,6 +8,8 @@ import {
   SITE_NAME,
   slugify,
   getMediaSlug,
+  formatSeoTitle,
+  formatSeoDescription,
 } from "@/lib/seo";
 import HeaderSearch from "@/components/public/header-search";
 import PublicFooter from "@/components/public/footer";
@@ -62,19 +64,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ],
   });
 
-  const title = `${capitalTag} HD Videos, MMS Leaks & Photos`;
-  const description = `Stream ${tagLabel} latest full HD sex videos, viral leaked clips, photoshoot pictures, and 4K uncensored content on ${SITE_NAME}. Free instant streaming.`;
+  const baseTitle = `${capitalTag} HD Videos, MMS Leaks & Photos`;
+  const title = formatSeoTitle(baseTitle);
+  const rawDesc = `Stream ${tagLabel} latest full HD sex videos, viral leaked clips, photoshoot pictures, and 4K uncensored content on ${SITE_NAME}. Free instant streaming.`;
+  const fallbackDesc = `Watch ${tagLabel} HD videos, photos and exclusive streaming content on ${SITE_NAME}. High-definition clips and photo galleries updated daily.`;
+  const description = formatSeoDescription(rawDesc, fallbackDesc);
   const url = `${SITE_URL}/tag/${slug}`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords: `${tagLabel}, ${tagLabel} videos, ${tagLabel} sex videos, ${tagLabel} leaks, ${tagLabel} photos, ${tagLabel} hd, ${tagLabel} mms, ${tagLabel} streaming, ${SITE_NAME}`,
     alternates: {
       canonical: url,
     },
     openGraph: {
-      title: `${capitalTag} HD Videos & Photos — ${SITE_NAME}`,
+      title,
       description,
       url,
       siteName: SITE_NAME,
@@ -82,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${capitalTag} HD Videos & Photos | ${SITE_NAME}`,
+      title,
       description,
     },
     robots: count > 0 ? "index, follow" : "noindex, follow",
@@ -274,19 +279,21 @@ export default async function TagPage({ params }: Props) {
                 const videoCount = model.media?.filter((m: any) => m.type === "video").length || 0;
                 const photoCount = model.media?.filter((m: any) => m.type === "photo").length || 0;
                 return (
-                  <Link
+                  <div
                     key={model._id.toString()}
-                    href={`/model/${model.slug}`}
-                    className="group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col"
+                    className="group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                   >
-                    <div className="relative aspect-[3/4] w-full bg-slate-100 overflow-hidden">
+                    <Link
+                      href={`/model/${model.slug}`}
+                      className="relative aspect-[3/4] w-full bg-slate-100 overflow-hidden block"
+                    >
                       <img
                         src={model.profileImage || model.coverImage || ""}
                         alt={`${model.name} ${tagLabel} HD photos and sex videos`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                       <div className="absolute bottom-2 left-2 right-2 text-white">
                         <p className="font-bold text-sm leading-tight truncate">
                           {model.name}
@@ -297,8 +304,26 @@ export default async function TagPage({ params }: Props) {
                           {photoCount > 0 && `${photoCount} photos`}
                         </p>
                       </div>
+                    </Link>
+
+                    {/* Direct Links to Photos & Videos Hubs for Strong Crawlability */}
+                    <div className="p-2 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold">
+                      <Link
+                        href={`/model/${model.slug}/photos`}
+                        className="text-slate-600 hover:text-indigo-600 flex items-center gap-1 transition-colors"
+                      >
+                        <ImageIcon className="w-3 h-3 text-indigo-500" />
+                        <span>{photoCount} Photos</span>
+                      </Link>
+                      <Link
+                        href={`/model/${model.slug}/videos`}
+                        className="text-slate-600 hover:text-rose-600 flex items-center gap-1 transition-colors"
+                      >
+                        <VideoIcon className="w-3 h-3 text-rose-500" />
+                        <span>{videoCount} Videos</span>
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>
@@ -327,12 +352,14 @@ export default async function TagPage({ params }: Props) {
                   .map((v: any, idx: number) => {
                     const mediaSlug = getMediaSlug(v, "video", v.vIdx);
                     return (
-                      <Link
+                      <div
                         key={`${v.modelSlug}-${idx}`}
-                        href={`/model/${v.modelSlug}/video/${mediaSlug}`}
-                        className="group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition-all"
+                        className="group bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
                       >
-                        <div className="relative aspect-video w-full bg-slate-900 overflow-hidden">
+                        <Link
+                          href={`/model/${v.modelSlug}/video/${mediaSlug}`}
+                          className="block relative aspect-video w-full bg-slate-900 overflow-hidden"
+                        >
                           {v.thumbnail ? (
                             <img
                               src={v.thumbnail}
@@ -350,16 +377,30 @@ export default async function TagPage({ params }: Props) {
                               <VideoIcon className="w-5 h-5" />
                             </div>
                           </div>
-                        </div>
+                        </Link>
                         <div className="p-3">
-                          <p className="text-sm font-bold text-slate-900 truncate group-hover:text-rose-600 transition-colors">
+                          <Link
+                            href={`/model/${v.modelSlug}/video/${mediaSlug}`}
+                            className="text-sm font-bold text-slate-900 truncate block group-hover:text-rose-600 transition-colors"
+                          >
                             {v.title || `${v.modelName} Video`}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {v.modelName}
-                          </p>
+                          </Link>
+                          <div className="flex items-center justify-between mt-1 text-xs text-slate-500">
+                            <Link
+                              href={`/model/${v.modelSlug}`}
+                              className="hover:text-rose-600 font-medium"
+                            >
+                              {v.modelName}
+                            </Link>
+                            <Link
+                              href={`/model/${v.modelSlug}/videos`}
+                              className="text-[10px] font-bold text-rose-600 hover:underline"
+                            >
+                              All Videos →
+                            </Link>
+                          </div>
                         </div>
-                      </Link>
+                      </div>
                     );
                   })}
               </div>

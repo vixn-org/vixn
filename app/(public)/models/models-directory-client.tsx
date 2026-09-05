@@ -177,12 +177,12 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredModels.map((model, idx) => (
-            <div key={model._id} className="contents">
-              <Link
-                href={`/model/${model.slug}`}
-                className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1"
-              >
+          {filteredModels.map((model) => (
+            <div
+              key={model._id}
+              className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1 justify-between"
+            >
+              <Link href={`/model/${model.slug}`} className="block">
                 {/* Media Preview / Cover */}
                 <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
                   {model.profileImage || model.coverImage ? (
@@ -221,34 +221,45 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
                 </div>
 
                 {/* Body Content */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <h2 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
-                        {model.name}
-                      </h2>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    </div>
-
-                    {model.bio && (
-                      <p className="text-xs text-slate-500 line-clamp-2 mt-1.5 leading-relaxed">
-                        {model.bio}
-                      </p>
-                    )}
+                <div className="p-5 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
+                      {model.name}
+                    </h2>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   </div>
 
-                  {/* View Folder Button */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
-                    <span className="flex items-center gap-1.5">
-                      <FolderOpen className="w-4 h-4 text-slate-400 group-hover:text-rose-500 transition-colors" />
-                      Open Folder
-                    </span>
-                    <span className="text-slate-400 group-hover:translate-x-1 group-hover:text-rose-600 transition-all font-black">
-                      →
-                    </span>
-                  </div>
+                  {model.bio && (
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {model.bio}
+                    </p>
+                  )}
                 </div>
               </Link>
+
+              {/* Direct Crawlable Links to Photos, Videos & Profile */}
+              <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
+                <Link
+                  href={`/model/${model.slug}/photos`}
+                  className="text-slate-600 hover:text-indigo-600 flex items-center gap-1 transition-colors text-[11px]"
+                >
+                  <ImageIcon className="w-3 h-3 text-indigo-500" />
+                  <span>{model.photoCount} Photos</span>
+                </Link>
+                <Link
+                  href={`/model/${model.slug}/videos`}
+                  className="text-slate-600 hover:text-rose-600 flex items-center gap-1 transition-colors text-[11px]"
+                >
+                  <VideoIcon className="w-3 h-3 text-rose-500" />
+                  <span>{model.videoCount} Videos</span>
+                </Link>
+                <Link
+                  href={`/model/${model.slug}`}
+                  className="text-slate-900 hover:text-rose-600 font-bold text-xs"
+                >
+                  Profile →
+                </Link>
+              </div>
             </div>
           ))}
         </div>

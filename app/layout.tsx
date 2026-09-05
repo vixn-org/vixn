@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     default: "VIXN - Hot Girl XXX Videos & Nude Photos | Free HD",
   },
   description:
-    "Watch free hot girl XXX videos, nude photos and sex videos in HD. Explore Indian hot girls, sexy desi girls, college girls and exclusive hot content on Vixn.fun – updated daily.",
+    "Watch free hot girl XXX videos, nude photos and sex clips in HD. Explore Indian hot girls, desi models and exclusive adult content on VIXN, updated daily.",
   keywords: [
     "models",
     "photo gallery",
@@ -163,6 +163,9 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    other: {
+      "msvalidate.01": "586BF667B67DA1F9353F02F88B1C80C6",
+    },
   },
   robots: {
     index: true,
