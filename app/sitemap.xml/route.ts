@@ -3,25 +3,17 @@ import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
 
+// Always use the canonical SITE_URL — never derive from request headers.
+// Deriving from headers caused www URLs to leak into sitemaps when Google
+// crawled via www.vixn.fun, which was the root cause of indexing issues.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
 
 export const dynamic = "force-dynamic";
 
-function getBaseUrl(request: Request): string {
-  const host =
-    request.headers.get("x-forwarded-host") || request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") || "https";
-  if (host) {
-    return `${proto}://${host}`;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
-}
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
     await connectDB();
-    const siteUrl = getBaseUrl(request);
 
     const [modelCount, blogCount] = await Promise.all([
       Model.countDocuments({ status: "published" }),
@@ -57,7 +49,7 @@ export async function GET(request: Request) {
     // Static pages sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${siteUrl}/sitemaps/static</loc>
+    <loc>${SITE_URL}/sitemaps/static</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
     );
@@ -66,7 +58,7 @@ export async function GET(request: Request) {
     for (let i = 1; i <= modelChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${siteUrl}/sitemaps/models-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/models-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -76,7 +68,7 @@ export async function GET(request: Request) {
     for (let i = 1; i <= videoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${siteUrl}/sitemaps/videos-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/videos-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -86,7 +78,7 @@ export async function GET(request: Request) {
     for (let i = 1; i <= photoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${siteUrl}/sitemaps/photos-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/photos-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -96,7 +88,7 @@ export async function GET(request: Request) {
     for (let i = 1; i <= blogChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${siteUrl}/sitemaps/blogs-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/blogs-${i}</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -105,7 +97,7 @@ export async function GET(request: Request) {
     // Tags (keyword hub pages) sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${siteUrl}/sitemaps/tags</loc>
+    <loc>${SITE_URL}/sitemaps/tags</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
     );

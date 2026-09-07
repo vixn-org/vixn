@@ -4,19 +4,13 @@ import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
 import { getMediaSlug } from "@/lib/seo";
 
+// Always use the canonical SITE_URL — never derive from request headers.
+// Deriving from headers caused www URLs to leak into sitemaps when Google
+// crawled via www.vixn.fun, which was the root cause of indexing issues.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
 
 export const dynamic = "force-dynamic";
-
-function getBaseUrl(request: Request): string {
-  const host =
-    request.headers.get("x-forwarded-host") || request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") || "https";
-  if (host) {
-    return `${proto}://${host}`;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
-}
 
 function escapeXml(str: string): string {
   return str
@@ -61,20 +55,19 @@ function extractKeywords(val: any): string[] {
 }
 
 // ─── Static Pages ───
-async function buildStaticSitemap(siteUrl: string): Promise<string[]> {
+async function buildStaticSitemap(): Promise<string[]> {
   const now = new Date().toISOString();
   return [
-    urlEntry(siteUrl, now, "daily", 1.0),
-    urlEntry(`${siteUrl}/models`, now, "daily", 0.9),
-    urlEntry(`${siteUrl}/blog`, now, "daily", 0.8),
-    urlEntry(`${siteUrl}/faq`, now, "weekly", 0.7),
+    urlEntry(SITE_URL, now, "daily", 1.0),
+    urlEntry(`${SITE_URL}/models`, now, "daily", 0.9),
+    urlEntry(`${SITE_URL}/blog`, now, "daily", 0.8),
+    urlEntry(`${SITE_URL}/faq`, now, "weekly", 0.7),
   ];
 }
 
 // ─── Model Profiles + /photos + /videos hub pages ───
 async function buildModelsSitemap(
   chunkIndex: number,
-  siteUrl: string,
 ): Promise<string[]> {
   const modelsPerChunk = Math.floor(CHUNK_SIZE / 3);
   const skip = (chunkIndex - 1) * modelsPerChunk;
@@ -94,7 +87,7 @@ async function buildModelsSitemap(
 
     // Model profile page
     entries.push(
-      urlEntry(`${siteUrl}/model/${model.slug}`, lastmod, "weekly", prio),
+      urlEntry(`${SITE_URL}/model/${model.slug}`, lastmod, "weekly", prio),
     );
 
     const hasPhotos = (model.media || []).some((m: any) => m.type === "photo");
@@ -104,7 +97,7 @@ async function buildModelsSitemap(
     if (hasPhotos) {
       entries.push(
         urlEntry(
-          `${siteUrl}/model/${model.slug}/photos`,
+          `${SITE_URL}/model/${model.slug}/photos`,
           lastmod,
           "weekly",
           0.85,
@@ -116,7 +109,7 @@ async function buildModelsSitemap(
     if (hasVideos) {
       entries.push(
         urlEntry(
-          `${siteUrl}/model/${model.slug}/videos`,
+          `${SITE_URL}/model/${model.slug}/videos`,
           lastmod,
           "weekly",
           0.85,
@@ -131,7 +124,6 @@ async function buildModelsSitemap(
 // ─── Individual Video Pages ───
 async function buildVideosSitemap(
   chunkIndex: number,
-  siteUrl: string,
 ): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
@@ -156,7 +148,7 @@ async function buildVideosSitemap(
     const mediaSlug = getMediaSlug(r.media, "video", r.mediaIndex);
     const lastmod = toIso(r.updatedAt);
     return urlEntry(
-      `${siteUrl}/model/${r.slug}/video/${mediaSlug}`,
+      `${SITE_URL}/model/${r.slug}/video/${mediaSlug}`,
       lastmod,
       "monthly",
       0.75,
@@ -167,7 +159,6 @@ async function buildVideosSitemap(
 // ─── Individual Photo Pages ───
 async function buildPhotosSitemap(
   chunkIndex: number,
-  siteUrl: string,
 ): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
@@ -192,7 +183,7 @@ async function buildPhotosSitemap(
     const mediaSlug = getMediaSlug(r.media, "photo", r.mediaIndex);
     const lastmod = toIso(r.updatedAt);
     return urlEntry(
-      `${siteUrl}/model/${r.slug}/photo/${mediaSlug}`,
+      `${SITE_URL}/model/${r.slug}/photo/${mediaSlug}`,
       lastmod,
       "monthly",
       0.7,
@@ -203,7 +194,6 @@ async function buildPhotosSitemap(
 // ─── Blog Posts ───
 async function buildBlogsSitemap(
   chunkIndex: number,
-  siteUrl: string,
 ): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
@@ -217,12 +207,12 @@ async function buildBlogsSitemap(
   return blogs.map((blog) => {
     const lastmod = toIso(blog.updatedAt || blog.publishedAt);
     const prio = blog.featured ? 0.9 : 0.8;
-    return urlEntry(`${siteUrl}/blog/${blog.slug}`, lastmod, "weekly", prio);
+    return urlEntry(`${SITE_URL}/blog/${blog.slug}`, lastmod, "weekly", prio);
   });
 }
 
 // ─── Tags (Keyword Hubs) ───
-async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
+async function buildTagsSitemap(): Promise<string[]> {
   const models = await Model.find({ status: "published" })
     .select("tags metaKeywords photosSeo videosSeo media updatedAt")
     .lean();
@@ -265,7 +255,7 @@ async function buildTagsSitemap(siteUrl: string): Promise<string[]> {
   const entries: string[] = [];
   tagMap.forEach((date, tagSlug) => {
     entries.push(
-      urlEntry(`${siteUrl}/tag/${tagSlug}`, toIso(date), "daily", 0.8),
+      urlEntry(`${SITE_URL}/tag/${tagSlug}`, toIso(date), "daily", 0.8),
     );
   });
 
@@ -280,26 +270,25 @@ export async function GET(
   try {
     await connectDB();
     const { id } = await ctx.params;
-    const siteUrl = getBaseUrl(request);
 
     let entries: string[] = [];
 
     if (id === "static") {
-      entries = await buildStaticSitemap(siteUrl);
+      entries = await buildStaticSitemap();
     } else if (id === "tags") {
-      entries = await buildTagsSitemap(siteUrl);
+      entries = await buildTagsSitemap();
     } else if (id.startsWith("models-")) {
       const chunk = parseInt(id.replace("models-", ""), 10) || 1;
-      entries = await buildModelsSitemap(chunk, siteUrl);
+      entries = await buildModelsSitemap(chunk);
     } else if (id.startsWith("videos-")) {
       const chunk = parseInt(id.replace("videos-", ""), 10) || 1;
-      entries = await buildVideosSitemap(chunk, siteUrl);
+      entries = await buildVideosSitemap(chunk);
     } else if (id.startsWith("photos-")) {
       const chunk = parseInt(id.replace("photos-", ""), 10) || 1;
-      entries = await buildPhotosSitemap(chunk, siteUrl);
+      entries = await buildPhotosSitemap(chunk);
     } else if (id.startsWith("blogs-")) {
       const chunk = parseInt(id.replace("blogs-", ""), 10) || 1;
-      entries = await buildBlogsSitemap(chunk, siteUrl);
+      entries = await buildBlogsSitemap(chunk);
     } else {
       return new NextResponse("Not Found", { status: 404 });
     }

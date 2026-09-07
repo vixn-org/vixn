@@ -8,7 +8,14 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/"],
+        disallow: [
+          "/admin/",
+          "/api/",
+          // Block search query URLs — these are just filtered homepage views,
+          // not unique content. Google was indexing the SearchAction template
+          // URL (?search={search_term_string}) as a real page.
+          "/*?search=",
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
