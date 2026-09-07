@@ -49,7 +49,7 @@ export async function GET() {
     // Static pages sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/static</loc>
+    <loc>${SITE_URL}/sitemaps/static.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
     );
@@ -58,7 +58,7 @@ export async function GET() {
     for (let i = 1; i <= modelChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/models-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/models-${i}.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -68,7 +68,7 @@ export async function GET() {
     for (let i = 1; i <= videoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/videos-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/videos-${i}.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -78,7 +78,7 @@ export async function GET() {
     for (let i = 1; i <= photoChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/photos-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/photos-${i}.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -88,7 +88,7 @@ export async function GET() {
     for (let i = 1; i <= blogChunks; i++) {
       sitemaps.push(
         `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/blogs-${i}</loc>
+    <loc>${SITE_URL}/sitemaps/blogs-${i}.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
       );
@@ -97,7 +97,7 @@ export async function GET() {
     // Tags (keyword hub pages) sitemap
     sitemaps.push(
       `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/tags</loc>
+    <loc>${SITE_URL}/sitemaps/tags.xml</loc>
     <lastmod>${now}</lastmod>
   </sitemap>`,
     );
@@ -119,7 +119,7 @@ ${sitemaps.join("\n")}
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>${SITE_URL}/sitemaps/static</loc>
+    <loc>${SITE_URL}/sitemaps/static.xml</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
   </sitemap>
 </sitemapindex>`;
