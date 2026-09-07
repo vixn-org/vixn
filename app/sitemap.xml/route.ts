@@ -3,9 +3,6 @@ import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
 
-// Always use the canonical SITE_URL — never derive from request headers.
-// Deriving from headers caused www URLs to leak into sitemaps when Google
-// crawled via www.vixn.fun, which was the root cause of indexing issues.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
 

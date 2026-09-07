@@ -63,7 +63,7 @@ export async function notifyIndexNow(urls: string[]): Promise<{
   }
 
   try {
-    // Derive host from the first URL to ensure host matches urlList perfectly (www vs non-www)
+    // Derive host from the first URL or canonical SITE_URL
     const firstUrl = urls[0];
     const host = firstUrl ? new URL(firstUrl).host : new URL(SITE_URL).host;
 
