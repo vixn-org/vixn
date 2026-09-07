@@ -270,24 +270,25 @@ export async function GET(
   try {
     await connectDB();
     const { id } = await ctx.params;
+    const cleanId = (id || "").replace(/\.xml$/i, "");
 
     let entries: string[] = [];
 
-    if (id === "static") {
+    if (cleanId === "static") {
       entries = await buildStaticSitemap();
-    } else if (id === "tags") {
+    } else if (cleanId === "tags") {
       entries = await buildTagsSitemap();
-    } else if (id.startsWith("models-")) {
-      const chunk = parseInt(id.replace("models-", ""), 10) || 1;
+    } else if (cleanId.startsWith("models-")) {
+      const chunk = parseInt(cleanId.replace("models-", ""), 10) || 1;
       entries = await buildModelsSitemap(chunk);
-    } else if (id.startsWith("videos-")) {
-      const chunk = parseInt(id.replace("videos-", ""), 10) || 1;
+    } else if (cleanId.startsWith("videos-")) {
+      const chunk = parseInt(cleanId.replace("videos-", ""), 10) || 1;
       entries = await buildVideosSitemap(chunk);
-    } else if (id.startsWith("photos-")) {
-      const chunk = parseInt(id.replace("photos-", ""), 10) || 1;
+    } else if (cleanId.startsWith("photos-")) {
+      const chunk = parseInt(cleanId.replace("photos-", ""), 10) || 1;
       entries = await buildPhotosSitemap(chunk);
-    } else if (id.startsWith("blogs-")) {
-      const chunk = parseInt(id.replace("blogs-", ""), 10) || 1;
+    } else if (cleanId.startsWith("blogs-")) {
+      const chunk = parseInt(cleanId.replace("blogs-", ""), 10) || 1;
       entries = await buildBlogsSitemap(chunk);
     } else {
       return new NextResponse("Not Found", { status: 404 });
