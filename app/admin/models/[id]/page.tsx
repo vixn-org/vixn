@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -135,9 +135,17 @@ export default function ModelManagementPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("media");
+  const hasInitializedTab = useRef(false);
 
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user && !hasInitializedTab.current) {
+      hasInitializedTab.current = true;
+      const hashTab = typeof window !== "undefined" ? window.location.hash.replace("#", "") : "";
+      const validTabs = ["general", "seo", "photos-seo", "videos-seo", "media"];
+      if (hashTab && validTabs.includes(hashTab)) {
+        setActiveTab(hashTab);
+        return;
+      }
       const role = (session.user as any).role;
       if (role === "admin") {
         setActiveTab("general");
@@ -146,6 +154,13 @@ export default function ModelManagementPage() {
       }
     }
   }, [session]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${val}`);
+    }
+  };
 
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
@@ -807,7 +822,7 @@ export default function ModelManagementPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl shadow-xs flex flex-wrap gap-1">
           {isAdmin && (
             <>
