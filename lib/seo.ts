@@ -118,6 +118,10 @@ export function generateModelMetadata(model: IModel): Metadata {
 
   const robots = model.robotsDirective || "index, follow";
 
+  const nameParts = (model.name || "").trim().split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || undefined;
+
   return {
     title: { absolute: title },
     description,
@@ -145,6 +149,9 @@ export function generateModelMetadata(model: IModel): Metadata {
           ]
         : [],
       type: "profile",
+      firstName,
+      lastName,
+      username: model.slug,
     },
     twitter: {
       card: "summary_large_image",
@@ -155,11 +162,6 @@ export function generateModelMetadata(model: IModel): Metadata {
         : [],
     },
     robots,
-    other: {
-      "article:author": model.name,
-      "article:published_time": model.createdAt?.toISOString() || "",
-      "article:modified_time": model.updatedAt?.toISOString() || "",
-    },
   };
 }
 
@@ -171,10 +173,12 @@ export function generateModelJsonLd(model: IModel) {
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
+    "@id": `${url}#person`,
     name: model.name,
     url,
     image: model.profileImage || undefined,
     description: cleanDescription,
+    mainEntityOfPage: url,
     ...(model.country
       ? {
           nationality: {
@@ -188,14 +192,27 @@ export function generateModelJsonLd(model: IModel) {
   const imageGallerySchema = {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
+    "@id": `${url}#gallery`,
     name: `${model.name} Gallery`,
     url,
     description: `Photo and video gallery of ${model.name}`,
+    author: {
+      "@type": "Person",
+      name: model.name,
+      url,
+    },
+    ...(model.createdAt
+      ? { datePublished: new Date(model.createdAt).toISOString() }
+      : {}),
+    ...(model.updatedAt
+      ? { dateModified: new Date(model.updatedAt).toISOString() }
+      : {}),
     image: model.media
       ?.filter((m) => m.type === "photo")
       .map((m) => ({
         "@type": "ImageObject",
         url: m.url,
+        contentUrl: m.url,
         name: m.title || `${model.name} photo`,
         description: m.alt || `Photo of ${model.name}`,
       })),
@@ -295,6 +312,7 @@ export function generateModelPhotosJsonLd(model: any) {
   const imageGallerySchema = {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
+    "@id": `${url}#gallery`,
     name: model.photosSeo?.heading || `${model.name} Photo Sets & Gallery`,
     url,
     description: cleanDescription,
@@ -303,9 +321,16 @@ export function generateModelPhotosJsonLd(model: any) {
       name: model.name,
       url: `${SITE_URL}/model/${model.slug}`,
     },
+    ...(model.createdAt
+      ? { datePublished: new Date(model.createdAt).toISOString() }
+      : {}),
+    ...(model.updatedAt
+      ? { dateModified: new Date(model.updatedAt).toISOString() }
+      : {}),
     image: photos.map((m: any, idx: number) => ({
       "@type": "ImageObject",
       url: m.url,
+      contentUrl: m.url,
       name: m.title || `${model.name} photo ${idx + 1}`,
       description: m.alt || `Photo of ${model.name}`,
     })),

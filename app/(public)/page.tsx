@@ -2,8 +2,6 @@ import Link from "next/link";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import {
-  generateWebsiteJsonLd,
-  generateOrganizationJsonLd,
   generateFaqJsonLd,
   generateHomepageItemListJsonLd,
 } from "@/lib/seo";
@@ -145,8 +143,6 @@ export default async function HomePage() {
     new Set(models.map((m) => m.category).filter(Boolean)),
   ) as string[];
 
-  const websiteJsonLd = generateWebsiteJsonLd();
-  const organizationJsonLd = generateOrganizationJsonLd();
   const faqSchema = generateFaqJsonLd(faqsList);
   const itemListSchema = generateHomepageItemListJsonLd(
     models.map((m) => ({ name: m.name, slug: m.slug })),
@@ -155,15 +151,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-16 pb-20">
 
-      {/* Structured Data JSON-LD for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
+      {/* Structured Data JSON-LD for SEO (Website & Organization are provided globally in RootLayout) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
