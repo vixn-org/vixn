@@ -13,28 +13,23 @@ export async function GET() {
 
     await connectDB();
 
-    const [
-      totalModels,
-      publishedModels,
-      draftModels,
-      totalBlogs,
-      mediaAgg,
-    ] = await Promise.all([
-      Model.countDocuments(),
-      Model.countDocuments({ status: "published" }),
-      Model.countDocuments({ status: "draft" }),
-      BlogPost.countDocuments({ status: "published" }),
-      Model.aggregate([
-        { $match: { status: "published" } },
-        { $unwind: "$media" },
-        {
-          $group: {
-            _id: "$media.type",
-            count: { $sum: 1 },
+    const [totalModels, publishedModels, draftModels, totalBlogs, mediaAgg] =
+      await Promise.all([
+        Model.countDocuments(),
+        Model.countDocuments({ status: "published" }),
+        Model.countDocuments({ status: "draft" }),
+        BlogPost.countDocuments({ status: "published" }),
+        Model.aggregate([
+          { $match: { status: "published" } },
+          { $unwind: "$media" },
+          {
+            $group: {
+              _id: "$media.type",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]),
-    ]);
+        ]),
+      ]);
 
     const videosCount = mediaAgg.find((a) => a._id === "video")?.count || 0;
     const photosCount = mediaAgg.find((a) => a._id === "photo")?.count || 0;
@@ -61,7 +56,8 @@ export async function GET() {
           4 + modelUrlCount + videosCount + photosCount + totalBlogs, // 4 = static pages
       },
       sitemaps: {
-        totalSubSitemaps: 1 + modelChunks + videoChunks + photoChunks + blogChunks,
+        totalSubSitemaps:
+          1 + modelChunks + videoChunks + photoChunks + blogChunks,
         breakdown: {
           static: { chunks: 1, urls: 4 },
           models: { chunks: modelChunks, urls: modelUrlCount },
@@ -82,7 +78,7 @@ export async function GET() {
     console.error("GET /api/admin/indexing/status error:", error);
     return NextResponse.json(
       { error: "Failed to fetch indexing status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -48,36 +48,19 @@ export function formatSeoTitle(rawTitle: string, brandSuffix: string = SITE_NAME
 }
 
 /**
- * Sanitize and clamp meta descriptions to strictly 120-155 characters.
- * Bing Webmaster Guidelines require 25-160 chars (flags 224/188 as errors).
- * Google requires 120-155 chars.
- * Eliminates keyword stuffing, excessive comma lists, and spam strings.
+ * Sanitize and clamp meta descriptions to 120-155 characters.
+ * Uses the raw description if available and long enough, otherwise falls back.
+ * Clamps cleanly at word boundaries.
  */
 export function formatSeoDescription(rawDesc: string | undefined | null, fallbackDesc: string): string {
-  let text = (rawDesc || "").trim();
+  let text = (rawDesc || "").trim().replace(/\s+/g, " ");
 
-  // Detect spam/keyword stuffing: excessive commas, known spam words, or lack of proper sentence structure
-  const commaCount = (text.match(/,/g) || []).length;
-  const spamTerms = ["sohail khan", "elvish yadav", "gangbang", "chut", "fuck", "chudai", "bobs", "bigg boss"];
-  const hasSpamTerm = spamTerms.some((term) => text.toLowerCase().includes(term));
-
-  if (commaCount > 4 || hasSpamTerm || text.length < 25) {
-    // If first sentence is clean and decent length, use it; otherwise use editorial fallback
-    const sentences = text.split(/[.!?]/).map((s) => s.trim()).filter(Boolean);
-    const firstSentence = sentences[0] || "";
-    const firstSentenceHasSpam = spamTerms.some((t) => firstSentence.toLowerCase().includes(t));
-    const firstSentenceCommas = (firstSentence.match(/,/g) || []).length;
-
-    if (firstSentence.length >= 45 && !firstSentenceHasSpam && firstSentenceCommas <= 3) {
-      text = firstSentence;
-    } else {
-      text = fallbackDesc.trim();
-    }
+  // Use fallback if raw description is empty or too short
+  if (text.length < 30) {
+    text = fallbackDesc.trim().replace(/\s+/g, " ");
   }
 
-  text = text.replace(/\s+/g, " ").trim();
-
-  // If text is short (< 95 chars), append high-CTR value proposition naturally
+  // If text is short (< 95 chars), append value proposition
   if (text.length < 95) {
     const valueProp = `Watch free HD photo galleries and 4K streaming videos online on ${SITE_NAME}.`;
     const combined = `${text.replace(/\.+$/, "")}. ${valueProp}`;
@@ -98,7 +81,6 @@ export function formatSeoDescription(rawDesc: string | undefined | null, fallbac
     if (lastSpace > 110) {
       truncated = truncated.substring(0, lastSpace);
     }
-    // Clean trailing punctuation before adding ellipsis
     truncated = truncated.replace(/[\s,;:\-]+$/, "");
     text = `${truncated}...`;
   }

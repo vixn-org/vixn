@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 interface SerializedModel {
   _id: string;
@@ -166,7 +166,7 @@ export default async function ModelsPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white pt-10 pb-12 border-b border-slate-100">
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           {/* Breadcrumb Visual */}
-          <nav className="flex justify-center items-center gap-2 text-xs font-semibold text-slate-500 mb-4">
+          <nav aria-label="Breadcrumb" className="flex justify-center items-center gap-2 text-xs font-semibold text-slate-500 mb-4">
             <Link href="/" className="hover:text-rose-600 transition-colors">
               Home
             </Link>

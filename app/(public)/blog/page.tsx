@@ -18,7 +18,7 @@ import {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: { absolute: "Blog & Creator Insights | VIXN" },

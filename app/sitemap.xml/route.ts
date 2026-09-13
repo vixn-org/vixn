@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
+import { getUniqueSitemapTags } from "@/lib/sitemap-tags";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
@@ -12,9 +13,10 @@ export async function GET() {
   try {
     await connectDB();
 
-    const [modelCount, blogCount] = await Promise.all([
+    const [modelCount, blogCount, uniqueTags] = await Promise.all([
       Model.countDocuments({ status: "published" }),
       BlogPost.countDocuments({ status: "published" }),
+      getUniqueSitemapTags(),
     ]);
 
     // Count total individual media items for video/photo sub-sitemaps
@@ -38,6 +40,7 @@ export async function GET() {
     const videoChunks = Math.max(1, Math.ceil(videosCount / CHUNK_SIZE));
     const photoChunks = Math.max(1, Math.ceil(photosCount / CHUNK_SIZE));
     const blogChunks = Math.max(1, Math.ceil(blogCount / CHUNK_SIZE));
+    const tagChunks = Math.max(1, Math.ceil(uniqueTags.length / CHUNK_SIZE));
 
     const now = new Date().toISOString();
 
@@ -91,13 +94,21 @@ export async function GET() {
       );
     }
 
-    // Tags (keyword hub pages) sitemap
-    sitemaps.push(
-      `  <sitemap>
-    <loc>${SITE_URL}/sitemaps/tags.xml</loc>
-    <lastmod>${now}</lastmod>
+    // Keyword Tags sitemaps (chunked with SEO lastmod matching models-1, videos-1, photos-1)
+    for (let i = 1; i <= tagChunks; i++) {
+      const chunkStartIndex = (i - 1) * CHUNK_SIZE;
+      const chunkFirstTag = uniqueTags[chunkStartIndex];
+      const tagLastmod = chunkFirstTag?.lastmod
+        ? new Date(chunkFirstTag.lastmod).toISOString()
+        : now;
+
+      sitemaps.push(
+        `  <sitemap>
+    <loc>${SITE_URL}/sitemaps/tags-${i}.xml</loc>
+    <lastmod>${tagLastmod}</lastmod>
   </sitemap>`,
-    );
+      );
+    }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

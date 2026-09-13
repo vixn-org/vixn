@@ -64,17 +64,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ],
   });
 
-  const baseTitle = `${capitalTag} HD Videos, MMS Leaks & Photos`;
+  const baseTitle = `${capitalTag} - Videos & Photos`;
   const title = formatSeoTitle(baseTitle);
-  const rawDesc = `Stream ${tagLabel} latest full HD sex videos, viral leaked clips, photoshoot pictures, and 4K uncensored content on ${SITE_NAME}. Free instant streaming.`;
-  const fallbackDesc = `Watch ${tagLabel} HD videos, photos and exclusive streaming content on ${SITE_NAME}. High-definition clips and photo galleries updated daily.`;
+  const rawDesc = `Browse ${tagLabel} HD videos, photos and exclusive content on ${SITE_NAME}. High-definition clips and photo galleries updated daily.`;
+  const fallbackDesc = `Watch ${tagLabel} HD videos, photos and streaming content on ${SITE_NAME}. Updated daily with fresh galleries.`;
   const description = formatSeoDescription(rawDesc, fallbackDesc);
   const url = `${SITE_URL}/tag/${slug}`;
 
   return {
     title: { absolute: title },
     description,
-    keywords: `${tagLabel}, ${tagLabel} videos, ${tagLabel} sex videos, ${tagLabel} leaks, ${tagLabel} photos, ${tagLabel} hd, ${tagLabel} mms, ${tagLabel} streaming, ${SITE_NAME}`,
+    keywords: `${tagLabel}, ${tagLabel} videos, ${tagLabel} photos, ${tagLabel} hd, ${tagLabel} gallery, ${SITE_NAME}`,
     alternates: {
       canonical: url,
     },
@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function TagPage({ params }: Props) {
   const { slug } = await params;
@@ -149,9 +149,9 @@ export default async function TagPage({ params }: Props) {
   const collectionSchema = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: `${capitalTag} — HD Videos & Photos`,
+    name: `${capitalTag} - Videos & Photos`,
     url: `${SITE_URL}/tag/${slug}`,
-    description: `Collection of ${tagLabel} exclusive uncensored videos, 4K streaming clips, and HD photo galleries on ${SITE_NAME}.`,
+    description: `Collection of ${tagLabel} videos, streaming clips, and photo galleries on ${SITE_NAME}.`,
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: models.length,
@@ -173,7 +173,7 @@ export default async function TagPage({ params }: Props) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Tags", item: `${SITE_URL}/sitemaps/tags` },
+      { "@type": "ListItem", position: 2, name: "Models", item: `${SITE_URL}/models` },
       { "@type": "ListItem", position: 3, name: capitalTag, item: `${SITE_URL}/tag/${slug}` },
     ],
   };
@@ -191,7 +191,7 @@ export default async function TagPage({ params }: Props) {
   const modelNames = models.map((m) => m.name).join(", ");
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-rose-500 selection:text-white">
+    <section className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-rose-500 selection:text-white">
       {/* Header Search */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-100">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -212,7 +212,7 @@ export default async function TagPage({ params }: Props) {
       />
 
       <main className="flex-1">
-        <article className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb */}
           <nav
             aria-label="Breadcrumb"
@@ -237,16 +237,16 @@ export default async function TagPage({ params }: Props) {
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight">
-              {capitalTag} Leaked Videos &amp; HD Photos
+              {capitalTag} — Videos &amp; Photos
             </h1>
 
             {/* Rich Intent Editorial Article (150+ Words for Google Keyword Ranking & BERT Understanding) */}
             <div className="bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80 text-sm text-slate-700 leading-relaxed space-y-3">
               <p>
-                Watch exclusive <strong>{tagLabel}</strong> full-length video clips, hot photoshoot galleries, and viral leaked media updates on {SITE_NAME}. This dedicated archive aggregates all verified material associated with <strong>{modelNames}</strong>, featuring ultra HD 1080p and 4K streaming quality.
+                Browse <strong>{tagLabel}</strong> video clips, photo galleries, and exclusive media on {SITE_NAME}. This collection features verified content from <strong>{modelNames}</strong> in HD and 4K quality.
               </p>
               <p>
-                Explore uncensored scenes, private app streams, saree shoots, bikini sets, and exclusive content updated directly from official creator feeds. Browse through <strong>{totalVideos} video{totalVideos !== 1 ? "s" : ""}</strong> and <strong>{totalPhotos} photo{totalPhotos !== 1 ? "s" : ""}</strong> across {models.length} creator portfolio{models.length !== 1 ? "s" : ""}, optimized with direct high-speed playback.
+                Explore photo sets, video streams, and exclusive content updated regularly. Browse through <strong>{totalVideos} video{totalVideos !== 1 ? "s" : ""}</strong> and <strong>{totalPhotos} photo{totalPhotos !== 1 ? "s" : ""}</strong> across {models.length} creator portfolio{models.length !== 1 ? "s" : ""}.
               </p>
             </div>
 
@@ -440,10 +440,10 @@ export default async function TagPage({ params }: Props) {
               ← Browse All Models on {SITE_NAME}
             </Link>
           </div>
-        </article>
+        </div>
       </main>
 
       <PublicFooter />
-    </div>
+    </section>
   );
 }

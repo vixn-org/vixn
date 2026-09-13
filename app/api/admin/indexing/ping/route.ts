@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { triggerIndexingPipeline, buildModelAffectedUrls } from "@/lib/indexing";
+import {
+  triggerIndexingPipeline,
+  buildModelAffectedUrls,
+} from "@/lib/indexing";
 import { revalidatePath } from "next/cache";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
         SITE_URL,
         `${SITE_URL}/models`,
         `${SITE_URL}/blog`,
-        `${SITE_URL}/faq`
+        `${SITE_URL}/faq`,
       );
 
       // 2. Models & All Media Items & Tags
@@ -58,13 +61,14 @@ export async function POST(request: Request) {
         targetUrls.push(
           `${SITE_URL}/model/${m.slug}`,
           `${SITE_URL}/model/${m.slug}/photos`,
-          `${SITE_URL}/model/${m.slug}/videos`
+          `${SITE_URL}/model/${m.slug}/videos`,
         );
 
         // Individual photos and videos
         (m.media || []).forEach((mediaItem: any, idx: number) => {
           const type = mediaItem.type === "video" ? "video" : "photo";
-          const mediaTitle = mediaItem.title || mediaItem.alt || `${type}-${idx + 1}`;
+          const mediaTitle =
+            mediaItem.title || mediaItem.alt || `${type}-${idx + 1}`;
           const cleanSlug = mediaTitle
             .toLowerCase()
             .replace(/[^\w\s-]/g, "")
@@ -85,8 +89,12 @@ export async function POST(request: Request) {
         // Collect model tags
         (m.tags || []).forEach((t: string) => t && tagSet.add(t));
         (m.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
-        (m.photosSeo?.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
-        (m.videosSeo?.metaKeywords || []).forEach((k: string) => k && tagSet.add(k));
+        (m.photosSeo?.metaKeywords || []).forEach(
+          (k: string) => k && tagSet.add(k),
+        );
+        (m.videosSeo?.metaKeywords || []).forEach(
+          (k: string) => k && tagSet.add(k),
+        );
       }
 
       // Add all unique tag hub URLs
@@ -121,7 +129,7 @@ export async function POST(request: Request) {
     console.error("POST /api/admin/indexing/ping error:", error);
     return NextResponse.json(
       { error: "Failed to trigger indexing pipeline" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -26,7 +26,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 interface PublicModel {
   _id: { toString(): string } | string;
@@ -168,16 +168,15 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           {/* Heading */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 tracking-tight leading-tight max-w-4xl mx-auto">
-            Watch Hot Girl XXX Videos & Nude Photos{" "}
+            Watch Free HD Videos & Nude Photos of{" "}
             <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-              Free
+              Top Models
             </span>
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
-            Free HD videos of popular pornstars, Indian hot girls, and trending
-            models — updated daily. Buttons: Explore Models | Watch Trending
-            Videos
+            Free HD videos of popular pornstars, trending models, and exclusive
+            photo galleries — updated daily with fresh content.
           </p>
 
           {/* Call-to-Action Buttons */}

@@ -7,7 +7,6 @@ import { generateModelMetadata, generateModelJsonLd, slugify, getMediaSlug } fro
 import ModelGalleryViewer from "@/components/public/model-gallery-viewer";
 import ModelInfoAccordion from "@/components/public/model-info-accordion";
 import HeaderSearch from "@/components/public/header-search";
-import PublicFooter from "@/components/public/footer";
 import {
   ChevronRight,
   Home,
@@ -51,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function ModelPage({ params }: Props) {
   const { slug } = await params;
@@ -659,9 +658,6 @@ export default async function ModelPage({ params }: Props) {
         )}
       </article>
       </main>
-
-      {/* SEO-Optimized Footer */}
-      <PublicFooter />
     </div>
   );
 }

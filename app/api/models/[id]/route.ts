@@ -190,6 +190,8 @@ export async function PUT(
         revalidatePath("/sitemaps/models-1");
         revalidatePath("/sitemaps/videos-1");
         revalidatePath("/sitemaps/photos-1");
+        revalidatePath("/sitemaps/tags-1");
+        revalidatePath("/sitemaps/tags");
       } catch (_) {
         // Non-critical
       }

@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import {
-  generateVideoMetadata,
-  generateVideoJsonLd,
+  generatePhotoMetadata,
+  generatePhotoJsonLd,
   getMediaSlug,
   slugify,
 } from "@/lib/seo";
@@ -20,33 +20,34 @@ import {
   Video as VideoIcon,
   Tag,
   Sparkles,
-  Play,
-  ExternalLink,
+  Maximize2,
 } from "lucide-react";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
-function findVideoIndex(videos: any[], param: string): number {
-  if (!videos || videos.length === 0) return -1;
+function findPhotoIndex(photos: any[], param: string): number {
+  if (!photos || photos.length === 0) return -1;
   const decoded = decodeURIComponent(param);
 
   // 1. Match exact ID or order
-  let idx = videos.findIndex(
-    (m: any) => m._id?.toString() === decoded || m.order?.toString() === decoded
+  let idx = photos.findIndex(
+    (m: any) =>
+      m._id?.toString() === decoded || m.order?.toString() === decoded,
   );
   if (idx !== -1) return idx;
 
-  // 2. Match slug with ID suffix
-  idx = videos.findIndex((m: any, i: number) => {
+  // 2. Match slug with ID suffix (e.g. "...-65f1234abc")
+  idx = photos.findIndex((m: any, i: number) => {
     const mId = m._id?.toString();
     const mOrder = m.order?.toString();
     if (mId && (decoded.endsWith(`-${mId}`) || decoded === mId)) return true;
-    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder)) return true;
-    const mediaSlug = getMediaSlug(m, "video", i);
+    if (mOrder && (decoded.endsWith(`-${mOrder}`) || decoded === mOrder))
+      return true;
+    const mediaSlug = getMediaSlug(m, "photo", i);
     return mediaSlug === decoded;
   });
 
@@ -62,23 +63,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       status: "published",
     }).lean();
 
-    if (!model) return { title: { absolute: "Video Not Found | VIXN" } };
+    if (!model) return { title: { absolute: "Photo Not Found | VIXN" } };
 
-    const allVideos = (model.media || []).filter((m: any) => m.type === "video");
-    const videoIndex = findVideoIndex(allVideos, mediaId);
+    const allPhotos = (model.media || []).filter(
+      (m: any) => m.type === "photo",
+    );
+    const photoIndex = findPhotoIndex(allPhotos, mediaId);
 
-    if (videoIndex === -1) {
-      return { title: { absolute: `${model.name} Videos | VIXN` } };
+    if (photoIndex === -1) {
+      return { title: { absolute: `${model.name} Photos | VIXN` } };
     }
 
-    const mediaItem = allVideos[videoIndex];
-    return generateVideoMetadata(model, mediaItem, videoIndex);
+    const mediaItem = allPhotos[photoIndex];
+    return generatePhotoMetadata(model, mediaItem, photoIndex);
   } catch {
-    return { title: { absolute: "Model Video | VIXN" } };
+    return { title: { absolute: "Model Photo | VIXN" } };
   }
 }
 
-export default async function ModelVideoPage({ params }: Props) {
+export default async function ModelPhotoPage({ params }: Props) {
   const { slug, mediaId } = await params;
   await connectDB();
 
@@ -91,43 +94,39 @@ export default async function ModelVideoPage({ params }: Props) {
     notFound();
   }
 
-  const allVideos = (model.media || []).filter((m: any) => m.type === "video");
-  const currentIndex = findVideoIndex(allVideos, mediaId);
+  const allPhotos = (model.media || []).filter((m: any) => m.type === "photo");
+  const currentIndex = findPhotoIndex(allPhotos, mediaId);
 
   if (currentIndex === -1) {
     notFound();
   }
 
-  const currentVideo = allVideos[currentIndex];
-  const prevVideo = currentIndex > 0 ? allVideos[currentIndex - 1] : null;
-  const nextVideo =
-    currentIndex < allVideos.length - 1 ? allVideos[currentIndex + 1] : null;
+  const currentPhoto = allPhotos[currentIndex];
+  const prevPhoto = currentIndex > 0 ? allPhotos[currentIndex - 1] : null;
+  const nextPhoto =
+    currentIndex < allPhotos.length - 1 ? allPhotos[currentIndex + 1] : null;
 
-  // Other related videos from the same model
-  const relatedVideos = allVideos
-    .map((v: any, originalIndex: number) => ({ ...v, originalIndex }))
-    .filter((v: any) => v._id?.toString() !== currentVideo._id?.toString());
+  // Other related photos from the same model (excluding current)
+  const relatedPhotos = allPhotos
+    .map((p: any, originalIndex: number) => ({ ...p, originalIndex }))
+    .filter((p: any) => p._id?.toString() !== currentPhoto._id?.toString());
 
-  const { videoSchema, breadcrumbSchema } = generateVideoJsonLd(
+  const { imageSchema, breadcrumbSchema } = generatePhotoJsonLd(
     model,
-    currentVideo,
-    currentIndex
+    currentPhoto,
+    currentIndex,
   );
 
-  const videoTitle =
-    currentVideo.title ||
-    `${model.name} - Exclusive HD Video Clip #${currentIndex + 1}`;
-
-  const posterSrc =
-    currentVideo.thumbnail || model.profileImage || model.coverImage || "";
+  const photoTitle =
+    currentPhoto.title ||
+    `${model.name} - Exclusive HD Photo #${currentIndex + 1}`;
 
   return (
     <div className="min-h-screen bg-white">
-
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(imageSchema) }}
       />
       <script
         type="application/ld+json"
@@ -164,14 +163,14 @@ export default async function ModelVideoPage({ params }: Props) {
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <Link
-              href={`/model/${model.slug}/videos`}
+              href={`/model/${model.slug}/photos`}
               className="hover:text-rose-600 transition-colors"
             >
-              Videos
+              Photos
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-violet-600 font-bold truncate max-w-[160px]">
-              Video #{currentIndex + 1}
+            <span className="text-rose-600 font-bold truncate max-w-[160px]">
+              Photo #{currentIndex + 1}
             </span>
           </nav>
 
@@ -187,64 +186,43 @@ export default async function ModelVideoPage({ params }: Props) {
           </Button>
         </div>
 
-        {/* Main Video Showcase */}
+        {/* Main Photo Showcase */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main Video Player Container */}
+          {/* Main Photo Display */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 shadow-xl aspect-video flex items-center justify-center">
-              {currentVideo.isExternal ? (
-                /* External Stream Video Card */
-                <a
-                  href={currentVideo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-full relative block group/player cursor-pointer"
-                >
-                  {posterSrc ? (
-                    <img
-                      src={posterSrc}
-                      alt={currentVideo.alt || videoTitle}
-                      className="w-full h-full object-cover group-hover/player:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-400">
-                      <VideoIcon className="w-16 h-16 text-slate-600" />
-                    </div>
-                  )}
+            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 shadow-xl flex items-center justify-center group">
+              <img
+                src={currentPhoto.url}
+                alt={currentPhoto.alt || photoTitle}
+                className="w-full h-auto max-h-[85vh] object-contain mx-auto"
+              />
 
-                  {/* Play CTA Overlay */}
-                  <div className="absolute inset-0 bg-black/40 group-hover/player:bg-black/25 transition-colors flex flex-col items-center justify-center gap-3">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-rose-600/40 group-hover/player:bg-rose-600/70 text-white flex items-center justify-center shadow-2xl transform group-hover/player:scale-110 transition-all">
-                      <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-current ml-1" />
-                    </div>
-                    <div className="bg-white/95 backdrop-blur-md text-slate-900 px-4 py-2 rounded-full text-xs font-black shadow-lg flex items-center gap-1.5">
-                      <span>Watch Full Video</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
-                    </div>
-                  </div>
-
-                  <div className="absolute top-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
-                    <ExternalLink className="w-3.5 h-3.5" /> External Stream
-                  </div>
-                </a>
-              ) : (
-                /* Native HTML5 Video Player */
-                <video
-                  src={currentVideo.url}
-                  poster={posterSrc}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="w-full h-full object-cover"
+              {/* Prev Button Overlay */}
+              {prevPhoto && (
+                <Link
+                  href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
+                  title="Previous Photo"
                 >
-                  Your browser does not support the video tag.
-                </video>
+                  <ChevronLeft className="w-6 h-6" />
+                </Link>
               )}
 
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-white/40 flex items-center gap-1.5 pointer-events-none">
-                <VideoIcon className="w-3.5 h-3.5 text-violet-600" />
+              {/* Next Button Overlay */}
+              {nextPhoto && (
+                <Link
+                  href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
+                  title="Next Photo"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Link>
+              )}
+
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-white/40 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-rose-600" />
                 <span>
-                  Video {currentIndex + 1} of {allVideos.length}
+                  Photo {currentIndex + 1} of {allPhotos.length}
                 </span>
               </div>
             </div>
@@ -252,7 +230,7 @@ export default async function ModelVideoPage({ params }: Props) {
             {/* Quick Browse Bar */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2">
-                {prevVideo ? (
+                {prevPhoto ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -260,9 +238,9 @@ export default async function ModelVideoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/video/${getMediaSlug(prevVideo, "video", currentIndex - 1)}`}
+                      href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
                     >
-                      <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Video
+                      <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Photo
                     </Link>
                   </Button>
                 ) : (
@@ -272,11 +250,11 @@ export default async function ModelVideoPage({ params }: Props) {
                     disabled
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Video
+                    <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Photo
                   </Button>
                 )}
 
-                {nextVideo ? (
+                {nextPhoto ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -284,9 +262,9 @@ export default async function ModelVideoPage({ params }: Props) {
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
                     <Link
-                      href={`/model/${model.slug}/video/${getMediaSlug(nextVideo, "video", currentIndex + 1)}`}
+                      href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
                     >
-                      Next Video <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                      Next Photo <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Link>
                   </Button>
                 ) : (
@@ -296,59 +274,53 @@ export default async function ModelVideoPage({ params }: Props) {
                     disabled
                     className="rounded-xl border-slate-200 text-xs font-semibold"
                   >
-                    Next Video <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                    Next Photo <ChevronRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
                 <a
-                  href={currentVideo.url}
+                  href={currentPhoto.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   download
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Download 1080p / 4K Video</span>
+                  <span>Download 4K Ultra HD</span>
                 </a>
-                {currentVideo.isExternal ? (
-                  <a
-                    href={currentVideo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
-                  >
-                    <span>External Stream</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                ) : (
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                    4K Direct Streaming
-                  </span>
-                )}
+                <a
+                  href={currentPhoto.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>View Original</span>
+                </a>
               </div>
             </div>
           </div>
 
           {/* Right Sidebar: Details & Model Profile */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Video Metadata Card */}
+            {/* Photo Metadata Card */}
             <div className="bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80 space-y-4 shadow-xs">
               <div className="space-y-1.5">
                 <h1 className="text-xl font-black text-slate-900 leading-tight">
-                  {videoTitle}
+                  {photoTitle}
                 </h1>
-                {currentVideo.alt && (
+                {currentPhoto.alt && (
                   <p className="text-xs text-slate-600 leading-relaxed pt-1">
-                    {currentVideo.alt}
+                    {currentPhoto.alt}
                   </p>
                 )}
               </div>
 
               <div className="pt-3 border-t border-slate-200/80 space-y-2 text-xs text-slate-600">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-medium">Starring:</span>
+                  <span className="text-slate-400 font-medium">Model:</span>
                   <Link
                     href={`/model/${model.slug}`}
                     className="font-bold text-slate-900 hover:text-rose-600 transition-colors"
@@ -362,24 +334,30 @@ export default async function ModelVideoPage({ params }: Props) {
                     variant="secondary"
                     className="bg-white border-slate-200 text-slate-700 font-semibold"
                   >
-                    {model.category || "Videos & Streaming"}
+                    {model.category || "Fashion & Glamour"}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-medium">Format:</span>
-                  <span className="font-bold text-slate-900">
-                    {currentVideo.isExternal ? "Redirect Stream" : "Direct HD Video"}
+                  <span className="text-slate-400 font-medium">Quality:</span>
+                  <span className="font-bold text-emerald-600">
+                    4K Ultra HD
                   </span>
                 </div>
 
                 {(() => {
-                  const videoKeywords: string[] = Array.isArray(currentVideo.keywords)
-                    ? currentVideo.keywords.filter(Boolean)
-                    : typeof currentVideo.keywords === "string" && currentVideo.keywords.trim()
-                    ? currentVideo.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-                    : [];
+                  const photoKeywords: string[] = Array.isArray(
+                    currentPhoto.keywords,
+                  )
+                    ? currentPhoto.keywords.filter(Boolean)
+                    : typeof currentPhoto.keywords === "string" &&
+                        currentPhoto.keywords.trim()
+                      ? currentPhoto.keywords
+                          .split(",")
+                          .map((k: string) => k.trim())
+                          .filter(Boolean)
+                      : [];
 
-                  if (videoKeywords.length === 0) return null;
+                  if (photoKeywords.length === 0) return null;
 
                   return (
                     <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
@@ -387,7 +365,7 @@ export default async function ModelVideoPage({ params }: Props) {
                         SEO Tags &amp; Keywords
                       </span>
                       <div className="flex flex-wrap gap-1">
-                        {videoKeywords.map((kw, i) => {
+                        {photoKeywords.map((kw, i) => {
                           const kwSlug = kw.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
                           return (
                             <Link
@@ -419,8 +397,12 @@ export default async function ModelVideoPage({ params }: Props) {
                     {model.name}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {(model.media || []).filter((m: any) => m.type === "photo").length}{" "}
-                    Photos • {allVideos.length} Videos
+                    {allPhotos.length} Photos •{" "}
+                    {
+                      (model.media || []).filter((m: any) => m.type === "video")
+                        .length
+                    }{" "}
+                    Videos
                   </p>
                 </div>
               </div>
@@ -443,18 +425,18 @@ export default async function ModelVideoPage({ params }: Props) {
 
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <Link
-                    href={`/model/${model.slug}/videos`}
-                    className="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1 border border-rose-100 transition-colors"
-                  >
-                    <VideoIcon className="w-3 h-3" />
-                    <span>Videos ({allVideos.length})</span>
-                  </Link>
-                  <Link
                     href={`/model/${model.slug}/photos`}
                     className="py-2 px-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1 border border-indigo-100 transition-colors"
                   >
                     <ImageIcon className="w-3 h-3" />
-                    <span>Photos ({(model.media || []).filter((m: any) => m.type === "photo").length})</span>
+                    <span>Photos ({allPhotos.length})</span>
+                  </Link>
+                  <Link
+                    href={`/model/${model.slug}/videos`}
+                    className="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1 border border-rose-100 transition-colors"
+                  >
+                    <VideoIcon className="w-3 h-3" />
+                    <span>Videos ({(model.media || []).filter((m: any) => m.type === "video").length})</span>
                   </Link>
                 </div>
 
@@ -470,16 +452,17 @@ export default async function ModelVideoPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Related Videos of Same Model Grid (SEO Internal Linking) */}
-        {relatedVideos.length > 0 && (
+        {/* More Photos from Same Model */}
+        {relatedPhotos.length > 0 && (
           <section className="pt-12 border-t border-slate-200 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  More Videos of {model.name}
+                  More Photos of {model.name}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Browse the complete video collection ({allVideos.length} total)
+                  Browse the complete photo collection ({allPhotos.length}{" "}
+                  total)
                 </p>
               </div>
 
@@ -491,47 +474,26 @@ export default async function ModelVideoPage({ params }: Props) {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {relatedVideos.slice(0, 8).map((vid: any) => {
-                const vidPoster =
-                  vid.thumbnail ||
-                  model.profileImage ||
-                  model.coverImage ||
-                  "";
-                return (
-                  <Link
-                    key={vid._id?.toString() || vid.originalIndex}
-                    href={`/model/${model.slug}/video/${getMediaSlug(vid, "video", vid.originalIndex)}`}
-                    className="group relative aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs hover:shadow-lg transition-all transform hover:-translate-y-1 block"
-                  >
-                    {vidPoster ? (
-                      <img
-                        src={vidPoster}
-                        alt={vid.alt || `${model.name} video`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-400">
-                        <VideoIcon className="w-8 h-8 text-slate-600" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-rose-600/40 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-rose-600/70 transition-transform">
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      </div>
-                    </div>
-                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-800 shadow-xs flex items-center gap-1">
-                      <VideoIcon className="w-3 h-3 text-violet-600" /> VIDEO
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
-                      <p className="text-xs font-bold text-white truncate">
-                        {vid.title || `Video Clip #${vid.originalIndex + 1}`}
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {relatedPhotos.slice(0, 12).map((photo: any) => (
+                <Link
+                  key={photo._id?.toString() || photo.originalIndex}
+                  href={`/model/${model.slug}/photo/${getMediaSlug(photo, "photo", photo.originalIndex)}`}
+                  className="group relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs hover:shadow-lg transition-all transform hover:-translate-y-1 block"
+                >
+                  <img
+                    src={photo.url}
+                    alt={photo.alt || `${model.name} photo`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
+                    <span className="text-[11px] font-bold text-white truncate">
+                      {photo.title || `Photo #${photo.originalIndex + 1}`}
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
         )}

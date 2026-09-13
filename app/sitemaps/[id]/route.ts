@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
 import { getMediaSlug } from "@/lib/seo";
+import { getUniqueSitemapTags } from "@/lib/sitemap-tags";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 const CHUNK_SIZE = 45000;
@@ -63,9 +64,7 @@ async function buildStaticSitemap(): Promise<string[]> {
 }
 
 // ─── Model Profiles + /photos + /videos hub pages ───
-async function buildModelsSitemap(
-  chunkIndex: number,
-): Promise<string[]> {
+async function buildModelsSitemap(chunkIndex: number): Promise<string[]> {
   const modelsPerChunk = Math.floor(CHUNK_SIZE / 3);
   const skip = (chunkIndex - 1) * modelsPerChunk;
 
@@ -119,9 +118,7 @@ async function buildModelsSitemap(
 }
 
 // ─── Individual Video Pages ───
-async function buildVideosSitemap(
-  chunkIndex: number,
-): Promise<string[]> {
+async function buildVideosSitemap(chunkIndex: number): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const results = await Model.aggregate([
@@ -154,9 +151,7 @@ async function buildVideosSitemap(
 }
 
 // ─── Individual Photo Pages ───
-async function buildPhotosSitemap(
-  chunkIndex: number,
-): Promise<string[]> {
+async function buildPhotosSitemap(chunkIndex: number): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const results = await Model.aggregate([
@@ -189,9 +184,7 @@ async function buildPhotosSitemap(
 }
 
 // ─── Blog Posts ───
-async function buildBlogsSitemap(
-  chunkIndex: number,
-): Promise<string[]> {
+async function buildBlogsSitemap(chunkIndex: number): Promise<string[]> {
   const skip = (chunkIndex - 1) * CHUNK_SIZE;
 
   const blogs = await BlogPost.find({ status: "published" })
@@ -209,54 +202,14 @@ async function buildBlogsSitemap(
 }
 
 // ─── Tags (Keyword Hubs) ───
-async function buildTagsSitemap(): Promise<string[]> {
-  const models = await Model.find({ status: "published" })
-    .select("tags metaKeywords photosSeo videosSeo media updatedAt")
-    .lean();
+async function buildTagsSitemap(chunkIndex: number = 1): Promise<string[]> {
+  const uniqueTags = await getUniqueSitemapTags();
+  const skip = (chunkIndex - 1) * CHUNK_SIZE;
+  const chunkTags = uniqueTags.slice(skip, skip + CHUNK_SIZE);
 
-  const tagMap = new Map<string, Date>();
-
-  for (const m of models) {
-    const lastmod = m.updatedAt || new Date();
-
-    // 1. Root model tags & metaKeywords
-    const allKeywords: string[] = [
-      ...extractKeywords(m.tags),
-      ...extractKeywords(m.metaKeywords),
-      ...extractKeywords(m.photosSeo?.metaKeywords),
-      ...extractKeywords(m.videosSeo?.metaKeywords),
-    ];
-
-    // 2. Individual media keywords
-    (m.media || []).forEach((item: any) => {
-      allKeywords.push(...extractKeywords(item.keywords));
-    });
-
-    for (const t of allKeywords) {
-      if (!t || typeof t !== "string") continue;
-      const cleanSlug = t
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/[\s_]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .trim();
-      if (!cleanSlug) continue;
-
-      const existingDate = tagMap.get(cleanSlug);
-      if (!existingDate || new Date(lastmod) > new Date(existingDate)) {
-        tagMap.set(cleanSlug, new Date(lastmod));
-      }
-    }
-  }
-
-  const entries: string[] = [];
-  tagMap.forEach((date, tagSlug) => {
-    entries.push(
-      urlEntry(`${SITE_URL}/tag/${tagSlug}`, toIso(date), "daily", 0.8),
-    );
-  });
-
-  return entries;
+  return chunkTags.map((t) =>
+    urlEntry(`${SITE_URL}/tag/${t.slug}`, toIso(t.lastmod), "daily", 0.85),
+  );
 }
 
 // ─── Main Route Handler ───
@@ -274,7 +227,11 @@ export async function GET(
     if (cleanId === "static") {
       entries = await buildStaticSitemap();
     } else if (cleanId === "tags") {
-      entries = await buildTagsSitemap();
+      // Legacy alias for chunk 1
+      entries = await buildTagsSitemap(1);
+    } else if (cleanId.startsWith("tags-")) {
+      const chunk = parseInt(cleanId.replace("tags-", ""), 10) || 1;
+      entries = await buildTagsSitemap(chunk);
     } else if (cleanId.startsWith("models-")) {
       const chunk = parseInt(cleanId.replace("models-", ""), 10) || 1;
       entries = await buildModelsSitemap(chunk);
