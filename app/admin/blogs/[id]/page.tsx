@@ -1,49 +1,54 @@
 "use client";
 
-import { useEffect, useState, useMemo, use } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  CardHeader,
+  Button,
+  IconButton,
+  Chip,
+  Skeleton,
+  Switch,
+  TextField,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  MenuItem,
+  FormControl,
+  Tabs,
+  Tab,
+  Tooltip,
+  Divider,
+  InputAdornment,
+} from "@mui/material";
 import {
-  Save,
-  ArrowLeft,
-  ExternalLink,
-  Search,
-  FileText,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Eye,
-  Globe,
-  Share2,
-  Clock,
-  BookOpen,
-  X,
-  Plus,
-  Heading1,
-  Heading2,
-  Bold,
-  Italic,
-  List,
-  Quote,
-  Code,
-  Image as ImageIcon,
-} from "lucide-react";
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  OpenInNew as OpenInNewIcon,
+  ArticleOutlined as ArticleIcon,
+  Search as SearchIcon,
+  AutoAwesomeOutlined as SparklesIcon,
+  CheckCircleOutlined as CheckCircleIcon,
+  WarningAmberOutlined as WarningIcon,
+  CancelOutlined as CancelIcon,
+  LanguageOutlined as GlobeIcon,
+  ShareOutlined as ShareIcon,
+  AccessTimeOutlined as ClockIcon,
+  MenuBookOutlined as BookOpenIcon,
+  Close as CloseIcon,
+  Add as AddIcon,
+  FormatBold as BoldIcon,
+  FormatItalic as ItalicIcon,
+  FormatListBulleted as ListIcon,
+  FormatQuote as QuoteIcon,
+  ImageOutlined as ImageIcon,
+  Title as TitleIcon,
+  PhoneIphone as PhoneIphoneIcon,
+  Computer as ComputerIcon,
+} from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
 
@@ -95,41 +100,44 @@ export default function BlogEditPage() {
   const [blog, setBlog] = useState<BlogData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [modelSlugInput, setModelSlugInput] = useState("");
   const [serpDevice, setSerpDevice] = useState<"desktop" | "mobile">("desktop");
 
-  useEffect(() => {
-    async function fetchBlog() {
-      try {
-        const res = await fetch(`/api/blogs/${blogId}`);
-        const data = await res.json();
-        if (res.ok && data.blog) {
-          setBlog({
-            ...data.blog,
-            author: data.blog.author || {
-              name: "VIXN Editorial",
-              role: "Senior Content Editor",
-              avatar: "/logo.jpg",
-              bio: "",
-            },
-            tags: data.blog.tags || [],
-            metaKeywords: data.blog.metaKeywords || [],
-            relatedModelSlugs: data.blog.relatedModelSlugs || [],
-          });
-        } else {
-          toast.error("Failed to load article");
-          router.push("/admin/blogs");
-        }
-      } catch {
-        toast.error("Network error loading blog");
-      } finally {
-        setLoading(false);
+  const fetchBlog = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/blogs/${blogId}`);
+      const data = await res.json();
+      if (res.ok && data.blog) {
+        setBlog({
+          ...data.blog,
+          author: data.blog.author || {
+            name: "VIXN Editorial",
+            role: "Senior Content Editor",
+            avatar: "/logo.jpg",
+            bio: "",
+          },
+          tags: data.blog.tags || [],
+          metaKeywords: data.blog.metaKeywords || [],
+          relatedModelSlugs: data.blog.relatedModelSlugs || [],
+        });
+      } else {
+        toast.error("Failed to load article");
+        router.push("/admin/blogs");
       }
+    } catch {
+      toast.error("Network error loading blog");
+    } finally {
+      setLoading(false);
     }
-    fetchBlog();
   }, [blogId, router]);
+
+  useEffect(() => {
+    fetchBlog();
+  }, [fetchBlog]);
 
   const updateField = (field: keyof BlogData, value: any) => {
     setBlog((prev) => (prev ? { ...prev, [field]: value } : null));
@@ -416,10 +424,16 @@ export default function BlogEditPage() {
 
   if (loading || !blog) {
     return (
-      <div className="p-8 text-center space-y-3">
-        <div className="w-8 h-8 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-slate-500 font-medium">Loading Article Editor...</p>
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 2, borderBottom: "1px solid #e2e8f0" }}>
+          <Skeleton variant="text" width={240} height={36} />
+          <Skeleton variant="rounded" width={120} height={36} sx={{ borderRadius: 1 }} />
+        </Box>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 3 }}>
+          <Skeleton variant="rounded" height={400} sx={{ borderRadius: 1.5 }} />
+          <Skeleton variant="rounded" height={300} sx={{ borderRadius: 1.5 }} />
+        </Box>
+      </Box>
     );
   }
 
@@ -427,739 +441,1410 @@ export default function BlogEditPage() {
   const computedReadingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Top Action Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="rounded-xl border-slate-200 text-slate-700"
-          >
-            <Link href="/admin/blogs">
-              <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to Articles
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 line-clamp-1">
-              {blog.title || "Untitled Article"}
-            </h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <Badge
-                variant="secondary"
-                className={
-                  blog.status === "published"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"
-                    : "bg-slate-100 text-slate-600 text-[10px]"
-                }
-              >
-                {blog.status === "published" ? "Published Live" : "Draft"}
-              </Badge>
-              <span className="text-[11px] text-slate-400 font-mono">
-                /blog/{blog.slug}
-              </span>
-            </div>
-          </div>
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 6 }}>
+      {/* Top Header Bar - Exact Match to /admin and /admin/models */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          pb: 1.5,
+          borderBottom: "1px solid #e2e8f0",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Tooltip title="Back to Articles">
+            <IconButton
+              component={Link}
+              href="/admin/blogs"
+              size="small"
+              sx={{
+                bgcolor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 1,
+                color: "#475569",
+                p: 0.75,
+                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+              }}
+            >
+              <ArrowBackIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
 
-        <div className="flex items-center gap-2">
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  color: "#0f172a",
+                  letterSpacing: "-0.01em",
+                  fontSize: { xs: "1.25rem", sm: "1.45rem" },
+                  maxWidth: { xs: 260, sm: 500 },
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {blog.title || "Untitled Article"}
+              </Typography>
+              <Chip
+                label={blog.status === "published" ? "Published Live" : "Draft"}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  bgcolor: blog.status === "published" ? "#ecfdf5" : "#f1f5f9",
+                  color: blog.status === "published" ? "#059669" : "#64748b",
+                  border: `1px solid ${blog.status === "published" ? "#a7f3d0" : "#e2e8f0"}`,
+                  borderRadius: 1,
+                }}
+              />
+            </Box>
+            <Typography variant="caption" sx={{ color: "#64748b", fontFamily: "monospace", fontSize: "0.75rem" }}>
+              /blog/{blog.slug}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="rounded-xl border-slate-200 text-slate-700"
+            component={Link}
+            href={`/blog/${blog.slug}`}
+            target="_blank"
+            variant="outlined"
+            size="small"
+            startIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#334155",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              bgcolor: "#ffffff",
+              px: 1.5,
+              py: 0.65,
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
           >
-            <Link href={`/blog/${blog.slug}`} target="_blank">
-              <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> Preview Post
-            </Link>
+            Preview Post
           </Button>
 
           <Button
             onClick={handleSave}
             disabled={saving}
-            size="sm"
-            className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs"
+            variant="contained"
+            size="small"
+            startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              px: 1.75,
+              py: 0.65,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
           >
-            <Save className="h-3.5 w-3.5 mr-1.5" />
             {saving ? "Saving..." : "Save Changes"}
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      {/* Main Tabs */}
-      <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl shadow-xs">
-          <TabsTrigger
-            value="content"
-            className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <FileText className="mr-1.5 h-3.5 w-3.5" />
-            Article Content &amp; Details
-          </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <Search className="mr-1.5 h-3.5 w-3.5" />
-            Real-Time SEO Strategy ({seoAudit.score}%)
-          </TabsTrigger>
-        </TabsList>
+      {/* Main Tabs Navigation */}
+      <Box sx={{ borderBottom: 1, borderColor: "#e2e8f0" }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, val) => setActiveTab(val)}
+          sx={{
+            minHeight: 40,
+            "& .MuiTabs-indicator": {
+              backgroundColor: "#0f172a",
+              height: 2,
+            },
+          }}
+        >
+          <Tab
+            icon={<ArticleIcon sx={{ fontSize: 16 }} />}
+            iconPosition="start"
+            label="Article Content & Details"
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              color: "#64748b",
+              minHeight: 40,
+              py: 1,
+              px: 2,
+              "&.Mui-selected": { color: "#0f172a", fontWeight: 700 },
+            }}
+          />
+          <Tab
+            icon={<SearchIcon sx={{ fontSize: 16 }} />}
+            iconPosition="start"
+            label={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <span>Real-Time SEO Strategy</span>
+                <Chip
+                  label={`${seoAudit.score}%`}
+                  size="small"
+                  sx={{
+                    height: 18,
+                    fontSize: "0.625rem",
+                    fontWeight: 700,
+                    bgcolor: seoAudit.score >= 80 ? "#ecfdf5" : seoAudit.score >= 50 ? "#fffbeb" : "#fef2f2",
+                    color: seoAudit.score >= 80 ? "#059669" : seoAudit.score >= 50 ? "#d97706" : "#dc2626",
+                    border: `1px solid ${seoAudit.score >= 80 ? "#a7f3d0" : seoAudit.score >= 50 ? "#fde68a" : "#fecaca"}`,
+                    borderRadius: 0.75,
+                  }}
+                />
+              </Box>
+            }
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              color: "#64748b",
+              minHeight: 40,
+              py: 1,
+              px: 2,
+              "&.Mui-selected": { color: "#0f172a", fontWeight: 700 },
+            }}
+          />
+        </Tabs>
+      </Box>
 
-        {/* ========== TAB 1: ARTICLE CONTENT ========== */}
-        <TabsContent value="content">
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left 2 Columns: Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Details */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-bold text-slate-900">
+      {/* ========== TAB 0: ARTICLE CONTENT ========== */}
+      {activeTab === 0 && (
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" }, gap: 3 }}>
+          {/* Left Column: Main Content Details */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Card: Article Fundamentals */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.9375rem", color: "#0f172a" }}>
                     Article Fundamentals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Article Title (H1)</Label>
-                    <Input
-                      value={blog.title}
-                      onChange={(e) => updateField("title", e.target.value)}
-                      placeholder="e.g. Complete Guide to 2026 Model Photography"
-                      className="rounded-xl border-slate-200 text-sm font-semibold"
+                  </Typography>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                    Primary title, URL slug, categorization, and excerpt teaser.
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Article Title (H1) *
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.title}
+                    onChange={(e) => updateField("title", e.target.value)}
+                    placeholder="e.g. Complete Guide to 2026 Model Photography"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.875rem", fontWeight: 600 } },
+                    }}
+                  />
+                </Box>
+
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      URL Route Slug *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={blog.slug}
+                      onChange={(e) => updateField("slug", slugify(e.target.value))}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Typography sx={{ color: "#94a3b8", fontSize: "0.75rem", fontFamily: "monospace" }}>
+                                /blog/
+                              </Typography>
+                            </InputAdornment>
+                          ),
+                          sx: { borderRadius: 1, fontSize: "0.8125rem", fontFamily: "monospace" },
+                        },
+                      }}
                     />
-                  </div>
+                  </Box>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700">URL Route Slug</Label>
-                      <Input
-                        value={blog.slug}
-                        onChange={(e) => updateField("slug", slugify(e.target.value))}
-                        className="rounded-xl border-slate-200 font-mono text-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700">Category</Label>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Category
+                    </Typography>
+                    <FormControl fullWidth size="small">
                       <Select
                         value={blog.category}
-                        onValueChange={(v) => updateField("category", v)}
+                        onChange={(e) => updateField("category", e.target.value)}
+                        sx={{ borderRadius: 1, fontSize: "0.8125rem" }}
                       >
-                        <SelectTrigger className="rounded-xl border-slate-200">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border-slate-200">
-                          <SelectItem value="Guides">Guides &amp; Tutorials</SelectItem>
-                          <SelectItem value="Model Spotlights">Model Spotlights</SelectItem>
-                          <SelectItem value="Industry News">Industry News</SelectItem>
-                          <SelectItem value="Photo Shoots">Photo Shoots</SelectItem>
-                          <SelectItem value="Features">Features &amp; Trends</SelectItem>
-                        </SelectContent>
+                        <MenuItem value="Guides">Guides &amp; Tutorials</MenuItem>
+                        <MenuItem value="Model Spotlights">Model Spotlights</MenuItem>
+                        <MenuItem value="Industry News">Industry News</MenuItem>
+                        <MenuItem value="Photo Shoots">Photo Shoots</MenuItem>
+                        <MenuItem value="Features">Features &amp; Trends</MenuItem>
                       </Select>
-                    </div>
-                  </div>
+                    </FormControl>
+                  </Box>
+                </Box>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">
-                      Summary / Lead Excerpt ({blog.excerpt?.length || 0}/500 chars)
-                    </Label>
-                    <Textarea
-                      rows={3}
-                      value={blog.excerpt}
-                      onChange={(e) => updateField("excerpt", e.target.value)}
-                      placeholder="Introductory teaser shown on blog listing cards and search snippet fallback..."
-                      className="rounded-xl border-slate-200 text-xs leading-relaxed max-h-28 overflow-y-auto resize-none"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Rich Markdown Content Editor */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader className="pb-3 border-b border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-base font-bold text-slate-900">
-                        Article Body (Markdown Supported)
-                      </CardTitle>
-                      <CardDescription className="text-xs text-slate-500">
-                        Use headings, paragraphs, lists, and images to craft engaging content.
-                      </CardDescription>
-                    </div>
-                    <div className="text-xs font-semibold text-slate-500 flex items-center gap-3">
-                      <span>{wordCount} words</span>
-                      <span>•</span>
-                      <span>~{computedReadingTime} min read</span>
-                    </div>
-                  </div>
-
-                  {/* Formatting Toolbar */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("## ", "\n")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Heading 2"
-                    >
-                      <Heading1 className="w-3.5 h-3.5 mr-1" /> H2
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("### ", "\n")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Heading 3"
-                    >
-                      <Heading2 className="w-3.5 h-3.5 mr-1" /> H3
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("**", "**")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Bold"
-                    >
-                      <Bold className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("*", "*")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Italic"
-                    >
-                      <Italic className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("\n- ", "")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Bullet List"
-                    >
-                      <List className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("\n> ", "\n")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Blockquote"
-                    >
-                      <Quote className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => insertMarkdown("![Image description](", ")")}
-                      className="h-7 px-2 text-xs rounded-lg border-slate-200"
-                      title="Insert Image"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5 mr-1" /> Image
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <Textarea
-                    id="content-editor"
-                    rows={18}
-                    value={blog.content}
-                    onChange={(e) => updateField("content", e.target.value)}
-                    placeholder="Write article content using markdown..."
-                    className="rounded-xl border-slate-200 font-mono text-xs leading-relaxed"
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Summary / Lead Excerpt
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.7rem", fontFamily: "monospace" }}>
+                      {blog.excerpt?.length || 0} / 500 chars
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={blog.excerpt}
+                    onChange={(e) => updateField("excerpt", e.target.value)}
+                    placeholder="Introductory teaser shown on blog listing cards and search snippet fallback..."
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem", lineHeight: 1.6 } },
+                    }}
                   />
-                </CardContent>
-              </Card>
+                </Box>
+              </CardContent>
+            </Card>
 
-              {/* Tags & Internal Linking */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-base font-bold text-slate-900">
+            {/* Card: Rich Markdown Content Editor */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.9375rem", color: "#0f172a" }}>
+                      Article Body (Markdown Supported)
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <BookOpenIcon sx={{ fontSize: 15, color: "#64748b" }} />
+                        <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
+                          {wordCount} words
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ color: "#cbd5e1" }}>•</Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <ClockIcon sx={{ fontSize: 15, color: "#64748b" }} />
+                        <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>
+                          ~{computedReadingTime} min read
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                    Format text using Markdown. Headings (##, ###) will automatically generate table of contents and SEO anchors.
+                  </Typography>
+                }
+                sx={{ pb: 1.5, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+
+              {/* Formatting Toolbar */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  gap: 0.75,
+                  p: 1.5,
+                  bgcolor: "#f8fafc",
+                  borderBottom: "1px solid #e2e8f0",
+                }}
+              >
+                <Tooltip title="Heading 2 (## Subheading)">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertMarkdown("## ", "\n")}
+                    sx={{
+                      minWidth: "auto",
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: 1,
+                      borderColor: "#e2e8f0",
+                      color: "#334155",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      bgcolor: "#ffffff",
+                      textTransform: "none",
+                    }}
+                  >
+                    H2
+                  </Button>
+                </Tooltip>
+
+                <Tooltip title="Heading 3 (### Section)">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => insertMarkdown("### ", "\n")}
+                    sx={{
+                      minWidth: "auto",
+                      px: 1,
+                      py: 0.35,
+                      borderRadius: 1,
+                      borderColor: "#e2e8f0",
+                      color: "#334155",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      bgcolor: "#ffffff",
+                      textTransform: "none",
+                    }}
+                  >
+                    H3
+                  </Button>
+                </Tooltip>
+
+                <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: "#e2e8f0" }} />
+
+                <Tooltip title="Bold (**text**)">
+                  <IconButton
+                    size="small"
+                    onClick={() => insertMarkdown("**", "**")}
+                    sx={{
+                      borderRadius: 1,
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#ffffff",
+                      p: 0.4,
+                      color: "#334155",
+                    }}
+                  >
+                    <BoldIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Italic (*text*)">
+                  <IconButton
+                    size="small"
+                    onClick={() => insertMarkdown("*", "*")}
+                    sx={{
+                      borderRadius: 1,
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#ffffff",
+                      p: 0.4,
+                      color: "#334155",
+                    }}
+                  >
+                    <ItalicIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Bullet List (- item)">
+                  <IconButton
+                    size="small"
+                    onClick={() => insertMarkdown("\n- ", "")}
+                    sx={{
+                      borderRadius: 1,
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#ffffff",
+                      p: 0.4,
+                      color: "#334155",
+                    }}
+                  >
+                    <ListIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Blockquote (> quote)">
+                  <IconButton
+                    size="small"
+                    onClick={() => insertMarkdown("\n> ", "\n")}
+                    sx={{
+                      borderRadius: 1,
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#ffffff",
+                      p: 0.4,
+                      color: "#334155",
+                    }}
+                  >
+                    <QuoteIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+
+                <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: "#e2e8f0" }} />
+
+                <Tooltip title="Insert Image markdown">
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<ImageIcon sx={{ fontSize: 15 }} />}
+                    onClick={() => insertMarkdown("![Image description](", ")")}
+                    sx={{
+                      borderRadius: 1,
+                      borderColor: "#e2e8f0",
+                      color: "#334155",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      bgcolor: "#ffffff",
+                      textTransform: "none",
+                      py: 0.35,
+                      px: 1,
+                    }}
+                  >
+                    Image
+                  </Button>
+                </Tooltip>
+              </Box>
+
+              <CardContent sx={{ p: 2 }}>
+                <TextField
+                  id="content-editor"
+                  fullWidth
+                  multiline
+                  rows={18}
+                  value={blog.content}
+                  onChange={(e) => updateField("content", e.target.value)}
+                  placeholder="Write article content using markdown syntax..."
+                  slotProps={{
+                    input: {
+                      sx: {
+                        borderRadius: 1,
+                        fontSize: "0.8125rem",
+                        fontFamily: "monospace",
+                        lineHeight: 1.65,
+                      },
+                    },
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Card: Tags & Internal Linking */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.9375rem", color: "#0f172a" }}>
                     Article Tags &amp; Cross-Linking
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Tags */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Article Tags</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="e.g. photography, glamour, lighting"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
-                        className="rounded-xl border-slate-200 text-xs"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleAddTag}
-                        className="bg-slate-900 text-white rounded-xl text-xs"
-                      >
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {blog.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700 border-slate-200 gap-1 rounded-full px-3"
-                        >
-                          #{tag}
-                          <button onClick={() => handleRemoveTag(tag)} className="ml-1 hover:text-red-600">
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                  </Typography>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                    Categorize topics and cross-link creator profiles to funnel internal PageRank.
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 3 }}>
+                {/* Article Tags */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Article Tags
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="e.g. photography, glamour, lighting"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
+                      slotProps={{
+                        input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleAddTag}
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: "#0f172a",
+                        color: "#ffffff",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        px: 2,
+                        boxShadow: "none",
+                        "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </Box>
 
-                  {/* Related Model Slugs */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                    <Label className="text-xs font-bold text-slate-700">
-                      Related Models (Internal Link Equity)
-                    </Label>
-                    <p className="text-[11px] text-slate-500">
-                      Cross-link model galleries within this article to boost internal Google PageRank.
-                    </p>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="e.g. aditi-mistry"
-                        value={modelSlugInput}
-                        onChange={(e) => setModelSlugInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRelatedModel())}
-                        className="rounded-xl border-slate-200 text-xs font-mono"
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.5 }}>
+                    {blog.tags.map((tag) => (
+                      <Chip
+                        key={tag}
+                        label={`#${tag}`}
+                        size="small"
+                        onDelete={() => handleRemoveTag(tag)}
+                        deleteIcon={<CloseIcon sx={{ fontSize: "14px !important" }} />}
+                        sx={{
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          bgcolor: "#f1f5f9",
+                          color: "#334155",
+                          border: "1px solid #e2e8f0",
+                        }}
                       />
-                      <Button
-                        type="button"
-                        onClick={handleAddRelatedModel}
-                        className="bg-slate-900 text-white rounded-xl text-xs"
-                      >
-                        Add Model
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {blog.relatedModelSlugs.map((slug) => (
-                        <Badge
-                          key={slug}
-                          variant="secondary"
-                          className="bg-rose-50 text-rose-700 border-rose-200 gap-1 rounded-full px-3"
-                        >
-                          /model/{slug}
-                          <button onClick={() => handleRemoveRelatedModel(slug)} className="ml-1 hover:text-red-600">
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    ))}
+                    {blog.tags.length === 0 && (
+                      <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
+                        No tags added yet.
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
 
-            {/* Right Sidebar: Cover Image, Author, Visibility */}
-            <div className="space-y-6">
-              {/* Publication Status */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold text-slate-900">
+                <Divider sx={{ borderColor: "#f1f5f9" }} />
+
+                {/* Related Model Slugs */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.25 }}>
+                    Related Models (Internal Link Equity)
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.7rem", color: "#64748b", mb: 1 }}>
+                    Cross-link model galleries within this article to boost internal Google PageRank.
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="e.g. aditi-mistry"
+                      value={modelSlugInput}
+                      onChange={(e) => setModelSlugInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRelatedModel())}
+                      slotProps={{
+                        input: { sx: { borderRadius: 1, fontSize: "0.8125rem", fontFamily: "monospace" } },
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleAddRelatedModel}
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: "#0f172a",
+                        color: "#ffffff",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        px: 2,
+                        boxShadow: "none",
+                        "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                      }}
+                    >
+                      Add Model
+                    </Button>
+                  </Box>
+
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.5 }}>
+                    {blog.relatedModelSlugs.map((slug) => (
+                      <Chip
+                        key={slug}
+                        label={`/model/${slug}`}
+                        size="small"
+                        onDelete={() => handleRemoveRelatedModel(slug)}
+                        deleteIcon={<CloseIcon sx={{ fontSize: "14px !important" }} />}
+                        sx={{
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          bgcolor: "#fff1f2",
+                          color: "#be123c",
+                          border: "1px solid #fecdd3",
+                          fontFamily: "monospace",
+                        }}
+                      />
+                    ))}
+                    {blog.relatedModelSlugs.length === 0 && (
+                      <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8", fontStyle: "italic" }}>
+                        No models linked yet.
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* Right Sidebar: Cover Image, Author, Visibility */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Card: Visibility & Publish Status */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
                     Visibility &amp; Publish Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Status</Label>
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Status
+                  </Typography>
+                  <FormControl fullWidth size="small">
                     <Select
                       value={blog.status}
-                      onValueChange={(v) => updateField("status", v as "draft" | "published")}
+                      onChange={(e) => updateField("status", e.target.value as "draft" | "published")}
+                      sx={{ borderRadius: 1, fontSize: "0.8125rem" }}
                     >
-                      <SelectTrigger className="rounded-xl border-slate-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        <SelectItem value="published">Published (Visible to All)</SelectItem>
-                        <SelectItem value="draft">Draft (Admin Only)</SelectItem>
-                      </SelectContent>
+                      <MenuItem value="published">Published (Visible to All)</MenuItem>
+                      <MenuItem value="draft">Draft (Admin Only)</MenuItem>
                     </Select>
-                  </div>
+                  </FormControl>
+                </Box>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-900">Featured Article</Label>
-                      <p className="text-[11px] text-slate-500">Showcase in blog hero banner</p>
-                    </div>
-                    <Switch
-                      checked={blog.featured}
-                      onCheckedChange={(v) => updateField("featured", v)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                <Divider sx={{ borderColor: "#f1f5f9" }} />
 
-              {/* Cover Image */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold text-slate-900">Featured Cover Image</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Image URL</Label>
-                    <Input
-                      value={blog.coverImage}
-                      onChange={(e) => updateField("coverImage", e.target.value)}
-                      placeholder="https://..."
-                      className="rounded-xl border-slate-200 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Image Alt Text (SEO)</Label>
-                    <Input
-                      value={blog.coverImageAlt}
-                      onChange={(e) => updateField("coverImageAlt", e.target.value)}
-                      placeholder="Descriptive text for Google Image search..."
-                      className="rounded-xl border-slate-200 text-xs"
-                    />
-                  </div>
-                  {blog.coverImage && (
-                    <div className="aspect-video w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-                      <img
-                        src={blog.coverImage}
-                        alt="Cover preview"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#0f172a" }}>
+                      Featured Article
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                      Showcase in blog hero banner
+                    </Typography>
+                  </Box>
+                  <Switch
+                    size="small"
+                    checked={Boolean(blog.featured)}
+                    onChange={(e) => updateField("featured", e.target.checked)}
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: "#0f172a" },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#0f172a" },
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
 
-              {/* Author Information */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-bold text-slate-900">Author Profile</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Author Name</Label>
-                    <Input
-                      value={blog.author?.name || ""}
-                      onChange={(e) => updateAuthorField("name", e.target.value)}
-                      className="rounded-xl border-slate-200 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Author Role</Label>
-                    <Input
-                      value={blog.author?.role || ""}
-                      onChange={(e) => updateAuthorField("role", e.target.value)}
-                      className="rounded-xl border-slate-200 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Author Avatar URL</Label>
-                    <Input
-                      value={blog.author?.avatar || ""}
-                      onChange={(e) => updateAuthorField("avatar", e.target.value)}
-                      className="rounded-xl border-slate-200 text-xs"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
+            {/* Card: Cover Image */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                    Featured Cover Image
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Image URL
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.coverImage}
+                    onChange={(e) => updateField("coverImage", e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
 
-        {/* ========== TAB 2: ADVANCED SEO STRATEGY ========== */}
-        <TabsContent value="seo" className="space-y-6">
-          {/* Real-time SEO Health Audit Header */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-xs ${
-                  seoAudit.score >= 80
-                    ? "bg-emerald-500 text-white"
-                    : seoAudit.score >= 50
-                    ? "bg-amber-500 text-white"
-                    : "bg-rose-500 text-white"
-                }`}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Image Alt Text (SEO)
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.coverImageAlt}
+                    onChange={(e) => updateField("coverImageAlt", e.target.value)}
+                    placeholder="Descriptive text for Google Image search..."
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
+
+                {blog.coverImage && (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      aspectRatio: "16/9",
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                      bgcolor: "#f1f5f9",
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={blog.coverImage}
+                      alt="Cover preview"
+                      sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card: Author Information */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                    Author Profile
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Author Name
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.author?.name || ""}
+                    onChange={(e) => updateAuthorField("name", e.target.value)}
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Author Role
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.author?.role || ""}
+                    onChange={(e) => updateAuthorField("role", e.target.value)}
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Author Avatar URL
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.author?.avatar || ""}
+                    onChange={(e) => updateAuthorField("avatar", e.target.value)}
+                    placeholder="/logo.jpg or https://..."
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      )}
+
+      {/* ========== TAB 1: ADVANCED SEO STRATEGY ========== */}
+      {activeTab === 1 && (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {/* Real-time SEO Health Audit Header Card */}
+          <Card
+            elevation={0}
+            sx={{
+              p: 2.5,
+              border: "1px solid #e2e8f0",
+              borderRadius: 1.5,
+              bgcolor: "#ffffff",
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: { xs: "flex-start", md: "center" },
+              justifyContent: "space-between",
+              gap: 3,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  fontSize: "1.25rem",
+                  bgcolor: seoAudit.score >= 80 ? "#10b981" : seoAudit.score >= 50 ? "#f59e0b" : "#ef4444",
+                  color: "#ffffff",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                }}
               >
                 {seoAudit.score}%
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-slate-900">
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: "1.05rem", fontWeight: 800, color: "#0f172a" }}>
                   Real-Time SEO Health Audit
-                </h3>
-                <p className="text-xs text-slate-500">
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
                   Evaluated across keyphrase optimization, content depth, headings, and snippet parameters.
-                </p>
-              </div>
-            </div>
+                </Typography>
+              </Box>
+            </Box>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {seoAudit.checks.map((check, idx) => (
-                <div
+                <Box
                   key={idx}
-                  className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 1.25,
+                    py: 0.6,
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    fontSize: "0.75rem",
+                  }}
                 >
                   {check.status === "pass" ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <CheckCircleIcon sx={{ fontSize: 16, color: "#059669" }} />
                   ) : check.status === "warn" ? (
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <WarningIcon sx={{ fontSize: 16, color: "#d97706" }} />
                   ) : (
-                    <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                    <CancelIcon sx={{ fontSize: 16, color: "#dc2626" }} />
                   )}
-                  <span className="font-bold text-slate-800">{check.name}:</span>
-                  <span className="text-slate-600 text-[11px]">{check.message}</span>
-                </div>
+                  <Typography component="span" sx={{ fontSize: "0.725rem", fontWeight: 700, color: "#1e293b" }}>
+                    {check.name}:
+                  </Typography>
+                  <Typography component="span" sx={{ fontSize: "0.725rem", color: "#64748b" }}>
+                    {check.message}
+                  </Typography>
+                </Box>
               ))}
-            </div>
-          </div>
+            </Box>
+          </Card>
 
-          {/* SERP & Social Card Previews */}
-          <div className="grid gap-6 lg:grid-cols-2">
+          {/* SERP & Social Card Previews Grid */}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
             {/* Google Search Result Preview */}
-            <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-              <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-blue-500" />
-                    Google Search Snippet Preview
-                  </CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
-                    Simulated search result in Google Search Console / SERP.
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs">
-                  <button
-                    onClick={() => setSerpDevice("desktop")}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                      serpDevice === "desktop" ? "bg-white shadow-xs text-slate-900" : "text-slate-500"
-                    }`}
-                  >
-                    Desktop
-                  </button>
-                  <button
-                    onClick={() => setSerpDevice("mobile")}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                      serpDevice === "mobile" ? "bg-white shadow-xs text-slate-900" : "text-slate-500"
-                    }`}
-                  >
-                    Mobile
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <div className="w-4 h-4 rounded-full bg-slate-900 flex items-center justify-center text-[9px] text-white font-bold">
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <GlobeIcon sx={{ fontSize: 18, color: "#2563eb" }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                      Google Search Snippet Preview
+                    </Typography>
+                  </Box>
+                }
+                action={
+                  <Box sx={{ display: "flex", bgcolor: "#f1f5f9", p: 0.5, borderRadius: 1, gap: 0.5 }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => setSerpDevice("desktop")}
+                      sx={{
+                        borderRadius: 0.75,
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: serpDevice === "desktop" ? "#ffffff" : "transparent",
+                        boxShadow: serpDevice === "desktop" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                        color: serpDevice === "desktop" ? "#0f172a" : "#64748b",
+                      }}
+                    >
+                      <ComputerIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => setSerpDevice("mobile")}
+                      sx={{
+                        borderRadius: 0.75,
+                        px: 1,
+                        py: 0.25,
+                        bgcolor: serpDevice === "mobile" ? "#ffffff" : "transparent",
+                        boxShadow: serpDevice === "mobile" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                        color: serpDevice === "mobile" ? "#0f172a" : "#64748b",
+                      }}
+                    >
+                      <PhoneIphoneIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5 }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.75,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, fontSize: "0.75rem", color: "#475569" }}>
+                    <Box
+                      sx={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: "50%",
+                        bgcolor: "#0f172a",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 800,
+                        fontSize: "0.6rem",
+                      }}
+                    >
                       V
-                    </div>
-                    <span className="font-medium text-slate-800">VIXN.fun</span>
-                    <span className="text-slate-400">› blog › {blog.slug}</span>
-                  </div>
-                  <h4 className="text-base font-medium text-[#1a0dab] hover:underline cursor-pointer line-clamp-1 leading-snug">
+                    </Box>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.75rem", color: "#1e293b" }}>
+                      VIXN.fun
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                      › blog › {blog.slug}
+                    </Typography>
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      color: "#1a0dab",
+                      lineHeight: 1.3,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      cursor: "pointer",
+                      "&:hover": { textDecoration: "underline" },
+                    }}
+                  >
                     {blog.metaTitle || blog.title || "Untitled Article"}
-                  </h4>
-                  <p className="text-xs text-[#4d5156] line-clamp-2 leading-relaxed">
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: "0.775rem",
+                      color: "#4d5156",
+                      lineHeight: 1.5,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
                     {blog.metaDescription ||
                       blog.excerpt ||
                       "Explore high-quality insights, modeling trends, and exclusive creator highlights on VIXN.fun..."}
-                  </p>
-                </div>
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
 
             {/* Social Share Card Preview */}
-            <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-              <CardHeader className="pb-3 border-b border-slate-100">
-                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-rose-500" />
-                  Social Card Preview (OpenGraph / Twitter)
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-500">
-                  How this post will render when shared on X (Twitter), Facebook, or WhatsApp.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
-                  <div className="aspect-video w-full bg-slate-100 overflow-hidden relative">
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <ShareIcon sx={{ fontSize: 18, color: "#e11d48" }} />
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                      Social Card Preview (OpenGraph / Twitter)
+                    </Typography>
+                  </Box>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5 }}>
+                <Box
+                  sx={{
+                    borderRadius: 1,
+                    border: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                    bgcolor: "#ffffff",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "100%",
+                      aspectRatio: "16/9",
+                      bgcolor: "#f1f5f9",
+                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     {blog.ogImage || blog.coverImage ? (
-                      <img
+                      <Box
+                        component="img"
                         src={blog.ogImage || blog.coverImage}
                         alt="Social preview"
-                        className="w-full h-full object-cover"
+                        sx={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 text-xs font-semibold">
-                        No cover image specified
-                      </div>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 600 }}>
+                        No preview image specified
+                      </Typography>
                     )}
-                  </div>
-                  <div className="p-3 bg-slate-50 border-t border-slate-200/80 space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  </Box>
+                  <Box sx={{ p: 1.5, bgcolor: "#f8fafc", borderTop: "1px solid #e2e8f0" }}>
+                    <Typography sx={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                       VIXN.FUN
-                    </span>
-                    <h5 className="text-xs font-bold text-slate-900 line-clamp-1">
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.8125rem",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        lineHeight: 1.3,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        mt: 0.25,
+                      }}
+                    >
                       {blog.ogTitle || blog.metaTitle || blog.title}
-                    </h5>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.725rem",
+                        color: "#64748b",
+                        lineHeight: 1.4,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        mt: 0.25,
+                      }}
+                    >
                       {blog.ogDescription || blog.metaDescription || blog.excerpt}
-                    </p>
-                  </div>
-                </div>
+                    </Typography>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
-          </div>
+          </Box>
 
-          {/* Meta Tag Configuration Fields */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Search Engine Meta Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Meta Tag Configuration Fields Grid */}
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
+            {/* Card: Search Engine Meta Tags */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.9375rem", color: "#0f172a" }}>
+                    Search Engine Meta Tags
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
                 {/* Meta Title */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-slate-700">Custom Meta Title</Label>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      {blog.metaTitle?.length || 0} / 60
-                    </span>
-                  </div>
-                  <Input
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Custom Meta Title
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.7rem", fontFamily: "monospace" }}>
+                      {blog.metaTitle?.length || 0} / 60 chars
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
                     value={blog.metaTitle}
                     onChange={(e) => updateField("metaTitle", e.target.value)}
-                    placeholder="Leave empty to use main title"
-                    className="rounded-xl border-slate-200 text-xs"
+                    placeholder="Leave empty to use main article title"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
                   />
-                </div>
+                </Box>
 
                 {/* Meta Description */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-slate-700">Custom Meta Description</Label>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      {blog.metaDescription?.length || 0} / 160
-                    </span>
-                  </div>
-                  <Textarea
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Custom Meta Description
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.7rem", fontFamily: "monospace" }}>
+                      {blog.metaDescription?.length || 0} / 160 chars
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
                     rows={3}
                     value={blog.metaDescription}
                     onChange={(e) => updateField("metaDescription", e.target.value)}
-                    placeholder="Leave empty to use article excerpt"
-                    className="rounded-xl border-slate-200 text-xs leading-relaxed max-h-28 overflow-y-auto resize-none"
+                    placeholder="Leave empty to use article summary excerpt"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem", lineHeight: 1.6 } },
+                    }}
                   />
-                </div>
+                </Box>
 
                 {/* Focus Keyphrase */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Target Focus Keyphrase</Label>
-                  <Input
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Target Focus Keyphrase
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
                     value={blog.focusKeyphrase}
                     onChange={(e) => updateField("focusKeyphrase", e.target.value)}
                     placeholder="e.g. modeling photography tips"
-                    className="rounded-xl border-slate-200 text-xs"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
                   />
-                </div>
+                </Box>
 
                 {/* Meta Keywords */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Meta Keywords</Label>
-                  <div className="flex gap-2">
-                    <Input
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Meta Keywords
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
                       placeholder="Add keyword..."
                       value={keywordInput}
                       onChange={(e) => setKeywordInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddKeyword())}
-                      className="rounded-xl border-slate-200 text-xs"
+                      slotProps={{
+                        input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                      }}
                     />
-                    <Button type="button" onClick={handleAddKeyword} className="bg-slate-900 text-white rounded-xl text-xs">
+                    <Button
+                      variant="contained"
+                      onClick={handleAddKeyword}
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: "#0f172a",
+                        color: "#ffffff",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        fontSize: "0.75rem",
+                        px: 2,
+                        boxShadow: "none",
+                        "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                      }}
+                    >
                       Add
                     </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
+                  </Box>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.5 }}>
                     {blog.metaKeywords.map((kw) => (
-                      <Badge
+                      <Chip
                         key={kw}
-                        variant="secondary"
-                        className="bg-slate-100 text-slate-700 border-slate-200 gap-1 rounded-full px-3"
-                      >
-                        {kw}
-                        <button onClick={() => handleRemoveKeyword(kw)} className="ml-1 hover:text-red-600">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
+                        label={kw}
+                        size="small"
+                        onDelete={() => handleRemoveKeyword(kw)}
+                        deleteIcon={<CloseIcon sx={{ fontSize: "14px !important" }} />}
+                        sx={{
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          bgcolor: "#f1f5f9",
+                          color: "#334155",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      />
                     ))}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
 
-            {/* Advanced Crawler Directives */}
-            <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-              <CardHeader>
-                <CardTitle className="text-base font-bold text-slate-900">
-                  Indexing &amp; Crawler Directives
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            {/* Card: Indexing & Crawler Directives */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.9375rem", color: "#0f172a" }}>
+                    Indexing &amp; Crawler Directives
+                  </Typography>
+                }
+                sx={{ pb: 1, px: 2.5, pt: 2 }}
+              />
+              <Divider sx={{ borderColor: "#f1f5f9" }} />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
                 {/* Robots Directive */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Robots Directive</Label>
-                  <Select
-                    value={blog.robotsDirective || "index, follow"}
-                    onValueChange={(v) => updateField("robotsDirective", v)}
-                  >
-                    <SelectTrigger className="rounded-xl border-slate-200 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200">
-                      <SelectItem value="index, follow">index, follow (Standard Indexing)</SelectItem>
-                      <SelectItem value="noindex, follow">noindex, follow (Hide from SERP, follow links)</SelectItem>
-                      <SelectItem value="index, nofollow">index, nofollow (Index page, do not pass PageRank)</SelectItem>
-                      <SelectItem value="noindex, nofollow">noindex, nofollow (Complete block)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Robots Directive
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <Select
+                      value={blog.robotsDirective || "index, follow"}
+                      onChange={(e) => updateField("robotsDirective", e.target.value)}
+                      sx={{ borderRadius: 1, fontSize: "0.8125rem" }}
+                    >
+                      <MenuItem value="index, follow">index, follow (Standard Indexing)</MenuItem>
+                      <MenuItem value="noindex, follow">noindex, follow (Hide from SERP, follow links)</MenuItem>
+                      <MenuItem value="index, nofollow">index, nofollow (Index page, do not pass PageRank)</MenuItem>
+                      <MenuItem value="noindex, nofollow">noindex, nofollow (Complete block)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
                 {/* Canonical URL */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Canonical URL Override</Label>
-                  <Input
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Canonical URL Override
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
                     value={blog.canonicalUrl}
                     onChange={(e) => updateField("canonicalUrl", e.target.value)}
                     placeholder="Defaults to https://vixn.fun/blog/[slug]"
-                    className="rounded-xl border-slate-200 text-xs font-mono"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem", fontFamily: "monospace" } },
+                    }}
                   />
-                </div>
+                </Box>
+
+                {/* OpenGraph Image Override */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Social Share Image Override (OG/Twitter)
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={blog.ogImage}
+                    onChange={(e) => updateField("ogImage", e.target.value)}
+                    placeholder="Defaults to Cover Image URL"
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, fontSize: "0.8125rem" } },
+                    }}
+                  />
+                </Box>
+
+                <Divider sx={{ borderColor: "#f1f5f9" }} />
 
                 {/* Cornerstone Article */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <div>
-                    <Label className="text-xs font-bold text-slate-900">Cornerstone Article</Label>
-                    <p className="text-[11px] text-slate-500">
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#0f172a" }}>
+                      Cornerstone Article
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
                       Mark as a core, high-priority pillar page for search ranking algorithms.
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
                   <Switch
-                    checked={blog.cornerstone}
-                    onCheckedChange={(v) => updateField("cornerstone", v)}
+                    size="small"
+                    checked={Boolean(blog.cornerstone)}
+                    onChange={(e) => updateField("cornerstone", e.target.checked)}
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: "#0f172a" },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#0f172a" },
+                    }}
                   />
-                </div>
+                </Box>
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 }

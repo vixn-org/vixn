@@ -3,70 +3,49 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Box,
+  Typography,
+  Card,
+  Button,
+  IconButton,
+  Chip,
+  Skeleton,
+  Switch,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
+  TablePagination,
+  TextField,
+  InputAdornment,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
+  MenuItem,
+  FormControl,
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Menu,
+  Tooltip,
+} from "@mui/material";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Plus,
-  Search,
-  ExternalLink,
-  Trash2,
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  Sparkles,
-  FileText,
-  Clock,
-  CheckCircle2,
-  Eye,
-  Edit,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Add as AddIcon,
+  Search as SearchIcon,
+  OpenInNew as OpenInNewIcon,
+  DeleteOutlined as DeleteOutlineIcon,
+  MoreVert as MoreVertIcon,
+  EditOutlined as EditIcon,
+  Refresh as RefreshIcon,
+  MenuBookOutlined as BookOpenIcon,
+  CheckCircleOutlined as CheckCircleIcon,
+  ArticleOutlined as ArticleIcon,
+  AutoAwesomeOutlined as SparklesIcon,
+  AccessTimeOutlined as ClockIcon,
+} from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
 
@@ -94,7 +73,7 @@ export default function AdminBlogsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
   // Quick Create Modal State
@@ -106,8 +85,13 @@ export default function AdminBlogsPage() {
   const [newExcerpt, setNewExcerpt] = useState("");
   const [newFocusKeyphrase, setNewFocusKeyphrase] = useState("");
 
+  // Action Menu State
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [activeMenuBlog, setActiveMenuBlog] = useState<BlogItem | null>(null);
+
   // Delete State
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState<BlogItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchBlogs = useCallback(async () => {
@@ -115,7 +99,7 @@ export default function AdminBlogsPage() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "10",
+        limit: limit.toString(),
         ...(search && { search }),
         ...(statusFilter !== "all" && { status: statusFilter }),
         ...(categoryFilter !== "all" && { category: categoryFilter }),
@@ -126,7 +110,6 @@ export default function AdminBlogsPage() {
 
       if (res.ok) {
         setBlogs(data.blogs || []);
-        setTotalPages(data.pagination?.pages || 1);
         setTotalCount(data.pagination?.total || 0);
       } else {
         toast.error(data.error || "Failed to fetch blogs");
@@ -136,13 +119,12 @@ export default function AdminBlogsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, categoryFilter]);
+  }, [page, limit, search, statusFilter, categoryFilter]);
 
   useEffect(() => {
     fetchBlogs();
   }, [fetchBlogs]);
 
-  // Handle title change & auto-generate slug
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
     setNewTitle(title);
@@ -174,7 +156,7 @@ export default function AdminBlogsPage() {
 
       const data = await res.json();
       if (res.ok) {
-        toast.success("Blog article created! Redirecting to editor...");
+        toast.success("Blog article created! Opening editor...");
         setCreateOpen(false);
         router.push(`/admin/blogs/${data.blog._id}`);
       } else {
@@ -213,16 +195,17 @@ export default function AdminBlogsPage() {
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (!blogToDelete) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/blogs/${deleteId}`, {
+      const res = await fetch(`/api/blogs/${blogToDelete._id}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
         toast.success("Blog article deleted");
-        setDeleteId(null);
+        setDeleteDialogOpen(false);
+        setBlogToDelete(null);
         fetchBlogs();
       } else {
         const data = await res.json();
@@ -235,458 +218,970 @@ export default function AdminBlogsPage() {
     }
   };
 
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, blog: BlogItem) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+    setActiveMenuBlog(blog);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
+    setActiveMenuBlog(null);
+  };
+
   const publishedCount = blogs.filter((b) => b.status === "published").length;
   const draftCount = blogs.filter((b) => b.status === "draft").length;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">
-              Blog &amp; SEO Articles
-            </h1>
-            <Badge
-              variant="outline"
-              className="bg-rose-50 text-rose-600 border-rose-200 font-bold"
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 4 }}>
+      {/* Top Header Bar - Exact Match to /admin */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          pb: 1,
+          borderBottom: "1px solid #e2e8f0",
+        }}
+      >
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: "#0f172a",
+                letterSpacing: "-0.01em",
+                fontSize: { xs: "1.4rem", sm: "1.6rem" },
+              }}
             >
-              SEO Engine
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Write, optimize, and publish high-authority articles with rich structured data and live SEO audits.
-          </p>
-        </div>
+              Blog &amp; SEO Articles
+            </Typography>
+            <Chip
+              label="SEO Engine"
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: "0.68rem",
+                fontWeight: 700,
+                bgcolor: "#fef2f2",
+                color: "#dc2626",
+                border: "1px solid #fecaca",
+                borderRadius: 1,
+              }}
+            />
+          </Box>
+          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+            Write, optimize, and publish high-authority editorial articles with live SEO audits.
+          </Typography>
+        </Box>
 
-        <div className="flex items-center gap-2">
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs gap-1.5 cursor-pointer">
-                <Plus className="h-4 w-4" />
-                <span>Create New Article</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-white rounded-2xl border-slate-200">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold text-slate-900">
-                  New Blog Article
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500">
-                  Set the title, target keyword, and category to initialize a new SEO-optimized article.
-                </DialogDescription>
-              </DialogHeader>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title="Refresh articles">
+            <IconButton
+              size="small"
+              onClick={fetchBlogs}
+              sx={{
+                bgcolor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 1,
+                color: "#64748b",
+                p: 0.75,
+                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+              }}
+            >
+              <RefreshIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
 
-              <form onSubmit={handleCreate} className="space-y-4 py-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Article Title</Label>
-                  <Input
-                    placeholder="e.g. Top 10 High-Fashion Modeling Trends in 2026"
-                    value={newTitle}
-                    onChange={handleTitleChange}
-                    className="rounded-xl border-slate-200"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">URL Slug</Label>
-                    <Input
-                      placeholder="top-10-high-fashion-trends"
-                      value={newSlug}
-                      onChange={(e) => setNewSlug(e.target.value)}
-                      className="rounded-xl border-slate-200 font-mono text-xs"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Category</Label>
-                    <Select value={newCategory} onValueChange={setNewCategory}>
-                      <SelectTrigger className="rounded-xl border-slate-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        <SelectItem value="Guides">Guides &amp; Tutorials</SelectItem>
-                        <SelectItem value="Model Spotlights">Model Spotlights</SelectItem>
-                        <SelectItem value="Industry News">Industry News</SelectItem>
-                        <SelectItem value="Photo Shoots">Photo Shoots</SelectItem>
-                        <SelectItem value="Features">Features &amp; Trends</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Focus Keyphrase (SEO)</Label>
-                  <Input
-                    placeholder="e.g. high fashion models"
-                    value={newFocusKeyphrase}
-                    onChange={(e) => setNewFocusKeyphrase(e.target.value)}
-                    className="rounded-xl border-slate-200 text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-700">Brief Excerpt / Summary</Label>
-                  <Textarea
-                    rows={3}
-                    placeholder="Brief description that will appear in search engine snippets and preview cards..."
-                    value={newExcerpt}
-                    onChange={(e) => setNewExcerpt(e.target.value)}
-                    className="rounded-xl border-slate-200 text-xs max-h-28 overflow-y-auto resize-none"
-                  />
-                </div>
-
-                <DialogFooter className="gap-2 sm:gap-0 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCreateOpen(false)}
-                    className="rounded-xl border-slate-200 text-slate-700"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={creating}
-                    className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl"
-                  >
-                    {creating ? "Creating..." : "Create & Edit"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateOpen(true)}
+            sx={{
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              borderRadius: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              px: 1.75,
+              py: 0.75,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
+          >
+            Create New Article
+          </Button>
+        </Box>
+      </Box>
 
       {/* Stats Summary Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
-            <BookOpen className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-slate-900">{totalCount}</div>
-            <div className="text-xs font-medium text-slate-500">Total Articles</div>
-          </div>
-        </div>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
+          gap: 2,
+        }}
+      >
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            border: "1px solid #e2e8f0",
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                bgcolor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#334155",
+              }}
+            >
+              <BookOpenIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+                {totalCount}
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+                Total Articles
+              </Typography>
+            </Box>
+          </Box>
+        </Card>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-slate-900">{publishedCount}</div>
-            <div className="text-xs font-medium text-slate-500">Published Live</div>
-          </div>
-        </div>
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            border: "1px solid #e2e8f0",
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                bgcolor: "#ecfdf5",
+                border: "1px solid #a7f3d0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#059669",
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+                {publishedCount}
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+                Published Live
+              </Typography>
+            </Box>
+          </Box>
+        </Card>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-            <FileText className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-slate-900">{draftCount}</div>
-            <div className="text-xs font-medium text-slate-500">Drafts</div>
-          </div>
-        </div>
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            border: "1px solid #e2e8f0",
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                bgcolor: "#fffbeb",
+                border: "1px solid #fde68a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#d97706",
+              }}
+            >
+              <ArticleIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+                {draftCount}
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+                Drafts
+              </Typography>
+            </Box>
+          </Box>
+        </Card>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xl font-bold text-slate-900">100%</div>
-            <div className="text-xs font-medium text-slate-500">SEO Schema Ready</div>
-          </div>
-        </div>
-      </div>
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 1.5,
+            border: "1px solid #e2e8f0",
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                bgcolor: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#2563eb",
+              }}
+            >
+              <SparklesIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+                100%
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+                SEO Schema Ready
+              </Typography>
+            </Box>
+          </Box>
+        </Card>
+      </Box>
 
-      {/* Filter Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search by title, tags, or content..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="pl-9 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 text-xs"
-          />
-        </div>
+      {/* Filter and Search Bar */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+          alignItems: "center",
+        }}
+      >
+        <TextField
+          placeholder="Search by title, tags, or content..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: 1,
+                bgcolor: "#ffffff",
+                fontSize: "0.875rem",
+                "& fieldset": { borderColor: "#e2e8f0" },
+                "&:hover fieldset": { borderColor: "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+              },
+            },
+          }}
+        />
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select
-            value={categoryFilter}
-            onValueChange={(v) => {
-              setCategoryFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-[160px] rounded-xl border-slate-200 bg-slate-50 text-xs">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200">
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Guides">Guides</SelectItem>
-              <SelectItem value="Model Spotlights">Model Spotlights</SelectItem>
-              <SelectItem value="Industry News">Industry News</SelectItem>
-              <SelectItem value="Photo Shoots">Photo Shoots</SelectItem>
-              <SelectItem value="Features">Features</SelectItem>
-            </SelectContent>
-          </Select>
+        <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", sm: "auto" } }}>
+          <FormControl size="small" sx={{ minWidth: 160, width: { xs: "50%", sm: 160 } }}>
+            <Select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setPage(1);
+              }}
+              displayEmpty
+              sx={{
+                borderRadius: 1,
+                bgcolor: "#ffffff",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                "& fieldset": { borderColor: "#e2e8f0" },
+              }}
+            >
+              <MenuItem value="all">All Categories</MenuItem>
+              <MenuItem value="Guides">Guides</MenuItem>
+              <MenuItem value="Model Spotlights">Model Spotlights</MenuItem>
+              <MenuItem value="Industry News">Industry News</MenuItem>
+              <MenuItem value="Photo Shoots">Photo Shoots</MenuItem>
+              <MenuItem value="Features">Features</MenuItem>
+            </Select>
+          </FormControl>
 
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-[130px] rounded-xl border-slate-200 bg-slate-50 text-xs">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Drafts</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          <FormControl size="small" sx={{ minWidth: 140, width: { xs: "50%", sm: 140 } }}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              displayEmpty
+              sx={{
+                borderRadius: 1,
+                bgcolor: "#ffffff",
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                "& fieldset": { borderColor: "#e2e8f0" },
+              }}
+            >
+              <MenuItem value="all">All Status</MenuItem>
+              <MenuItem value="published">Published</MenuItem>
+              <MenuItem value="draft">Drafts</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
 
-      {/* Articles Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-        <Table>
-          <TableHeader className="bg-slate-50 border-b border-slate-200">
-            <TableRow>
-              <TableHead className="w-[80px] text-xs font-bold text-slate-700">Cover</TableHead>
-              <TableHead className="text-xs font-bold text-slate-700">Article Title</TableHead>
-              <TableHead className="text-xs font-bold text-slate-700">Category</TableHead>
-              <TableHead className="text-xs font-bold text-slate-700">Reading Time</TableHead>
-              <TableHead className="text-xs font-bold text-slate-700">Status</TableHead>
-              <TableHead className="text-xs font-bold text-slate-700">Date</TableHead>
-              <TableHead className="w-[80px] text-right text-xs font-bold text-slate-700">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-10 w-14 rounded-lg" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-48 rounded" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20 rounded" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16 rounded" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24 rounded" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-8 rounded-full ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : blogs.length === 0 ? (
+      {/* Articles Material UI Table Card */}
+      <Card
+        elevation={0}
+        sx={{
+          border: "1px solid #e2e8f0",
+          borderRadius: 1.5,
+          bgcolor: "#ffffff",
+          overflow: "hidden",
+        }}
+      >
+        <TableContainer>
+          <Table sx={{ minWidth: 750 }} size="small">
+            <TableHead sx={{ bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
               <TableRow>
-                <TableCell colSpan={7} className="h-64 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <BookOpen className="h-10 w-10 text-slate-300" />
-                    <p className="text-sm font-bold text-slate-700">No blog articles found</p>
-                    <p className="text-xs text-slate-400">
-                      Create your first SEO article to rank on search engines.
-                    </p>
-                    <Button
-                      onClick={() => setCreateOpen(true)}
-                      size="sm"
-                      className="mt-2 bg-slate-900 text-white rounded-xl"
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" /> New Article
-                    </Button>
-                  </div>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em", width: 70 }}>
+                  Cover
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Article Title
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Category
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Read Time
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Status
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Date
+                </TableCell>
+                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Actions
                 </TableCell>
               </TableRow>
-            ) : (
-              blogs.map((blog) => (
-                <TableRow key={blog._id} className="hover:bg-slate-50/80 transition-colors">
-                  {/* Cover Thumbnail */}
-                  <TableCell>
-                    <div className="h-10 w-14 rounded-lg bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center">
-                      {blog.coverImage ? (
-                        <img
-                          src={blog.coverImage}
-                          alt={blog.title}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <FileText className="h-4 w-4 text-slate-400" />
-                      )}
-                    </div>
-                  </TableCell>
-
-                  {/* Title & Slug */}
-                  <TableCell>
-                    <div className="space-y-0.5">
-                      <Link
-                        href={`/admin/blogs/${blog._id}`}
-                        className="font-bold text-sm text-slate-900 hover:text-rose-600 transition-colors line-clamp-1"
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i} sx={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={52} height={36} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="text" width="85%" height={20} />
+                      <Skeleton variant="text" width="45%" height={14} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={70} height={22} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="text" width={60} height={18} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="text" width={75} height={18} />
+                    </TableCell>
+                    <TableCell align="right" sx={{ py: 1.5, px: 2.5 }}>
+                      <Skeleton variant="circular" width={28} height={28} sx={{ ml: "auto" }} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : blogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ py: 8, textAlign: "center" }}>
+                    <Box sx={{ maxWidth: 300, mx: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <BookOpenIcon sx={{ fontSize: 36, color: "#cbd5e1" }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                        No blog articles found
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                        {search || statusFilter !== "all" || categoryFilter !== "all"
+                          ? "Try adjusting your search criteria or category filters."
+                          : "Create your first SEO article to rank on search engines."}
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => setCreateOpen(true)}
+                        startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                        sx={{
+                          mt: 1,
+                          bgcolor: "#0f172a",
+                          color: "#ffffff",
+                          borderRadius: 1,
+                          textTransform: "none",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                        }}
                       >
-                        {blog.title}
-                      </Link>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
-                        <span>/blog/{blog.slug}</span>
-                        {blog.focusKeyphrase && (
-                          <Badge variant="outline" className="text-[9px] py-0 px-1.5 text-slate-500 border-slate-200">
-                            Key: {blog.focusKeyphrase}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-
-                  {/* Category */}
-                  <TableCell>
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-lg">
-                      {blog.category}
-                    </Badge>
-                  </TableCell>
-
-                  {/* Reading Time */}
-                  <TableCell>
-                    <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {blog.readingTime || 3} min read
-                    </span>
-                  </TableCell>
-
-                  {/* Status Toggle */}
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={blog.status === "published"}
-                        onCheckedChange={() => handleToggleStatus(blog)}
-                        className="data-[state=checked]:bg-emerald-600"
-                      />
-                      <Badge
-                        variant="secondary"
-                        className={
-                          blog.status === "published"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-slate-100 text-slate-600"
-                        }
-                      >
-                        {blog.status === "published" ? "Published" : "Draft"}
-                      </Badge>
-                    </div>
-                  </TableCell>
-
-                  {/* Date */}
-                  <TableCell className="text-xs text-slate-500 font-medium">
-                    {new Date(blog.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
-                          <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white border-slate-200 rounded-xl shadow-lg">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/blogs/${blog._id}`} className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
-                            <Edit className="h-3.5 w-3.5 text-slate-500" />
-                            Edit Article &amp; SEO
-                          </Link>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/blog/${blog.slug}`}
-                            target="_blank"
-                            className="flex items-center gap-2 text-xs font-semibold cursor-pointer"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-indigo-500" />
-                            View Public Post
-                          </Link>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() => setDeleteId(blog._id)}
-                          className="flex items-center gap-2 text-xs font-semibold text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                          Delete Article
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                        New Article
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                blogs.map((blog) => (
+                  <TableRow
+                    key={blog._id}
+                    hover
+                    onClick={() => router.push(`/admin/blogs/${blog._id}`)}
+                    sx={{
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f1f5f9",
+                      "&:last-child": { borderBottom: "none" },
+                      "&:hover": { bgcolor: "#f8fafc" },
+                      transition: "background-color 0.15s ease",
+                    }}
+                  >
+                    {/* Cover Thumbnail */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Box
+                        sx={{
+                          width: 52,
+                          height: 36,
+                          borderRadius: 1,
+                          bgcolor: "#f1f5f9",
+                          overflow: "hidden",
+                          border: "1px solid #e2e8f0",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {blog.coverImage ? (
+                          <Box
+                            component="img"
+                            src={blog.coverImage}
+                            alt={blog.title}
+                            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          <ArticleIcon sx={{ fontSize: 18, color: "#94a3b8" }} />
+                        )}
+                      </Box>
+                    </TableCell>
 
-        {/* Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
-              Page {page} of {totalPages} ({totalCount} articles)
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="rounded-xl border-slate-200 text-xs"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="rounded-xl border-slate-200 text-xs"
-              >
-                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+                    {/* Title & Slug */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Box sx={{ minWidth: 0, maxWidth: 360 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.825rem",
+                            color: "#0f172a",
+                            lineHeight: 1.2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            "&:hover": { color: "#2563eb" },
+                          }}
+                        >
+                          {blog.title}
+                        </Typography>
 
-      {/* Delete Confirmation Alert */}
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent className="bg-white rounded-2xl border-slate-200">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-bold text-slate-900">
-              Delete this blog post?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-slate-500">
-              This action cannot be undone. The article and its associated search engine routing will be permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel className="rounded-xl border-slate-200 text-slate-700">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.25 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontFamily: "monospace",
+                              color: "#64748b",
+                              fontSize: "0.7rem",
+                            }}
+                          >
+                            /blog/{blog.slug}
+                          </Typography>
+                          {blog.focusKeyphrase && (
+                            <Chip
+                              label={`Key: ${blog.focusKeyphrase}`}
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                fontWeight: 600,
+                                borderRadius: 0.75,
+                                bgcolor: "#f8fafc",
+                                color: "#64748b",
+                                border: "1px solid #e2e8f0",
+                              }}
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    </TableCell>
+
+                    {/* Category */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Chip
+                        label={blog.category}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: "0.68rem",
+                          fontWeight: 600,
+                          borderRadius: 1,
+                          bgcolor: "#f1f5f9",
+                          color: "#475569",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      />
+                    </TableCell>
+
+                    {/* Reading Time */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <ClockIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+                        <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                          {blog.readingTime || 3} min
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+                    {/* Status Toggle */}
+                    <TableCell
+                      sx={{ py: 1.5, px: 2 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <Switch
+                          size="small"
+                          checked={blog.status === "published"}
+                          onChange={() => handleToggleStatus(blog)}
+                          sx={{
+                            "& .MuiSwitch-switchBase.Mui-checked": {
+                              color: "#059669",
+                            },
+                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                              bgcolor: "#10b981",
+                            },
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: "0.7rem",
+                            fontWeight: 700,
+                            color: blog.status === "published" ? "#059669" : "#94a3b8",
+                          }}
+                        >
+                          {blog.status === "published" ? "Published" : "Draft"}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+                    {/* Date */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                        {new Date(blog.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Typography>
+                    </TableCell>
+
+                    {/* Actions Menu */}
+                    <TableCell
+                      align="right"
+                      sx={{ py: 1.5, px: 2.5 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleOpenMenu(e, blog)}
+                        sx={{
+                          color: "#94a3b8",
+                          borderRadius: 1,
+                          p: 0.5,
+                          "&:hover": { color: "#0f172a", bgcolor: "#f1f5f9" },
+                        }}
+                      >
+                        <MoreVertIcon sx={{ fontSize: 17 }} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Material UI TablePagination - Backend Driven */}
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page - 1}
+          onPageChange={(_, newPage) => setPage(newPage + 1)}
+          rowsPerPage={limit}
+          onRowsPerPageChange={(e) => {
+            setLimit(parseInt(e.target.value, 10));
+            setPage(1);
+          }}
+          rowsPerPageOptions={[5, 10, 20, 50]}
+          sx={{
+            borderTop: "1px solid #e2e8f0",
+            bgcolor: "#ffffff",
+            ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+              fontSize: "0.75rem",
+              color: "#64748b",
+              fontWeight: 500,
+            },
+            ".MuiTablePagination-select": {
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "#334155",
+            },
+            ".MuiTablePagination-actions button": {
+              color: "#475569",
+              p: 0.5,
+              borderRadius: 1,
+              "&.Mui-disabled": {
+                color: "#cbd5e1",
+              },
+            },
+          }}
+        />
+      </Card>
+
+      {/* Row Context Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleCloseMenu}
+        slotProps={{
+          paper: {
+            elevation: 2,
+            sx: {
+              border: "1px solid #e2e8f0",
+              borderRadius: 1,
+              minWidth: 170,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              p: 0.5,
+            },
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        {activeMenuBlog && (
+          <>
+            <MenuItem
+              onClick={() => {
+                router.push(`/admin/blogs/${activeMenuBlog._id}`);
+                handleCloseMenu();
+              }}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "#1e293b",
+                borderRadius: 1,
+                gap: 1.25,
+                py: 0.75,
+              }}
             >
-              {deleting ? "Deleting..." : "Confirm Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+              <EditIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              Edit Article &amp; SEO
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              href={`/blog/${activeMenuBlog.slug}`}
+              target="_blank"
+              onClick={handleCloseMenu}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "#1e293b",
+                borderRadius: 1,
+                gap: 1.25,
+                py: 0.75,
+              }}
+            >
+              <OpenInNewIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              View Public Post
+            </MenuItem>
+
+            <MenuItem
+              onClick={() => {
+                setBlogToDelete(activeMenuBlog);
+                setDeleteDialogOpen(true);
+                handleCloseMenu();
+              }}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "#dc2626",
+                borderRadius: 1,
+                gap: 1.25,
+                py: 0.75,
+                "&:hover": { bgcolor: "#fef2f2" },
+              }}
+            >
+              <DeleteOutlineIcon sx={{ fontSize: 16, color: "#dc2626" }} />
+              Delete Article
+            </MenuItem>
+          </>
+        )}
+      </Menu>
+
+      {/* Quick Create Dialog */}
+      <Dialog
+        open={createOpen}
+        onClose={() => !creating && setCreateOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <form onSubmit={handleCreate}>
+          <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+              New Blog Article
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+              Set the title, target keyword, and category to initialize a new SEO-optimized article.
+            </Typography>
+          </DialogTitle>
+
+          <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                Article Title *
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                required
+                placeholder="e.g. Top 10 High-Fashion Modeling Trends in 2026"
+                value={newTitle}
+                onChange={handleTitleChange}
+                slotProps={{
+                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+              <Box>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  URL Slug *
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  required
+                  placeholder="top-10-high-fashion-trends"
+                  value={newSlug}
+                  onChange={(e) => setNewSlug(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography sx={{ color: "#94a3b8", fontSize: "0.75rem", fontFamily: "monospace" }}>
+                            /blog/
+                          </Typography>
+                        </InputAdornment>
+                      ),
+                      sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem", fontFamily: "monospace" },
+                    },
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  Category
+                </Typography>
+                <FormControl fullWidth size="small">
+                  <Select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem" }}
+                  >
+                    <MenuItem value="Guides">Guides &amp; Tutorials</MenuItem>
+                    <MenuItem value="Model Spotlights">Model Spotlights</MenuItem>
+                    <MenuItem value="Industry News">Industry News</MenuItem>
+                    <MenuItem value="Photo Shoots">Photo Shoots</MenuItem>
+                    <MenuItem value="Features">Features &amp; Trends</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                Focus Keyphrase (SEO)
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="e.g. high fashion models"
+                value={newFocusKeyphrase}
+                onChange={(e) => setNewFocusKeyphrase(e.target.value)}
+                slotProps={{
+                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                }}
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                Brief Excerpt / Summary
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Brief description that will appear in search engine snippets and preview cards..."
+                value={newExcerpt}
+                onChange={(e) => setNewExcerpt(e.target.value)}
+                slotProps={{
+                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                }}
+              />
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setCreateOpen(false)}
+              disabled={creating}
+              sx={{
+                borderRadius: 1,
+                borderColor: "#e2e8f0",
+                color: "#475569",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={creating}
+              sx={{
+                borderRadius: 1,
+                bgcolor: "#0f172a",
+                color: "#ffffff",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              }}
+            >
+              {creating ? "Creating..." : "Create & Edit"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+            Delete Article?
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, py: 1 }}>
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
+            Are you sure you want to delete &quot;{blogToDelete?.title}&quot;? This action cannot be undone and its public URL routing will be removed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setBlogToDelete(null);
+            }}
+            disabled={deleting}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDelete}
+            disabled={deleting}
+            sx={{
+              borderRadius: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { boxShadow: "none" },
+            }}
+          >
+            {deleting ? "Deleting..." : "Confirm Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

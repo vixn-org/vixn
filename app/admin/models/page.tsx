@@ -4,66 +4,47 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Box,
+  Typography,
+  Card,
+  Button,
+  IconButton,
+  Chip,
+  Avatar,
+  Skeleton,
+  Switch,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
-  TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
+  TablePagination,
+  TextField,
+  InputAdornment,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
+  MenuItem,
+  FormControl,
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Menu,
+  Tooltip,
+} from "@mui/material";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Plus,
-  Search,
-  ExternalLink,
-  Trash2,
-  MoreHorizontal,
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight,
-  Flame,
-  Globe,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Add as AddIcon,
+  Search as SearchIcon,
+  OpenInNew as OpenInNewIcon,
+  DeleteOutlined as DeleteOutlineIcon,
+  MoreVert as MoreVertIcon,
+  PhotoLibraryOutlined as PhotoLibraryIcon,
+  WhatshotOutlined as FlameIcon,
+  EditOutlined as EditIcon,
+  Refresh as RefreshIcon,
+} from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
 
@@ -91,12 +72,16 @@ export default function AdminModelsPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
+
   const [models, setModels] = useState<ModelItem[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
+
+  // Create Dialog State
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newModel, setNewModel] = useState<{
@@ -115,12 +100,20 @@ export default function AdminModelsPage() {
     status: "draft",
   });
 
+  // Action Menu State
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [activeMenuModel, setActiveMenuModel] = useState<ModelItem | null>(null);
+
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState<ModelItem | null>(null);
+
   const fetchModels = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.set("page", page.toString());
-      params.set("limit", "15");
+      params.set("limit", limit.toString());
       if (search) params.set("search", search);
       if (statusFilter !== "all") params.set("status", statusFilter);
 
@@ -133,7 +126,7 @@ export default function AdminModelsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, limit, search, statusFilter]);
 
   useEffect(() => {
     fetchModels();
@@ -184,11 +177,15 @@ export default function AdminModelsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = async () => {
+    if (!modelToDelete) return;
+    const { _id, name } = modelToDelete;
     try {
-      const res = await fetch(`/api/models/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/models/${_id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       toast.success(`${name} deleted`);
+      setDeleteDialogOpen(false);
+      setModelToDelete(null);
       fetchModels();
     } catch {
       toast.error("Failed to delete model");
@@ -223,487 +220,968 @@ export default function AdminModelsPage() {
   };
 
   const handleNameChange = (name: string) => {
-    setNewModel({
-      ...newModel,
+    setNewModel((prev) => ({
+      ...prev,
       name,
       slug: slugify(name),
       metaTitle: `${name} - Photos & Videos`,
       metaDescription: `Explore ${name}'s exclusive photo gallery and video collection on VIXN.`,
-    });
+    }));
+  };
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, model: ModelItem) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+    setActiveMenuModel(model);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchorEl(null);
+    setActiveMenuModel(null);
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            Models Management
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Create custom routes (<span className="font-mono text-slate-700">/model/[route]</span>), manage photo/video sets, and tune SEO parameters.
-          </p>
-        </div>
-
-        {isAdmin && (
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl shadow-xs">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Model Route
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="border-slate-200 bg-white text-slate-900 sm:max-w-lg rounded-2xl shadow-xl">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold text-slate-900">
-                  Create New Model Route
-                </DialogTitle>
-                <DialogDescription className="text-slate-500 text-xs">
-                  Creates a new model directory and establishes canonical URL /model/[slug].
-                </DialogDescription>
-              </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Model Full Name *</Label>
-                <Input
-                  placeholder="e.g. Aditi Mistry"
-                  value={newModel.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Custom URL Slug *</Label>
-                <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
-                  <span className="text-slate-400">/model/</span>
-                  <input
-                    type="text"
-                    value={newModel.slug}
-                    onChange={(e) =>
-                      setNewModel({ ...newModel, slug: slugify(e.target.value) })
-                    }
-                    className="flex-1 bg-transparent text-slate-900 focus:outline-hidden font-mono text-xs"
-                    placeholder="aditi-mistry"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Country / Origin</Label>
-                <Input
-                  placeholder="e.g. India, United States"
-                  value={newModel.country}
-                  onChange={(e) =>
-                    setNewModel({ ...newModel, country: e.target.value })
-                  }
-                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-slate-700">Meta Title (SEO)</Label>
-                  <span
-                    className={`text-[11px] font-semibold ${
-                      newModel.metaTitle.length === 0
-                        ? "text-slate-400"
-                        : newModel.metaTitle.length <= 60
-                        ? "text-emerald-600"
-                        : "text-red-500 font-bold"
-                    }`}
-                  >
-                    {newModel.metaTitle.length}/60 {newModel.metaTitle.length > 60 ? "(Too long!)" : newModel.metaTitle.length >= 25 ? "(Optimal)" : ""}
-                  </span>
-                </div>
-                <Input
-                  placeholder="SEO title for Google SERP (max 60 chars)"
-                  value={newModel.metaTitle}
-                  maxLength={60}
-                  onChange={(e) =>
-                    setNewModel({ ...newModel, metaTitle: e.target.value })
-                  }
-                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                />
-                <p className="text-[11px] text-slate-400">
-                  Max 60 chars. Do NOT add &quot;| VIXN&quot; (added automatically).
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-slate-700">Meta Description</Label>
-                  <span
-                    className={`text-[11px] font-semibold ${
-                      newModel.metaDescription.length === 0
-                        ? "text-slate-400"
-                        : newModel.metaDescription.length < 50
-                        ? "text-amber-500"
-                        : newModel.metaDescription.length <= 155
-                        ? "text-emerald-600"
-                        : "text-red-500 font-bold"
-                    }`}
-                  >
-                    {newModel.metaDescription.length}/155 {newModel.metaDescription.length > 155 ? "(Too long!)" : newModel.metaDescription.length >= 120 ? "(Optimal)" : ""}
-                  </span>
-                </div>
-                <Textarea
-                  placeholder="Compelling description for search snippets (max 155 chars)"
-                  value={newModel.metaDescription}
-                  maxLength={155}
-                  onChange={(e) =>
-                    setNewModel({
-                      ...newModel,
-                      metaDescription: e.target.value,
-                    })
-                  }
-                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
-                  rows={3}
-                />
-                <p className="text-[11px] text-slate-400">
-                  Strict limit: 155 characters for Bing and Google Snippets.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Publication Status</Label>
-                <Select
-                  value={newModel.status}
-                  onValueChange={(v) =>
-                    setNewModel({
-                      ...newModel,
-                      status: v as "draft" | "published",
-                    })
-                  }
-                >
-                  <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50 text-slate-900">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white text-slate-900 border-slate-200">
-                    <SelectItem value="published">Published (Live for Public)</SelectItem>
-                    <SelectItem value="draft">Draft (Admin Only)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* SERP Preview */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1">
-                <p className="text-[11px] font-bold uppercase text-slate-400">
-                  Google Search Snippet Preview
-                </p>
-                <p className="text-sm font-semibold text-blue-600 truncate hover:underline">
-                  {newModel.metaTitle ? `${newModel.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN` : `${newModel.name || "Model Name"} - Photos & Videos | VIXN`}
-                </p>
-                <p className="text-xs text-emerald-700 font-mono truncate">
-                  https://vixn.fun/model/{newModel.slug || "model-slug"}
-                </p>
-                <p className="text-xs text-slate-600 line-clamp-2">
-                  {newModel.metaDescription ||
-                    "Explore model's exclusive photo gallery and video collection on VIXN."}
-                </p>
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setCreateOpen(false)}
-                className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreate}
-                disabled={creating}
-                className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl"
-              >
-                {creating ? "Creating..." : "Save & Open Editor"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search model name, tags or slug..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Top Header Bar - Exact Match to /admin */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          pb: 1,
+          borderBottom: "1px solid #e2e8f0",
+        }}
+      >
+        <Box>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              color: "#0f172a",
+              letterSpacing: "-0.01em",
+              fontSize: { xs: "1.4rem", sm: "1.6rem" },
             }}
-            className="pl-10 rounded-xl border-slate-200 bg-white text-slate-900 shadow-xs"
-          />
-        </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v);
+          >
+            Models Directory
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+            Overview of creator catalogs, custom routes, SEO pipelines, and content publishing.
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title="Refresh data">
+            <IconButton
+              size="small"
+              onClick={fetchModels}
+              sx={{
+                bgcolor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 1,
+                color: "#64748b",
+                p: 0.75,
+                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+              }}
+            >
+              <RefreshIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+
+          {isAdmin && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateOpen(true)}
+              sx={{
+                bgcolor: "#0f172a",
+                color: "#ffffff",
+                borderRadius: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                px: 1.75,
+                py: 0.75,
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              }}
+            >
+              Create Model Route
+            </Button>
+          )}
+        </Box>
+      </Box>
+
+      {/* Filter and Search Bar */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+          alignItems: "center",
+        }}
+      >
+        <TextField
+          placeholder="Search model name, tags or slug..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
             setPage(1);
           }}
-        >
-          <SelectTrigger className="w-[160px] rounded-xl border-slate-200 bg-white text-slate-900 shadow-xs">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-slate-200">
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="published">Published</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          size="small"
+          fullWidth
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              sx: {
+                borderRadius: 1,
+                bgcolor: "#ffffff",
+                fontSize: "0.875rem",
+                "& fieldset": { borderColor: "#e2e8f0" },
+                "&:hover fieldset": { borderColor: "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+              },
+            },
+          }}
+        />
 
-      {/* Table Container */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-slate-100 bg-slate-50/70 hover:bg-slate-50/70">
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Model Name</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Live Route</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Status</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Reviewed</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Media Sets</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase">Created Date</TableHead>
-              <TableHead className="text-slate-600 font-bold text-xs uppercase text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i} className="border-slate-100">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-xl" />
-                      <Skeleton className="h-4 w-28 rounded-md" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24 rounded-md" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-10 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-8 rounded-md" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-20 rounded-md" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 ml-auto rounded-lg" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : models.length === 0 ? (
-              <TableRow className="border-slate-100">
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-16 text-slate-500"
-                >
-                  <div className="max-w-xs mx-auto text-center space-y-2">
-                    <Flame className="w-8 h-8 text-slate-300 mx-auto" />
-                    <p className="font-bold text-slate-800 text-sm">No model routes match your filter</p>
-                    <p className="text-xs text-slate-500">Create a new model route to populate your public directory.</p>
-                  </div>
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
+          <Select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            displayEmpty
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#ffffff",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              "& fieldset": { borderColor: "#e2e8f0" },
+              "&:hover fieldset": { borderColor: "#cbd5e1" },
+              "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+            }}
+          >
+            <MenuItem value="all">All Status</MenuItem>
+            <MenuItem value="published">Published</MenuItem>
+            <MenuItem value="draft">Draft</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
+      {/* Material UI Table Card */}
+      <Card
+        elevation={0}
+        sx={{
+          border: "1px solid #e2e8f0",
+          borderRadius: 1.5,
+          bgcolor: "#ffffff",
+          overflow: "hidden",
+        }}
+      >
+        <TableContainer>
+          <Table sx={{ minWidth: 700 }} size="small">
+            <TableHead sx={{ bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+              <TableRow>
+                <TableCell sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Model
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Live Route
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Status
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Review
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Media
+                </TableCell>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Created
+                </TableCell>
+                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                  Actions
                 </TableCell>
               </TableRow>
-            ) : (
-              models.map((model) => (
-                <TableRow
-                  key={model._id}
-                  className="border-slate-100 cursor-pointer hover:bg-slate-50/80 transition-colors"
-                  onClick={() => router.push(`/admin/models/${model._id}`)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {model.profileImage ? (
-                        <img
-                          src={model.profileImage}
-                          alt={model.name}
-                          className="h-10 w-10 rounded-xl object-cover border border-slate-200 shadow-xs shrink-0"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 shrink-0">
-                          {model.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <span className="font-bold text-slate-900 text-sm block">
-                          {model.name}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-200">
-                      /model/{model.slug}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        model.status === "published"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
-                      }
-                    >
-                      {model.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={!!model.reviewed}
-                        onCheckedChange={() =>
-                          handleToggleReviewed(model._id, !!model.reviewed)
-                        }
-                      />
-                      <span
-                        className={`text-[11px] font-bold ${
-                          model.reviewed
-                            ? "text-emerald-600"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {model.reviewed ? "Reviewed" : "Pending"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                      <ImageIcon className="h-3.5 w-3.5 text-rose-500" />
-                      {model.media?.length || 0}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-slate-500 text-xs font-medium">
-                    {new Date(model.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div
-                      className="flex justify-end"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="bg-white border-slate-200 text-slate-900 shadow-lg rounded-xl"
-                        >
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(`/admin/models/${model._id}`)
-                            }
-                            className="hover:bg-slate-100 cursor-pointer font-medium text-xs"
-                          >
-                            Edit Information &amp; Media
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            asChild
-                            className="hover:bg-slate-100 cursor-pointer font-medium text-xs"
-                          >
-                            <Link
-                              href={`/model/${model.slug}`}
-                              target="_blank"
-                            >
-                              <ExternalLink className="mr-2 h-3.5 w-3.5 text-slate-400" />
-                              View Public Route
-                            </Link>
-                          </DropdownMenuItem>
-                          {isAdmin && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  className="text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer font-medium text-xs"
-                                  onSelect={(e) => e.preventDefault()}
-                                >
-                                  <Trash2 className="mr-2 h-3.5 w-3.5" />
-                                  Delete Model
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle className="text-lg font-bold">
-                                    Delete &quot;{model.name}&quot;?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription className="text-slate-500 text-xs">
-                                    This will permanently remove the route /model/{model.slug}, along with all uploaded photos, videos, and associated metadata.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
-                                    Cancel
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() =>
-                                      handleDelete(model._id, model.name)
-                                    }
-                                    className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
-                                  >
-                                    Delete Permanently
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={i} sx={{ borderBottom: "1px solid #f1f5f9" }}>
+                    <TableCell sx={{ py: 1.5, px: 2.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Skeleton variant="rounded" width={38} height={38} sx={{ borderRadius: 1 }} />
+                        <Box sx={{ width: 140 }}>
+                          <Skeleton variant="text" width="90%" height={20} />
+                          <Skeleton variant="text" width="60%" height={14} />
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={110} height={24} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={75} height={22} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: 1 }} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="text" width={40} height={20} />
+                    </TableCell>
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Skeleton variant="text" width={70} height={20} />
+                    </TableCell>
+                    <TableCell align="right" sx={{ py: 1.5, px: 2.5 }}>
+                      <Skeleton variant="circular" width={28} height={28} sx={{ ml: "auto" }} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : models.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ py: 8, textAlign: "center" }}>
+                    <Box sx={{ maxWidth: 300, mx: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <FlameIcon sx={{ fontSize: 36, color: "#cbd5e1" }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                        No models found
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                        {search || statusFilter !== "all"
+                          ? "Try adjusting your search criteria or status filter."
+                          : "Create your first model route to populate the directory."}
+                      </Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                models.map((model) => (
+                  <TableRow
+                    key={model._id}
+                    hover
+                    onClick={() => router.push(`/admin/models/${model._id}`)}
+                    sx={{
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f1f5f9",
+                      "&:last-child": { borderBottom: "none" },
+                      "&:hover": { bgcolor: "#f8fafc" },
+                      transition: "background-color 0.15s ease",
+                    }}
+                  >
+                    {/* Model Info */}
+                    <TableCell sx={{ py: 1.5, px: 2.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Avatar
+                          src={model.profileImage || undefined}
+                          variant="rounded"
+                          sx={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 1,
+                            bgcolor: "#f1f5f9",
+                            color: "#334155",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          {model.name.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.825rem",
+                              color: "#0f172a",
+                              lineHeight: 1.2,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              "&:hover": { color: "#2563eb" },
+                            }}
+                          >
+                            {model.name}
+                          </Typography>
+                          {model.country ? (
+                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "#64748b", display: "block", mt: 0.25 }}>
+                              {model.country}
+                            </Typography>
+                          ) : (
+                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "#94a3b8", display: "block", mt: 0.25 }}>
+                              {model.tags?.slice(0, 2).join(", ") || "Creator"}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    </TableCell>
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs font-medium text-slate-500">
-            Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-            {pagination.total} records
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs"
+                    {/* Live Route */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Box
+                        component="span"
+                        sx={{
+                          fontFamily: "monospace",
+                          fontSize: "0.7rem",
+                          fontWeight: 500,
+                          color: "#64748b",
+                          bgcolor: "#f8fafc",
+                          px: 1,
+                          py: 0.4,
+                          borderRadius: 1,
+                          border: "1px solid #e2e8f0",
+                          display: "inline-block",
+                        }}
+                      >
+                        /model/{model.slug}
+                      </Box>
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Chip
+                        label={model.status === "published" ? "Published" : "Draft"}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: "0.68rem",
+                          fontWeight: 600,
+                          borderRadius: 1,
+                          ...(model.status === "published"
+                            ? {
+                                bgcolor: "#ecfdf5",
+                                color: "#059669",
+                                border: "1px solid #a7f3d0",
+                              }
+                            : {
+                                bgcolor: "#f1f5f9",
+                                color: "#64748b",
+                                border: "1px solid #e2e8f0",
+                              }),
+                        }}
+                      />
+                    </TableCell>
+
+                    {/* Review Toggle */}
+                    <TableCell
+                      sx={{ py: 1.5, px: 2 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <Switch
+                          size="small"
+                          checked={!!model.reviewed}
+                          onChange={() => handleToggleReviewed(model._id, !!model.reviewed)}
+                          sx={{
+                            "& .MuiSwitch-switchBase.Mui-checked": {
+                              color: "#059669",
+                            },
+                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                              bgcolor: "#10b981",
+                            },
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: "0.7rem",
+                            fontWeight: 700,
+                            color: model.reviewed ? "#059669" : "#94a3b8",
+                          }}
+                        >
+                          {model.reviewed ? "Reviewed" : "Pending"}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+                    {/* Media Count */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                        <PhotoLibraryIcon sx={{ fontSize: 15, color: "#f43f5e" }} />
+                        <Typography sx={{ fontSize: "0.775rem", fontWeight: 600, color: "#334155" }}>
+                          {model.media?.length || 0}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+
+                    {/* Created Date */}
+                    <TableCell sx={{ py: 1.5, px: 2 }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                        {new Date(model.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+
+                    {/* Action Menu */}
+                    <TableCell
+                      align="right"
+                      sx={{ py: 1.5, px: 2.5 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleOpenMenu(e, model)}
+                        sx={{
+                          color: "#94a3b8",
+                          borderRadius: 1,
+                          p: 0.5,
+                          "&:hover": { color: "#0f172a", bgcolor: "#f1f5f9" },
+                        }}
+                      >
+                        <MoreVertIcon sx={{ fontSize: 17 }} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* Material UI TablePagination - Backend Driven */}
+        {pagination && (
+          <TablePagination
+            component="div"
+            count={pagination.total}
+            page={page - 1}
+            onPageChange={(_, newPage) => setPage(newPage + 1)}
+            rowsPerPage={limit}
+            onRowsPerPageChange={(e) => {
+              setLimit(parseInt(e.target.value, 10));
+              setPage(1);
+            }}
+            rowsPerPageOptions={[10, 15, 25, 50]}
+            sx={{
+              borderTop: "1px solid #e2e8f0",
+              bgcolor: "#ffffff",
+              ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+                fontSize: "0.75rem",
+                color: "#64748b",
+                fontWeight: 500,
+              },
+              ".MuiTablePagination-select": {
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "#334155",
+              },
+              ".MuiTablePagination-actions button": {
+                color: "#475569",
+                p: 0.5,
+                borderRadius: 1,
+                "&.Mui-disabled": {
+                  color: "#cbd5e1",
+                },
+              },
+            }}
+          />
+        )}
+      </Card>
+
+      {/* Row Context Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleCloseMenu}
+        slotProps={{
+          paper: {
+            elevation: 2,
+            sx: {
+              border: "1px solid #e2e8f0",
+              borderRadius: 1,
+              minWidth: 180,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              p: 0.5,
+            },
+          },
+        }}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        {activeMenuModel && (
+          <>
+            <MenuItem
+              onClick={() => {
+                router.push(`/admin/models/${activeMenuModel._id}`);
+                handleCloseMenu();
+              }}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "#1e293b",
+                borderRadius: 1,
+                gap: 1.25,
+                py: 0.75,
+              }}
             >
-              <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Prev
-            </Button>
-            <span className="text-xs font-semibold text-slate-600 px-2">
-              {page} / {pagination.totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs"
+              <EditIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              Edit Model &amp; Media
+            </MenuItem>
+
+            <MenuItem
+              component={Link}
+              href={`/model/${activeMenuModel.slug}`}
+              target="_blank"
+              onClick={handleCloseMenu}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 500,
+                color: "#1e293b",
+                borderRadius: 1,
+                gap: 1.25,
+                py: 0.75,
+              }}
             >
-              Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+              <OpenInNewIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              View Public Route
+            </MenuItem>
+
+            {isAdmin && (
+              <MenuItem
+                onClick={() => {
+                  setModelToDelete(activeMenuModel);
+                  setDeleteDialogOpen(true);
+                  handleCloseMenu();
+                }}
+                sx={{
+                  fontSize: "0.8125rem",
+                  fontWeight: 500,
+                  color: "#dc2626",
+                  borderRadius: 1,
+                  gap: 1.25,
+                  py: 0.75,
+                  "&:hover": { bgcolor: "#fef2f2" },
+                }}
+              >
+                <DeleteOutlineIcon sx={{ fontSize: 16, color: "#dc2626" }} />
+                Delete Model
+              </MenuItem>
+            )}
+          </>
+        )}
+      </Menu>
+
+      {/* Create Model Dialog */}
+      <Dialog
+        open={createOpen}
+        onClose={() => !creating && setCreateOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              border: "1px solid #e2e8f0",
+            },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pb: 1, pt: 2.5, px: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+            Create New Model Route
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+            Establish a canonical directory route at /model/[slug] with custom metadata.
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Full Name */}
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Model Full Name *
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="e.g. Aditi Mistry"
+              value={newModel.name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              slotProps={{
+                input: {
+                  sx: {
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Route Slug */}
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Canonical Route Slug *
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="aditi-mistry"
+              value={newModel.slug}
+              onChange={(e) =>
+                setNewModel({ ...newModel, slug: slugify(e.target.value) })
+              }
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: "#94a3b8", fontSize: "0.8125rem", fontFamily: "monospace" }}>
+                        /model/
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    fontFamily: "monospace",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Country */}
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Country / Origin
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="e.g. India, United States"
+              value={newModel.country}
+              onChange={(e) =>
+                setNewModel({ ...newModel, country: e.target.value })
+              }
+              slotProps={{
+                input: {
+                  sx: {
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Meta Title */}
+          <Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                Meta Title (SEO)
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  color:
+                    newModel.metaTitle.length === 0
+                      ? "#94a3b8"
+                      : newModel.metaTitle.length <= 60
+                      ? "#059669"
+                      : "#dc2626",
+                }}
+              >
+                {newModel.metaTitle.length}/60{" "}
+                {newModel.metaTitle.length > 60
+                  ? "(Too long!)"
+                  : newModel.metaTitle.length >= 25
+                  ? "(Optimal)"
+                  : ""}
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="SEO title for Google SERP (max 60 chars)"
+              value={newModel.metaTitle}
+              onChange={(e) =>
+                setNewModel({ ...newModel, metaTitle: e.target.value })
+              }
+              helperText='Max 60 chars. Do NOT add "| VIXN" (added automatically).'
+              slotProps={{
+                htmlInput: { maxLength: 60 },
+                input: {
+                  sx: {
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+                formHelperText: {
+                  sx: { fontSize: "0.6875rem", color: "#94a3b8" },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Meta Description */}
+          <Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                Meta Description
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  color:
+                    newModel.metaDescription.length === 0
+                      ? "#94a3b8"
+                      : newModel.metaDescription.length < 50
+                      ? "#d97706"
+                      : newModel.metaDescription.length <= 155
+                      ? "#059669"
+                      : "#dc2626",
+                }}
+              >
+                {newModel.metaDescription.length}/155{" "}
+                {newModel.metaDescription.length > 155
+                  ? "(Too long!)"
+                  : newModel.metaDescription.length >= 120
+                  ? "(Optimal)"
+                  : ""}
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              multiline
+              rows={2.5}
+              placeholder="Compelling description for search snippets (max 155 chars)"
+              value={newModel.metaDescription}
+              onChange={(e) =>
+                setNewModel({
+                  ...newModel,
+                  metaDescription: e.target.value,
+                })
+              }
+              helperText="Strict limit: 155 characters for search engines."
+              slotProps={{
+                htmlInput: { maxLength: 155 },
+                input: {
+                  sx: {
+                    borderRadius: 1,
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": { borderColor: "#e2e8f0" },
+                  },
+                },
+                formHelperText: {
+                  sx: { fontSize: "0.6875rem", color: "#94a3b8" },
+                },
+              }}
+            />
+          </Box>
+
+          {/* Status Select */}
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Publication Status
+            </Typography>
+            <FormControl fullWidth size="small">
+              <Select
+                value={newModel.status}
+                onChange={(e) =>
+                  setNewModel({
+                    ...newModel,
+                    status: e.target.value as "draft" | "published",
+                  })
+                }
+                sx={{
+                  borderRadius: 1,
+                  bgcolor: "#f8fafc",
+                  fontSize: "0.875rem",
+                  "& fieldset": { borderColor: "#e2e8f0" },
+                }}
+              >
+                <MenuItem value="published">Published (Live for Public)</MenuItem>
+                <MenuItem value="draft">Draft (Admin Only)</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          {/* SERP Preview Box */}
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 1,
+              border: "1px solid #e2e8f0",
+              bgcolor: "#f8fafc",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.5,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: "0.625rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: "#94a3b8",
+                letterSpacing: "0.05em",
+              }}
+            >
+              Google Search Snippet Preview
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                color: "#1a0dab",
+                lineHeight: 1.3,
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {newModel.metaTitle
+                ? `${newModel.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                : `${newModel.name || "Model Name"} - Photos & Videos | VIXN`}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.6875rem",
+                fontFamily: "monospace",
+                color: "#006621",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              }}
+            >
+              https://vixn.fun/model/{newModel.slug || "model-slug"}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                color: "#4d5156",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                lineHeight: 1.4,
+              }}
+            >
+              {newModel.metaDescription ||
+                "Explore model's exclusive photo gallery and video collection on VIXN."}
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setCreateOpen(false)}
+            disabled={creating}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCreate}
+            disabled={creating}
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
+          >
+            {creating ? "Creating..." : "Save & Open Editor"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              border: "1px solid #e2e8f0",
+            },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+            Delete &quot;{modelToDelete?.name}&quot;?
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, py: 1 }}>
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
+            This will permanently remove the route{" "}
+            <strong style={{ color: "#0f172a" }}>/model/{modelToDelete?.slug}</strong>,
+            along with all uploaded photos, videos, and associated metadata. This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setModelToDelete(null);
+            }}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDelete}
+            sx={{
+              borderRadius: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { boxShadow: "none" },
+            }}
+          >
+            Delete Permanently
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
+

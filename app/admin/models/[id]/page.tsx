@@ -4,70 +4,54 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Box,
+  Typography,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
+  Button,
+  IconButton,
+  Chip,
+  Avatar,
+  Skeleton,
+  Switch,
+  TextField,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
+  MenuItem,
+  FormControl,
+  Tabs,
+  Tab,
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Tooltip,
+  CircularProgress,
+  Divider,
+} from "@mui/material";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  ArrowLeft,
-  Save,
-  ExternalLink,
-  Trash2,
-  Plus,
-  Upload,
-  UploadCloud,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Globe,
-  Search,
-  FileText,
-  X,
-  Sparkles,
-  CheckCircle2,
-  ListPlus,
-  Loader2,
-  Film,
-  Camera,
-} from "lucide-react";
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  OpenInNew as OpenInNewIcon,
+  DeleteOutlined as DeleteOutlineIcon,
+  Add as AddIcon,
+  CloudUploadOutlined as CloudUploadIcon,
+  PhotoLibraryOutlined as PhotoLibraryIcon,
+  VideoLibraryOutlined as VideoLibraryIcon,
+  LanguageOutlined as GlobeIcon,
+  Search as SearchIcon,
+  ArticleOutlined as ArticleIcon,
+  Close as CloseIcon,
+  AutoAwesomeOutlined as SparklesIcon,
+  CheckCircleOutlined as CheckCircleIcon,
+  PlaylistAddOutlined as PlaylistAddIcon,
+  PhotoCameraOutlined as CameraIcon,
+  MovieOutlined as MovieIcon,
+  TuneOutlined as TuneIcon,
+  ShareOutlined as ShareIcon,
+} from "@mui/icons-material";
 import { toast } from "sonner";
 
 interface MediaItem {
@@ -134,14 +118,23 @@ export default function ModelManagementPage() {
   const [model, setModel] = useState<ModelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("media");
+  const [activeTab, setActiveTab] = useState<string>("general");
   const hasInitializedTab = useRef(false);
 
   useEffect(() => {
     if (session?.user && !hasInitializedTab.current) {
       hasInitializedTab.current = true;
-      const hashTab = typeof window !== "undefined" ? window.location.hash.replace("#", "") : "";
-      const validTabs = ["general", "seo", "photos-seo", "videos-seo", "media"];
+      const hashTab =
+        typeof window !== "undefined"
+          ? window.location.hash.replace("#", "")
+          : "";
+      const validTabs = [
+        "general",
+        "seo",
+        "photos-seo",
+        "videos-seo",
+        "media",
+      ];
       if (hashTab && validTabs.includes(hashTab)) {
         setActiveTab(hashTab);
         return;
@@ -162,15 +155,18 @@ export default function ModelManagementPage() {
     }
   };
 
+  // Tag & Keyword inputs
   const [tagInput, setTagInput] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [photoKeywordInput, setPhotoKeywordInput] = useState("");
   const [videoKeywordInput, setVideoKeywordInput] = useState("");
   const [bulkKeywordsOpen, setBulkKeywordsOpen] = useState(false);
   const [bulkKeywordsText, setBulkKeywordsText] = useState("");
-  const [bulkKeywordsTarget, setBulkKeywordsTarget] = useState<"main" | "photos" | "videos">("main");
+  const [bulkKeywordsTarget, setBulkKeywordsTarget] = useState<
+    "main" | "photos" | "videos"
+  >("main");
 
-  // Media modals state
+  // Direct URL Media Modal
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [directMediaAdding, setDirectMediaAdding] = useState(false);
   const [newMedia, setNewMedia] = useState({
@@ -183,7 +179,7 @@ export default function ModelManagementPage() {
     isExternal: true,
   });
 
-  // Media File Upload Dialog state
+  // Media File Upload Dialog
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState<"photo" | "video">("photo");
@@ -198,6 +194,10 @@ export default function ModelManagementPage() {
     thumbnailFile: null as File | null,
     thumbnailPreview: "",
   });
+
+  // Delete Media Dialog State
+  const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
+  const [mediaToDelete, setMediaToDelete] = useState<MediaItem | null>(null);
 
   // Avatar & Cover Upload states
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -221,128 +221,9 @@ export default function ModelManagementPage() {
     fetchModel();
   }, [fetchModel]);
 
-  const handleSave = async () => {
+  const updateField = (field: keyof ModelData, value: unknown) => {
     if (!model) return;
-
-    // Strict SEO limits validation
-    if (model.metaTitle && model.metaTitle.length > 60) {
-      toast.error(`Meta title is too long (${model.metaTitle.length}/60 chars). Maximum allowed for Bing & Google is 60.`);
-      return;
-    }
-    if (model.metaDescription && model.metaDescription.length > 155) {
-      toast.error(`Meta description is too long (${model.metaDescription.length}/155 chars). Maximum allowed is 155.`);
-      return;
-    }
-    if (model.photosSeo?.metaTitle && model.photosSeo.metaTitle.length > 60) {
-      toast.error(`Photos meta title is too long (${model.photosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`);
-      return;
-    }
-    if (model.photosSeo?.metaDescription && model.photosSeo.metaDescription.length > 155) {
-      toast.error(`Photos meta description is too long (${model.photosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`);
-      return;
-    }
-    if (model.videosSeo?.metaTitle && model.videosSeo.metaTitle.length > 60) {
-      toast.error(`Videos meta title is too long (${model.videosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`);
-      return;
-    }
-    if (model.videosSeo?.metaDescription && model.videosSeo.metaDescription.length > 155) {
-      toast.error(`Videos meta description is too long (${model.videosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`);
-      return;
-    }
-
-    if (model.ogTitle && model.ogTitle.length > 60) {
-      toast.error(`OG title is too long (${model.ogTitle.length}/60 chars). Maximum allowed is 60.`);
-      return;
-    }
-    if (model.ogDescription && model.ogDescription.length > 155) {
-      toast.error(`OG description is too long (${model.ogDescription.length}/155 chars). Maximum allowed is 155.`);
-      return;
-    }
-    if (model.photosSeo?.heading && model.photosSeo.heading.length > 80) {
-      toast.error(`Photos heading is too long (${model.photosSeo.heading.length}/80 chars). Maximum allowed is 80.`);
-      return;
-    }
-    if (model.videosSeo?.heading && model.videosSeo.heading.length > 80) {
-      toast.error(`Videos heading is too long (${model.videosSeo.heading.length}/80 chars). Maximum allowed is 80.`);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // Auto-strip trailing duplicate site suffix if entered
-      const cleanedModel = {
-        ...model,
-        metaTitle: model.metaTitle
-          ? model.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
-          : model.metaTitle,
-        ogTitle: model.ogTitle
-          ? model.ogTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
-          : model.ogTitle,
-        photosSeo: model.photosSeo ? {
-          ...model.photosSeo,
-          metaTitle: model.photosSeo.metaTitle
-            ? model.photosSeo.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
-            : model.photosSeo.metaTitle,
-        } : model.photosSeo,
-        videosSeo: model.videosSeo ? {
-          ...model.videosSeo,
-          metaTitle: model.videosSeo.metaTitle
-            ? model.videosSeo.metaTitle.replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "").trim()
-            : model.videosSeo.metaTitle,
-        } : model.videosSeo,
-      };
-
-      const res = await fetch(`/api/models/${modelId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedModel),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Failed to save");
-        return;
-      }
-
-      setModel(cleanedModel);
-      toast.success("All changes saved successfully!");
-    } catch {
-      toast.error("Failed to save model changes");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddTag = () => {
-    if (!tagInput.trim() || !model) return;
-    if (!model.tags.includes(tagInput.trim())) {
-      setModel({ ...model, tags: [...model.tags, tagInput.trim()] });
-    }
-    setTagInput("");
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    if (!model) return;
-    setModel({ ...model, tags: model.tags.filter((t) => t !== tag) });
-  };
-
-  const handleAddKeyword = () => {
-    if (!keywordInput.trim() || !model) return;
-    if (!model.metaKeywords.includes(keywordInput.trim())) {
-      setModel({
-        ...model,
-        metaKeywords: [...model.metaKeywords, keywordInput.trim()],
-      });
-    }
-    setKeywordInput("");
-  };
-
-  const handleRemoveKeyword = (kw: string) => {
-    if (!model) return;
-    setModel({
-      ...model,
-      metaKeywords: model.metaKeywords.filter((k) => k !== kw),
-    });
+    setModel({ ...model, [field]: value });
   };
 
   const updatePhotosSeo = (field: keyof SubPageSeoData, value: unknown) => {
@@ -367,11 +248,163 @@ export default function ModelManagementPage() {
     });
   };
 
+  const handleSave = async () => {
+    if (!model) return;
+
+    if (model.metaTitle && model.metaTitle.length > 60) {
+      toast.error(
+        `Meta title is too long (${model.metaTitle.length}/60 chars). Maximum allowed is 60.`
+      );
+      return;
+    }
+    if (model.metaDescription && model.metaDescription.length > 155) {
+      toast.error(
+        `Meta description is too long (${model.metaDescription.length}/155 chars). Maximum allowed is 155.`
+      );
+      return;
+    }
+    if (model.photosSeo?.metaTitle && model.photosSeo.metaTitle.length > 60) {
+      toast.error(
+        `Photos meta title is too long (${model.photosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`
+      );
+      return;
+    }
+    if (
+      model.photosSeo?.metaDescription &&
+      model.photosSeo.metaDescription.length > 155
+    ) {
+      toast.error(
+        `Photos meta description is too long (${model.photosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`
+      );
+      return;
+    }
+    if (model.videosSeo?.metaTitle && model.videosSeo.metaTitle.length > 60) {
+      toast.error(
+        `Videos meta title is too long (${model.videosSeo.metaTitle.length}/60 chars). Maximum allowed is 60.`
+      );
+      return;
+    }
+    if (
+      model.videosSeo?.metaDescription &&
+      model.videosSeo.metaDescription.length > 155
+    ) {
+      toast.error(
+        `Videos meta description is too long (${model.videosSeo.metaDescription.length}/155 chars). Maximum allowed is 155.`
+      );
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const cleanedModel = {
+        ...model,
+        metaTitle: model.metaTitle
+          ? model.metaTitle
+              .replace(
+                /(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i,
+                ""
+              )
+              .trim()
+          : model.metaTitle,
+        ogTitle: model.ogTitle
+          ? model.ogTitle
+              .replace(
+                /(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i,
+                ""
+              )
+              .trim()
+          : model.ogTitle,
+        photosSeo: model.photosSeo
+          ? {
+              ...model.photosSeo,
+              metaTitle: model.photosSeo.metaTitle
+                ? model.photosSeo.metaTitle
+                    .replace(
+                      /(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i,
+                      ""
+                    )
+                    .trim()
+                : model.photosSeo.metaTitle,
+            }
+          : model.photosSeo,
+        videosSeo: model.videosSeo
+          ? {
+              ...model.videosSeo,
+              metaTitle: model.videosSeo.metaTitle
+                ? model.videosSeo.metaTitle
+                    .replace(
+                      /(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i,
+                      ""
+                    )
+                    .trim()
+                : model.videosSeo.metaTitle,
+            }
+          : model.videosSeo,
+      };
+
+      const res = await fetch(`/api/models/${modelId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleanedModel),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to update");
+      }
+
+      const data = await res.json();
+      setModel(data.model);
+      toast.success("All model changes saved successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save changes");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Tags Management
+  const handleAddTag = () => {
+    if (!tagInput.trim() || !model) return;
+    const tag = tagInput.trim().toLowerCase();
+    if (!model.tags.includes(tag)) {
+      updateField("tags", [...model.tags, tag]);
+    }
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    if (!model) return;
+    updateField(
+      "tags",
+      model.tags.filter((t) => t !== tag)
+    );
+  };
+
+  // Keyword Management
+  const handleAddKeyword = () => {
+    if (!keywordInput.trim() || !model) return;
+    const kw = keywordInput.trim().toLowerCase();
+    if (!model.metaKeywords.includes(kw)) {
+      updateField("metaKeywords", [...model.metaKeywords, kw]);
+    }
+    setKeywordInput("");
+  };
+
+  const handleRemoveKeyword = (kw: string) => {
+    if (!model) return;
+    updateField(
+      "metaKeywords",
+      model.metaKeywords.filter((k) => k !== kw)
+    );
+  };
+
   const handleAddPhotoKeyword = () => {
     if (!photoKeywordInput.trim() || !model) return;
+    const kw = photoKeywordInput.trim().toLowerCase();
     const current = model.photosSeo?.metaKeywords || [];
-    if (!current.includes(photoKeywordInput.trim())) {
-      updatePhotosSeo("metaKeywords", [...current, photoKeywordInput.trim()]);
+    if (!current.includes(kw)) {
+      updatePhotosSeo("metaKeywords", [...current, kw]);
     }
     setPhotoKeywordInput("");
   };
@@ -387,9 +420,10 @@ export default function ModelManagementPage() {
 
   const handleAddVideoKeyword = () => {
     if (!videoKeywordInput.trim() || !model) return;
+    const kw = videoKeywordInput.trim().toLowerCase();
     const current = model.videosSeo?.metaKeywords || [];
-    if (!current.includes(videoKeywordInput.trim())) {
-      updateVideosSeo("metaKeywords", [...current, videoKeywordInput.trim()]);
+    if (!current.includes(kw)) {
+      updateVideosSeo("metaKeywords", [...current, kw]);
     }
     setVideoKeywordInput("");
   };
@@ -404,60 +438,38 @@ export default function ModelManagementPage() {
   };
 
   const handleAddBulkKeywords = () => {
-    if (!model || !bulkKeywordsText.trim()) return;
-    const lines = bulkKeywordsText
+    if (!bulkKeywordsText.trim() || !model) return;
+    const parsed = bulkKeywordsText
       .split(/\r?\n|,/)
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
+      .map((k) => k.trim().toLowerCase())
+      .filter(Boolean);
 
     if (bulkKeywordsTarget === "photos") {
-      const existingSet = new Set(model.photosSeo?.metaKeywords || []);
-      const newKeywords = [...(model.photosSeo?.metaKeywords || [])];
-      let addedCount = 0;
-      for (const kw of lines) {
-        if (!existingSet.has(kw)) {
-          existingSet.add(kw);
-          newKeywords.push(kw);
-          addedCount++;
-        }
-      }
+      const current = model.photosSeo?.metaKeywords || [];
+      const newKeywords = Array.from(new Set([...current, ...parsed]));
       updatePhotosSeo("metaKeywords", newKeywords);
-      if (addedCount > 0) toast.success(`Added ${addedCount} photo keywords`);
+      toast.success(
+        `Added ${newKeywords.length - current.length} photo keywords`
+      );
     } else if (bulkKeywordsTarget === "videos") {
-      const existingSet = new Set(model.videosSeo?.metaKeywords || []);
-      const newKeywords = [...(model.videosSeo?.metaKeywords || [])];
-      let addedCount = 0;
-      for (const kw of lines) {
-        if (!existingSet.has(kw)) {
-          existingSet.add(kw);
-          newKeywords.push(kw);
-          addedCount++;
-        }
-      }
+      const current = model.videosSeo?.metaKeywords || [];
+      const newKeywords = Array.from(new Set([...current, ...parsed]));
       updateVideosSeo("metaKeywords", newKeywords);
-      if (addedCount > 0) toast.success(`Added ${addedCount} video keywords`);
+      toast.success(
+        `Added ${newKeywords.length - current.length} video keywords`
+      );
     } else {
-      const existingSet = new Set(model.metaKeywords);
-      const newKeywords = [...model.metaKeywords];
-      let addedCount = 0;
-      for (const kw of lines) {
-        if (!existingSet.has(kw)) {
-          existingSet.add(kw);
-          newKeywords.push(kw);
-          addedCount++;
-        }
-      }
-      setModel({
-        ...model,
-        metaKeywords: newKeywords,
-      });
-      if (addedCount > 0) toast.success(`Added ${addedCount} keywords`);
+      const current = model.metaKeywords || [];
+      const newKeywords = Array.from(new Set([...current, ...parsed]));
+      updateField("metaKeywords", newKeywords);
+      toast.success(`Added ${newKeywords.length - current.length} keywords`);
     }
 
     setBulkKeywordsText("");
     setBulkKeywordsOpen(false);
   };
 
+  // Media Direct URL Add
   const handleAddMedia = async () => {
     if (!newMedia.url.trim()) {
       toast.error(
@@ -479,7 +491,6 @@ export default function ModelManagementPage() {
       });
 
       if (!res.ok) throw new Error();
-
       const data = await res.json();
       setModel(data.model);
       setNewMedia({
@@ -500,6 +511,7 @@ export default function ModelManagementPage() {
     }
   };
 
+  // Media File Upload
   const handleSelectUploadFile = (file: File | null) => {
     if (!file) {
       setUploadFile(null);
@@ -507,18 +519,19 @@ export default function ModelManagementPage() {
       return;
     }
     if (file.type.startsWith("video/")) {
-      toast.error("Direct video file uploads are not supported. Videos must be linked via external redirect URL.");
+      toast.error(
+        "Direct video uploads are disabled. Videos must be linked via external redirect URL."
+      );
       return;
     }
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file (JPG, PNG, WebP, GIF, AVIF).");
+      toast.error("Please select a valid image file (JPG, PNG, WebP).");
       return;
     }
     setUploadFile(file);
     const objectUrl = URL.createObjectURL(file);
     setUploadPreview(objectUrl);
 
-    // Auto fill title if empty
     const cleanName = file.name
       .replace(/\.[^/.]+$/, "")
       .replace(/[-_]/g, " ")
@@ -576,7 +589,6 @@ export default function ModelManagementPage() {
 
         const data = await res.json();
 
-        // Add media item to model
         const mediaRes = await fetch(`/api/models/${modelId}/media`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -606,34 +618,34 @@ export default function ModelManagementPage() {
           thumbnailFile: null,
           thumbnailPreview: "",
         });
-        toast.success("Photo uploaded to Supabase & added to Media Set!");
-      } catch (err: any) {
-        console.error(err);
-        toast.error(err?.message || "Failed to upload photo");
+        toast.success("Photo uploaded and added to media set!");
+      } catch {
+        toast.error("Failed to upload photo");
       } finally {
         setUploading(false);
       }
     } else {
-      // Video (always redirect URL + poster image)
       if (!uploadForm.videoUrl.trim()) {
-        toast.error("Video redirect URL is required");
+        toast.error("Please enter a video streaming or redirect URL");
         return;
       }
+
       setUploading(true);
       try {
-        let posterUrl = uploadForm.thumbnailUrl.trim();
+        let finalThumbnailUrl = uploadForm.thumbnailUrl.trim();
 
-        // Upload poster thumbnail image if provided
         if (uploadForm.thumbnailFile) {
-          const formData = new FormData();
-          formData.append("file", uploadForm.thumbnailFile);
-          const uploadRes = await fetch("/api/upload", {
+          const thumbFormData = new FormData();
+          thumbFormData.append("file", uploadForm.thumbnailFile);
+
+          const thumbRes = await fetch("/api/upload", {
             method: "POST",
-            body: formData,
+            body: thumbFormData,
           });
-          if (uploadRes.ok) {
-            const data = await uploadRes.json();
-            posterUrl = data.url;
+
+          if (thumbRes.ok) {
+            const thumbData = await thumbRes.json();
+            finalThumbnailUrl = thumbData.url;
           }
         }
 
@@ -643,12 +655,11 @@ export default function ModelManagementPage() {
           body: JSON.stringify({
             type: "video",
             url: uploadForm.videoUrl.trim(),
-            thumbnail: posterUrl,
-            title:
-              uploadForm.title.trim() || `${model?.name || "Model"} Video Clip`,
+            thumbnail: finalThumbnailUrl,
+            title: uploadForm.title.trim() || "Exclusive Video",
             alt:
               uploadForm.alt.trim() ||
-              `${model?.name || "Model"} 4K video clip stream`,
+              `${model?.name || "Model"} exclusive video`,
             keywords: uploadForm.keywords.trim(),
             isExternal: true,
           }),
@@ -659,8 +670,6 @@ export default function ModelManagementPage() {
         const mediaData = await mediaRes.json();
         setModel(mediaData.model);
         setUploadDialogOpen(false);
-        setUploadFile(null);
-        setUploadPreview("");
         setUploadForm({
           title: "",
           alt: "",
@@ -670,16 +679,16 @@ export default function ModelManagementPage() {
           thumbnailFile: null,
           thumbnailPreview: "",
         });
-        toast.success("Video redirect link & poster added to Media Set!");
-      } catch (err: any) {
-        console.error(err);
-        toast.error(err?.message || "Failed to add video to gallery");
+        toast.success("Video redirect added to media set!");
+      } catch {
+        toast.error("Failed to add video");
       } finally {
         setUploading(false);
       }
     }
   };
 
+  // Avatar & Cover Uploads
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -691,7 +700,10 @@ export default function ModelManagementPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       if (!res.ok) {
         const data = await res.json();
         toast.error(data.error || "Upload failed");
@@ -699,7 +711,7 @@ export default function ModelManagementPage() {
       }
       const data = await res.json();
       updateField("profileImage", data.url);
-      toast.success("Avatar image uploaded to Supabase!");
+      toast.success("Avatar image uploaded successfully!");
     } catch {
       toast.error("Failed to upload avatar image");
     } finally {
@@ -718,7 +730,10 @@ export default function ModelManagementPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
       if (!res.ok) {
         const data = await res.json();
         toast.error(data.error || "Upload failed");
@@ -726,7 +741,7 @@ export default function ModelManagementPage() {
       }
       const data = await res.json();
       updateField("coverImage", data.url);
-      toast.success("Cover image uploaded to Supabase!");
+      toast.success("Cover banner image uploaded successfully!");
     } catch {
       toast.error("Failed to upload cover image");
     } finally {
@@ -734,1857 +749,2821 @@ export default function ModelManagementPage() {
     }
   };
 
-  const handleDeleteMedia = async (mediaId: string) => {
+  // Delete Media Item
+  const handleDeleteMedia = async () => {
+    if (!mediaToDelete) return;
     try {
       const res = await fetch(
-        `/api/models/${modelId}/media?mediaId=${mediaId}`,
+        `/api/models/${modelId}/media?mediaId=${mediaToDelete._id}`,
         { method: "DELETE" }
       );
       if (!res.ok) throw new Error();
       const data = await res.json();
       setModel(data.model);
-      toast.success("Media item removed");
+      setDeleteMediaDialogOpen(false);
+      setMediaToDelete(null);
+      toast.success("Media item removed from gallery");
     } catch {
-      toast.error("Failed to remove media");
+      toast.error("Failed to remove media item");
     }
-  };
-
-  const updateField = (field: keyof ModelData, value: unknown) => {
-    if (!model) return;
-    setModel({ ...model, [field]: value });
   };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48 rounded-xl" />
-        <Skeleton className="h-[600px] w-full rounded-2xl" />
-      </div>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Skeleton variant="rounded" width={240} height={40} sx={{ borderRadius: 1 }} />
+        <Skeleton variant="rounded" width="100%" height={400} sx={{ borderRadius: 1.5 }} />
+      </Box>
     );
   }
 
   if (!model) return null;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push("/admin/models")}
-            className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-slate-900">{model.name}</h1>
-              <Badge
-                className={
-                  model.status === "published"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-slate-100 text-slate-600 border-slate-200"
-                }
-              >
-                {model.status}
-              </Badge>
-            </div>
-            <p className="text-xs font-mono text-slate-500 mt-0.5">
-              Live Route: /model/{model.slug}
-            </p>
-          </div>
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 4 }}>
+      {/* Top Header Bar - Exact Match to /admin */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+          pb: 1,
+          borderBottom: "1px solid #e2e8f0",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Tooltip title="Back to Models Directory">
+            <IconButton
+              size="small"
+              onClick={() => router.push("/admin/models")}
+              sx={{
+                bgcolor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: 1,
+                color: "#475569",
+                p: 0.75,
+                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+              }}
+            >
+              <ArrowBackIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
 
-        <div className="flex items-center gap-2">
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  color: "#0f172a",
+                  letterSpacing: "-0.01em",
+                  fontSize: { xs: "1.3rem", sm: "1.5rem" },
+                }}
+              >
+                {model.name}
+              </Typography>
+              <Chip
+                label={model.status === "published" ? "Published" : "Draft"}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.68rem",
+                  fontWeight: 600,
+                  borderRadius: 1,
+                  ...(model.status === "published"
+                    ? {
+                        bgcolor: "#ecfdf5",
+                        color: "#059669",
+                        border: "1px solid #a7f3d0",
+                      }
+                    : {
+                        bgcolor: "#f1f5f9",
+                        color: "#64748b",
+                        border: "1px solid #e2e8f0",
+                      }),
+                }}
+              />
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                fontFamily: "monospace",
+                color: "#64748b",
+                fontSize: "0.75rem",
+                display: "block",
+                mt: 0.25,
+              }}
+            >
+              Live Route: /model/{model.slug}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
+            variant="outlined"
+            size="small"
+            component={Link}
+            href={`/model/${model.slug}`}
+            target="_blank"
+            startIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#334155",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              textTransform: "none",
+              px: 1.75,
+              py: 0.75,
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
           >
-            <Link href={`/model/${model.slug}`} target="_blank">
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
-              Preview Public Page
-            </Link>
+            Preview Page
           </Button>
+
           <Button
+            variant="contained"
+            size="small"
             onClick={handleSave}
             disabled={saving}
-            size="sm"
-            className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl shadow-xs"
+            startIcon={
+              saving ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SaveIcon sx={{ fontSize: 16 }} />
+              )
+            }
+            sx={{
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              borderRadius: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              px: 2,
+              py: 0.75,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
           >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving Changes..." : "Save Changes"}
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-white border border-slate-200 p-1 rounded-2xl shadow-xs flex flex-wrap gap-1">
+      {/* Tabs Navigation Bar */}
+      <Box
+        sx={{
+          bgcolor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          borderRadius: 1.5,
+          p: 0.5,
+        }}
+      >
+        <Tabs
+          value={activeTab}
+          onChange={(_, val) => handleTabChange(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: 40,
+            "& .MuiTabs-indicator": {
+              display: "none",
+            },
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              minHeight: 36,
+              py: 0.75,
+              px: 1.75,
+              borderRadius: 1,
+              color: "#64748b",
+              mr: 0.5,
+              transition: "all 0.15s ease",
+              "&.Mui-selected": {
+                bgcolor: "#0f172a",
+                color: "#ffffff",
+              },
+            },
+          }}
+        >
           {isAdmin && (
-            <>
-              <TabsTrigger
-                value="general"
-                className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-              >
-                <FileText className="mr-1.5 h-3.5 w-3.5" />
-                General Information
-              </TabsTrigger>
-              <TabsTrigger
-                value="seo"
-                className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-              >
-                <Search className="mr-1.5 h-3.5 w-3.5" />
-                Main SEO &amp; Tags
-              </TabsTrigger>
-              <TabsTrigger
-                value="photos-seo"
-                className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-              >
-                <Camera className="mr-1.5 h-3.5 w-3.5 text-indigo-500 group-data-[state=active]:text-white" />
-                Photos Page SEO
-              </TabsTrigger>
-              <TabsTrigger
-                value="videos-seo"
-                className="data-[state=active]:bg-rose-600 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-              >
-                <Film className="mr-1.5 h-3.5 w-3.5 text-rose-500 group-data-[state=active]:text-white" />
-                Videos Page SEO
-              </TabsTrigger>
-            </>
+            <Tab
+              value="general"
+              label="General Info"
+              icon={<ArticleIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+            />
           )}
-          <TabsTrigger
+          {isAdmin && (
+            <Tab
+              value="seo"
+              label="Main SEO &amp; Tags"
+              icon={<GlobeIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+            />
+          )}
+          {isAdmin && (
+            <Tab
+              value="photos-seo"
+              label="Photos Page SEO"
+              icon={<CameraIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+            />
+          )}
+          {isAdmin && (
+            <Tab
+              value="videos-seo"
+              label="Videos Page SEO"
+              icon={<MovieIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+            />
+          )}
+          <Tab
             value="media"
-            className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-600 rounded-xl font-semibold text-xs py-2 px-4"
-          >
-            <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
-            Media Sets ({model.media?.length || 0})
-          </TabsTrigger>
-        </TabsList>
+            label={`Media Sets (${model.media?.length || 0})`}
+            icon={<PhotoLibraryIcon sx={{ fontSize: 16 }} />}
+            iconPosition="start"
+          />
+        </Tabs>
+      </Box>
 
-        {isAdmin && (
-          <>
-            {/* ========== GENERAL TAB ========== */}
-            <TabsContent value="general">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold">Profile Details</CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Basic information shown to users visiting /model/{model.slug}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700">Display Name</Label>
-                      <Input
-                        value={model.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700">Route Slug</Label>
-                      <Input
-                        value={model.slug}
-                        onChange={(e) => updateField("slug", e.target.value)}
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Biography / Portfolio Overview</Label>
-                    <Textarea
-                      value={model.bio}
-                      onChange={(e) => updateField("bio", e.target.value)}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-32"
-                      rows={5}
-                      placeholder="Write a rich biographical description..."
+      {/* ======================================================== */}
+      {/* 1. GENERAL INFORMATION TAB */}
+      {/* ======================================================== */}
+      {activeTab === "general" && isAdmin && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 2.5,
+          }}
+        >
+          {/* Left Column: Profile Details */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Profile Details
+                  </Typography>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    Core model metadata rendered at /model/{model.slug}
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Display Name *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.name}
+                      onChange={(e) => updateField("name", e.target.value)}
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
                     />
-                  </div>
+                  </Box>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700">Category</Label>
-                      <Input
-                        value={model.category}
-                        onChange={(e) => updateField("category", e.target.value)}
-                        placeholder="e.g. Glamour, Fashion, Lifestyle, Fitness"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                    </div>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Route Slug *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.slug}
+                      onChange={(e) => updateField("slug", e.target.value)}
+                      slotProps={{
+                        input: {
+                          sx: {
+                            borderRadius: 1,
+                            bgcolor: "#f8fafc",
+                            fontSize: "0.875rem",
+                            fontFamily: "monospace",
+                          },
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                        <span>Country / Associated Region</span>
-                        <span className="text-[10px] text-slate-400 font-normal">e.g. India, USA</span>
-                      </Label>
-                      <Input
-                        value={model.country || ""}
-                        onChange={(e) => updateField("country", e.target.value)}
-                        placeholder="e.g. India, United States, Brazil"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                    </div>
-                  </div>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Biography &amp; Career Summary
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={model.bio}
+                    onChange={(e) => updateField("bio", e.target.value)}
+                    placeholder="Write a rich biographical overview of the creator..."
+                    slotProps={{
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                    }}
+                  />
+                </Box>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Profile Tags</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                        }
-                        placeholder="Type tag and press Enter"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                      <Button
-                        variant="outline"
-                        onClick={handleAddTag}
-                        className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-                      >
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Category / Niche
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.category}
+                      onChange={(e) => updateField("category", e.target.value)}
+                      placeholder="e.g. Glamour, Fashion, Lifestyle"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Country / Origin
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.country || ""}
+                      onChange={(e) => updateField("country", e.target.value)}
+                      placeholder="e.g. India, United States"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Profile Tags */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Profile Tags
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
+                      placeholder="Add tag and press Enter"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleAddTag}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#e2e8f0",
+                        color: "#334155",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </Box>
+
+                  {model.tags && model.tags.length > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        mt: 1.5,
+                        p: 1.25,
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
                       {model.tags.map((tag) => (
-                        <Badge
+                        <Chip
                           key={tag}
-                          variant="secondary"
-                          className="bg-slate-100 text-slate-700 border-slate-200 gap-1 rounded-full px-3"
-                        >
-                          #{tag}
-                          <button
-                            onClick={() => handleRemoveTag(tag)}
-                            className="ml-1 hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
+                          label={tag}
+                          size="small"
+                          onDelete={() => handleRemoveTag(tag)}
+                          sx={{
+                            borderRadius: 1,
+                            bgcolor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            color: "#334155",
+                          }}
+                        />
                       ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
 
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold">Key Visuals</CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Main avatar picture and cover banner header
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Profile Image (Avatar URL)</Label>
-                      <label className="cursor-pointer">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-lg transition-colors">
-                          <Upload className="w-3 h-3" />
-                          {uploadingAvatar ? "Uploading..." : "Upload Photo"}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleAvatarUpload}
+          {/* Right Column: Imagery & Controls */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {/* Imagery Card */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Imagery Assets
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Profile Avatar */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Avatar Photo
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar
+                      src={model.profileImage || undefined}
+                      variant="rounded"
+                      sx={{
+                        width: 54,
+                        height: 54,
+                        borderRadius: 1,
+                        bgcolor: "#f1f5f9",
+                        color: "#334155",
+                        fontWeight: 700,
+                        fontSize: "1.1rem",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      {model.name.charAt(0)}
+                    </Avatar>
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <label style={{ cursor: "pointer" }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          component="span"
                           disabled={uploadingAvatar}
-                        />
-                      </label>
-                    </div>
-                    <Input
-                      value={model.profileImage}
-                      onChange={(e) =>
-                        updateField("profileImage", e.target.value)
-                      }
-                      placeholder="https://..."
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    {model.profileImage && (
-                      <img
-                        src={model.profileImage}
-                        alt="Profile preview"
-                        className="mt-2 h-24 w-24 rounded-2xl object-cover border border-slate-200 shadow-sm"
-                      />
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Cover Banner (Header Image URL)</Label>
-                      <label className="cursor-pointer">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-lg transition-colors">
-                          <Upload className="w-3 h-3" />
-                          {uploadingCover ? "Uploading..." : "Upload Photo"}
-                        </span>
+                          startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
+                          sx={{
+                            borderRadius: 1,
+                            borderColor: "#e2e8f0",
+                            color: "#334155",
+                            fontSize: "0.75rem",
+                            textTransform: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
+                        </Button>
                         <input
                           type="file"
                           accept="image/*"
-                          className="hidden"
-                          onChange={handleCoverUpload}
-                          disabled={uploadingCover}
+                          style={{ display: "none" }}
+                          onChange={handleAvatarUpload}
                         />
                       </label>
-                    </div>
-                    <Input
-                      value={model.coverImage}
-                      onChange={(e) =>
-                        updateField("coverImage", e.target.value)
-                      }
-                      placeholder="https://..."
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    {model.coverImage && (
-                      <img
-                        src={model.coverImage}
-                        alt="Cover preview"
-                        className="mt-2 h-36 w-full rounded-2xl object-cover border border-slate-200 shadow-sm"
+                      <TextField
+                        size="small"
+                        placeholder="or paste image URL"
+                        value={model.profileImage || ""}
+                        onChange={(e) => updateField("profileImage", e.target.value)}
+                        slotProps={{
+                          input: {
+                            sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.75rem" },
+                          },
+                        }}
                       />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    </Box>
+                  </Box>
+                </Box>
 
-              {/* Detailed SEO Article / About Content */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold flex items-center justify-between">
-                    <span>Detailed SEO Article / About Content</span>
-                    <Badge variant="outline" className="text-[10px] text-slate-500 font-normal">
-                      Indexed in DOM &amp; Info Accordion
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Comprehensive biography, modeling career details, background story, and keyword-rich text to boost search engine rankings.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Detailed About Story / Article</Label>
-                    <Textarea
-                      rows={10}
-                      value={model.aboutContent || ""}
-                      onChange={(e) => updateField("aboutContent", e.target.value)}
-                      placeholder="Write a comprehensive article / biography about the model, career highlights, facts, and bio information for search engine indexation..."
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 leading-relaxed font-sans text-sm"
+                <Divider sx={{ borderColor: "#f1f5f9" }} />
+
+                {/* Cover Banner */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Cover Banner
+                  </Typography>
+                  {model.coverImage && (
+                    <Box
+                      component="img"
+                      src={model.coverImage}
+                      alt="Cover preview"
+                      sx={{
+                        width: "100%",
+                        height: 90,
+                        objectFit: "cover",
+                        borderRadius: 1,
+                        border: "1px solid #e2e8f0",
+                        mb: 1,
+                      }}
                     />
-                    <p className="text-[11px] text-slate-400">
-                      This text is always rendered in the page DOM for search engine crawlers, and accessible to visitors via the info icon accordion below the gallery.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  )}
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Cover image URL"
+                      value={model.coverImage || ""}
+                      onChange={(e) => updateField("coverImage", e.target.value)}
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.75rem" },
+                        },
+                      }}
+                    />
+                    <label style={{ cursor: "pointer" }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        component="span"
+                        disabled={uploadingCover}
+                        startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
+                        sx={{
+                          borderRadius: 1,
+                          borderColor: "#e2e8f0",
+                          color: "#334155",
+                          fontSize: "0.75rem",
+                          textTransform: "none",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {uploadingCover ? "..." : "Upload"}
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={handleCoverUpload}
+                      />
+                    </label>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
 
-            {/* Sidebar Settings */}
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-sm font-bold">Visibility &amp; Status</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Publication Status</Label>
+            {/* Publishing Controls Card */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Publication Controls
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Status
+                  </Typography>
+                  <FormControl fullWidth size="small">
                     <Select
                       value={model.status}
-                      onValueChange={(v) =>
-                        updateField("status", v as "draft" | "published")
-                      }
+                      onChange={(e) => updateField("status", e.target.value)}
+                      sx={{
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        fontSize: "0.8125rem",
+                        fontWeight: 600,
+                      }}
                     >
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50 text-slate-900">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        <SelectItem value="published">Published (Visible to All)</SelectItem>
-                        <SelectItem value="draft">Draft (Admin Only)</SelectItem>
-                      </SelectContent>
+                      <MenuItem value="published">Published (Live for Public)</MenuItem>
+                      <MenuItem value="draft">Draft (Admin Only)</MenuItem>
                     </Select>
-                  </div>
+                  </FormControl>
+                </Box>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-700 block">Featured Creator</Label>
-                      <span className="text-[11px] text-slate-400">Show on homepage spotlight</span>
-                    </div>
-                    <Switch
-                      checked={model.featured}
-                      onCheckedChange={(v) => updateField("featured", v)}
-                    />
-                  </div>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                      Reviewed Model
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                      Mark verification checklist complete
+                    </Typography>
+                  </Box>
+                  <Switch
+                    size="small"
+                    checked={!!model.reviewed}
+                    onChange={(e) => updateField("reviewed", e.target.checked)}
+                  />
+                </Box>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-700 block">Reviewed Tag</Label>
-                      <span className="text-[11px] text-slate-400">Mark portfolio as reviewed</span>
-                    </div>
-                    <Switch
-                      checked={!!model.reviewed}
-                      onCheckedChange={(v) => updateField("reviewed", v)}
-                    />
-                  </div>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                      Featured Creator
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                      Promote on home feeds &amp; top banners
+                    </Typography>
+                  </Box>
+                  <Switch
+                    size="small"
+                    checked={!!model.featured}
+                    onChange={(e) => updateField("featured", e.target.checked)}
+                  />
+                </Box>
 
-                  <Separator className="bg-slate-100 my-2" />
-
-                  <div className="text-[11px] text-slate-400 space-y-1">
-                    <p>Created: {new Date(model.createdAt).toLocaleString()}</p>
-                    <p>Last Modified: {new Date(model.updatedAt).toLocaleString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {isAdmin && (
-                <Card className="border-red-100 bg-red-50/40 rounded-2xl shadow-xs">
-                  <CardHeader>
-                    <CardTitle className="text-red-700 text-xs font-bold uppercase tracking-wider">
-                      Delete Route
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full border-red-200 text-red-600 hover:bg-red-100/70 rounded-xl text-xs font-bold"
-                        >
-                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                          Delete Model Profile
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-lg font-bold">
-                            Delete &quot;{model.name}&quot;?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="text-slate-500 text-xs">
-                            This will permanently delete this model and all related media assets.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl">
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={async () => {
-                              const res = await fetch(`/api/models/${modelId}`, {
-                                method: "DELETE",
-                              });
-                              if (!res.ok) {
-                                const data = await res.json();
-                                toast.error(data.error || "Failed to delete");
-                                return;
-                              }
-                              toast.success("Model deleted");
-                              router.push("/admin/models");
-                            }}
-                            className="bg-red-600 text-white hover:bg-red-700 rounded-xl"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ========== SEO TAB ========== */}
-        <TabsContent value="seo">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-indigo-600" />
-                    Advanced Search Engine Optimization
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Fine-tune Google indexing, titles, descriptions, and crawler rules
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Focus Keyphrase</Label>
-                    <Input
-                      value={model.focusKeyphrase}
-                      onChange={(e) =>
-                        updateField("focusKeyphrase", e.target.value)
-                      }
-                      placeholder="e.g. Aditi Mistry photos videos"
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                  </div>
-
-                  <Separator className="bg-slate-100 my-2" />
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Meta Title (Search Engine Snippet)</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          model.metaTitle.length === 0
-                            ? "text-slate-400"
-                            : model.metaTitle.length < 25
-                            ? "text-amber-500"
-                            : model.metaTitle.length <= 60
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {model.metaTitle.length}/60 {model.metaTitle.length > 60 ? "(Too long!)" : model.metaTitle.length >= 25 ? "(Optimal)" : model.metaTitle.length > 0 ? "(Min 25 chars)" : ""}
-                      </span>
-                    </div>
-                    <Input
-                      value={model.metaTitle}
-                      maxLength={60}
-                      onChange={(e) =>
-                        updateField("metaTitle", e.target.value)
-                      }
-                      placeholder="Title tag for search engines (max 60 chars)"
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Optimal length: 25–60 characters. Bing and Google truncate titles longer than 60–70 chars. Do NOT append &quot;| VIXN&quot; (it is added automatically).
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Meta Description (Search Snippet)</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          model.metaDescription.length === 0
-                            ? "text-slate-400"
-                            : model.metaDescription.length < 50
-                            ? "text-amber-500"
-                            : model.metaDescription.length <= 155
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {model.metaDescription.length}/155 {model.metaDescription.length > 155 ? "(Too long!)" : model.metaDescription.length >= 120 ? "(Optimal: 120-155)" : model.metaDescription.length >= 50 ? "(Good)" : model.metaDescription.length > 0 ? "(Min 50 chars)" : ""}
-                      </span>
-                    </div>
-                    <Textarea
-                      value={model.metaDescription}
-                      maxLength={155}
-                      onChange={(e) =>
-                        updateField("metaDescription", e.target.value)
-                      }
-                      placeholder="Search snippet description (strict limit: 50–155 characters)"
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
-                      rows={3}
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Strict limit: 155 characters. Bing explicitly flags descriptions exceeding 160 characters. Write high-intent natural sentences; avoid lists of comma keywords.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Meta Keywords</Label>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {model.metaKeywords.length} keywords
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={keywordInput}
-                        onChange={(e) => setKeywordInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), handleAddKeyword())
-                        }
-                        placeholder="Add keyword and press Enter"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddKeyword}
-                        className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setBulkKeywordsText("");
-                          setBulkKeywordsOpen(true);
-                        }}
-                        className="rounded-xl border-indigo-200 bg-indigo-50/60 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 flex items-center gap-1.5 font-semibold"
-                      >
-                        <ListPlus className="w-4 h-4 text-indigo-600" />
-                        Bulk
-                      </Button>
-                    </div>
-                    {model.metaKeywords.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2 max-h-48 overflow-y-auto p-2 rounded-xl bg-slate-50/80 border border-slate-100">
-                        {model.metaKeywords.map((kw) => (
-                          <Badge
-                            key={kw}
-                            variant="secondary"
-                            className="bg-indigo-50 text-indigo-700 border-indigo-200 gap-1 rounded-full px-3 shrink-0"
-                          >
-                            {kw}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveKeyword(kw)}
-                              className="ml-1 hover:text-red-600 cursor-pointer"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Canonical URL Override</Label>
-                    <Input
-                      value={model.canonicalUrl}
-                      onChange={(e) =>
-                        updateField("canonicalUrl", e.target.value)
-                      }
-                      placeholder={`https://vixn.fun/model/${model.slug}`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">Robots Directive</Label>
-                    <Select
-                      value={model.robotsDirective || "index, follow"}
-                      onValueChange={(v) =>
-                        updateField("robotsDirective", v)
-                      }
-                    >
-                      <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50 text-slate-900">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        <SelectItem value="index, follow">Index, Follow (Recommended)</SelectItem>
-                        <SelectItem value="noindex, follow">No Index, Follow</SelectItem>
-                        <SelectItem value="index, nofollow">Index, No Follow</SelectItem>
-                        <SelectItem value="noindex, nofollow">No Index, No Follow</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <Label className="text-xs font-bold text-slate-700 block">Cornerstone Content</Label>
-                      <span className="text-[11px] text-slate-400">Mark as primary authority pillar</span>
-                    </div>
-                    <Switch
-                      checked={model.cornerstone}
-                      onCheckedChange={(v) => updateField("cornerstone", v)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Social Meta */}
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold">
-                    Open Graph &amp; Social Card Tags
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Custom share cards for Twitter, Telegram, WhatsApp &amp; Facebook
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">OG Title</Label>
-                      <span className="text-[11px] text-slate-400">
-                        {(model.ogTitle || "").length}/60
-                      </span>
-                    </div>
-                    <Input
-                      value={model.ogTitle}
-                      maxLength={60}
-                      onChange={(e) =>
-                        updateField("ogTitle", e.target.value)
-                      }
-                      placeholder={model.metaTitle || "Open Graph title (max 60 chars)"}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">OG Description</Label>
-                      <span className="text-[11px] text-slate-400">
-                        {(model.ogDescription || "").length}/155
-                      </span>
-                    </div>
-                    <Textarea
-                      value={model.ogDescription}
-                      maxLength={155}
-                      onChange={(e) =>
-                        updateField("ogDescription", e.target.value)
-                      }
-                      placeholder={model.metaDescription || "Open Graph description (max 155 chars)"}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">OG Share Image URL</Label>
-                    <Input
-                      value={model.ogImage}
-                      onChange={(e) =>
-                        updateField("ogImage", e.target.value)
-                      }
-                      placeholder="1200x630 share image URL"
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* SERP & Checklist */}
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs sticky top-6">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    Google &amp; Bing Snippet Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
-                    <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.metaTitle || `${model.name} - Photos & Videos`} | VIXN
-                    </p>
-                    <p className="text-xs text-emerald-700 font-mono truncate">
-                      vixn.fun › model › {model.slug}
-                    </p>
-                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                      {model.metaDescription ||
-                        `Watch exclusive ${model.name} HD photos, 4K streaming videos and viral leaks on VIXN.`}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    Bing &amp; Google SEO Health Checklist
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  {[
-                    {
-                      label: "Meta title length (25–60 chars)",
-                      ok: model.metaTitle.length >= 25 && model.metaTitle.length <= 60,
-                    },
-                    {
-                      label: "No duplicate branding (| VIXN)",
-                      ok: !/(?:[|\-–—:]|\bon\b)\s*vixn/i.test(model.metaTitle),
-                    },
-                    {
-                      label: "Description optimal (50–155 chars)",
-                      ok:
-                        model.metaDescription.length >= 50 &&
-                        model.metaDescription.length <= 155,
-                    },
-                    {
-                      label: "No keyword stuffing / spam",
-                      ok: (model.metaDescription.match(/,/g) || []).length <= 4 && !model.metaDescription.toLowerCase().includes("sohail khan"),
-                    },
-                    {
-                      label: "Focus keyphrase configured",
-                      ok: model.focusKeyphrase.length > 0,
-                    },
-                    {
-                      label: "OG Image set (1200x630)",
-                      ok: (model.ogImage || model.profileImage).length > 0,
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-2 text-xs"
-                    >
-                      <div
-                        className={`h-2 w-2 rounded-full ${item.ok ? "bg-emerald-500" : "bg-slate-300"}`}
-                      />
-                      <span
-                        className={
-                          item.ok ? "text-slate-700 font-medium" : "text-slate-400"
-                        }
-                      >
-                        {item.label}
-                      </span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ========== PHOTOS PAGE SEO TAB ========== */}
-        <TabsContent value="photos-seo">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Camera className="h-4 w-4 text-indigo-600" />
-                      Dedicated Photos Page SEO &amp; Copy
-                    </span>
-                    <Badge variant="outline" className="font-mono text-[11px] text-indigo-600 bg-indigo-50 border-indigo-200">
-                      /model/{model.slug}/photos
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Fine-tune search engine ranking for people searching &quot;{model.name} photos&quot;, &quot;{model.name} pics&quot;, and photoshoot galleries.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
-                      <span className="text-[11px] text-slate-400">
-                        {(model.photosSeo?.heading || "").length}/80
-                      </span>
-                    </div>
-                    <Input
-                      value={model.photosSeo?.heading || ""}
-                      maxLength={80}
-                      onChange={(e) => updatePhotosSeo("heading", e.target.value)}
-                      placeholder={`e.g. ${model.name} High-Definition Photo Sets & Exclusive Galleries`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      If left empty, defaults dynamically to &quot;{model.name} Photo Sets &amp; HD Gallery&quot;.
-                    </p>
-                  </div>
-
-                  <Separator className="bg-slate-100 my-2" />
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Photos Page Meta Title</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          (model.photosSeo?.metaTitle || "").length === 0
-                            ? "text-slate-400"
-                            : (model.photosSeo?.metaTitle || "").length <= 60
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {(model.photosSeo?.metaTitle || "").length}/60 {(model.photosSeo?.metaTitle || "").length > 60 ? "(Too long!)" : (model.photosSeo?.metaTitle || "").length >= 25 ? "(Optimal)" : ""}
-                      </span>
-                    </div>
-                    <Input
-                      value={model.photosSeo?.metaTitle || ""}
-                      maxLength={60}
-                      onChange={(e) => updatePhotosSeo("metaTitle", e.target.value)}
-                      placeholder={`e.g. ${model.name} Photos, HD Galleries & Pictures | VIXN`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Max 60 chars. Do NOT include &quot;| VIXN&quot; (added automatically).
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Photos Page Meta Description</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          (model.photosSeo?.metaDescription || "").length === 0
-                            ? "text-slate-400"
-                            : (model.photosSeo?.metaDescription || "").length < 50
-                            ? "text-amber-500"
-                            : (model.photosSeo?.metaDescription || "").length <= 155
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {(model.photosSeo?.metaDescription || "").length}/155 {(model.photosSeo?.metaDescription || "").length > 155 ? "(Too long!)" : (model.photosSeo?.metaDescription || "").length >= 120 ? "(Optimal)" : ""}
-                      </span>
-                    </div>
-                    <Textarea
-                      value={model.photosSeo?.metaDescription || ""}
-                      maxLength={155}
-                      onChange={(e) => updatePhotosSeo("metaDescription", e.target.value)}
-                      placeholder={`e.g. Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on VIXN.`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
-                      rows={3}
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Strict limit: 155 characters. Bing flags descriptions over 160 characters.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Photo SEO Keywords</Label>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {(model.photosSeo?.metaKeywords || []).length} keywords
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={photoKeywordInput}
-                        onChange={(e) => setPhotoKeywordInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), handleAddPhotoKeyword())
-                        }
-                        placeholder="Add photo keyword and press Enter"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddPhotoKeyword}
-                        className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setBulkKeywordsTarget("photos");
-                          setBulkKeywordsText("");
-                          setBulkKeywordsOpen(true);
-                        }}
-                        className="rounded-xl border-indigo-200 bg-indigo-50/60 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800 flex items-center gap-1.5 font-semibold"
-                      >
-                        <ListPlus className="w-4 h-4 text-indigo-600" />
-                        Bulk
-                      </Button>
-                    </div>
-                    {(model.photosSeo?.metaKeywords || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2 max-h-36 overflow-y-auto p-2 rounded-xl bg-slate-50/80 border border-slate-100">
-                        {model.photosSeo?.metaKeywords?.map((kw) => (
-                          <Badge
-                            key={kw}
-                            variant="secondary"
-                            className="bg-indigo-50 text-indigo-700 border-indigo-200 gap-1 rounded-full px-3 shrink-0"
-                          >
-                            {kw}
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePhotoKeyword(kw)}
-                              className="ml-1 hover:text-red-600"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">
-                      Introductory Photo Gallery Article / Story
-                    </Label>
-                    <Textarea
-                      rows={5}
-                      value={model.photosSeo?.introText || ""}
-                      onChange={(e) => updatePhotosSeo("introText", e.target.value)}
-                      placeholder={`Write a keyword-rich intro for the photo gallery page describing ${model.name}'s photoshoot themes, styles, and photo highlights...`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 text-sm leading-relaxed"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Rendered at the top of /model/{model.slug}/photos for Google crawlers and visitors.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Photos SERP Preview */}
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs sticky top-6">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    Google Photo Snippet Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
-                    <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.photosSeo?.metaTitle
-                        ? `${model.photosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
-                        : `${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
-                    </p>
-                    <p className="text-xs text-emerald-700 font-mono truncate">
-                      vixn.fun › model › {model.slug} › photos
-                    </p>
-                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                      {model.photosSeo?.metaDescription ||
-                        `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on VIXN.`}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* ========== VIDEOS PAGE SEO TAB ========== */}
-        <TabsContent value="videos-seo">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-base font-bold flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Film className="h-4 w-4 text-rose-600" />
-                      Dedicated Videos Page SEO &amp; Copy
-                    </span>
-                    <Badge variant="outline" className="font-mono text-[11px] text-rose-600 bg-rose-50 border-rose-200">
-                      /model/{model.slug}/videos
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 text-xs">
-                    Fine-tune search engine ranking for people searching &quot;{model.name} videos&quot;, &quot;{model.name} 4k clips&quot;, and streaming reels.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Custom Page Heading (H1)</Label>
-                      <span className="text-[11px] text-slate-400">
-                        {(model.videosSeo?.heading || "").length}/80
-                      </span>
-                    </div>
-                    <Input
-                      value={model.videosSeo?.heading || ""}
-                      maxLength={80}
-                      onChange={(e) => updateVideosSeo("heading", e.target.value)}
-                      placeholder={`e.g. ${model.name} 4K Video Clips, Streams & Exclusive Reels`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      If left empty, defaults dynamically to &quot;{model.name} Video Showcase &amp; Clips&quot;.
-                    </p>
-                  </div>
-
-                  <Separator className="bg-slate-100 my-2" />
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Videos Page Meta Title</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          (model.videosSeo?.metaTitle || "").length === 0
-                            ? "text-slate-400"
-                            : (model.videosSeo?.metaTitle || "").length <= 60
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {(model.videosSeo?.metaTitle || "").length}/60 {(model.videosSeo?.metaTitle || "").length > 60 ? "(Too long!)" : (model.videosSeo?.metaTitle || "").length >= 25 ? "(Optimal)" : ""}
-                      </span>
-                    </div>
-                    <Input
-                      value={model.videosSeo?.metaTitle || ""}
-                      maxLength={60}
-                      onChange={(e) => updateVideosSeo("metaTitle", e.target.value)}
-                      placeholder={`e.g. ${model.name} Videos, 4K Clips & Streaming | VIXN`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Max 60 chars. Do NOT include &quot;| VIXN&quot; (added automatically).
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Videos Page Meta Description</Label>
-                      <span
-                        className={`text-[11px] font-semibold ${
-                          (model.videosSeo?.metaDescription || "").length === 0
-                            ? "text-slate-400"
-                            : (model.videosSeo?.metaDescription || "").length < 50
-                            ? "text-amber-500"
-                            : (model.videosSeo?.metaDescription || "").length <= 155
-                            ? "text-emerald-600"
-                            : "text-red-500 font-bold"
-                        }`}
-                      >
-                        {(model.videosSeo?.metaDescription || "").length}/155 {(model.videosSeo?.metaDescription || "").length > 155 ? "(Too long!)" : (model.videosSeo?.metaDescription || "").length >= 120 ? "(Optimal)" : ""}
-                      </span>
-                    </div>
-                    <Textarea
-                      value={model.videosSeo?.metaDescription || ""}
-                      maxLength={155}
-                      onChange={(e) => updateVideosSeo("metaDescription", e.target.value)}
-                      placeholder={`e.g. Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on VIXN.`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 min-h-20"
-                      rows={3}
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Strict limit: 155 characters. Bing flags descriptions over 160 characters.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-700">Video SEO Keywords</Label>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {(model.videosSeo?.metaKeywords || []).length} keywords
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={videoKeywordInput}
-                        onChange={(e) => setVideoKeywordInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), handleAddVideoKeyword())
-                        }
-                        placeholder="Add video keyword and press Enter"
-                        className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddVideoKeyword}
-                        className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setBulkKeywordsTarget("videos");
-                          setBulkKeywordsText("");
-                          setBulkKeywordsOpen(true);
-                        }}
-                        className="rounded-xl border-rose-200 bg-rose-50/60 text-rose-700 hover:bg-rose-100 hover:text-rose-800 flex items-center gap-1.5 font-semibold"
-                      >
-                        <ListPlus className="w-4 h-4 text-rose-600" />
-                        Bulk
-                      </Button>
-                    </div>
-                    {(model.videosSeo?.metaKeywords || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2 max-h-36 overflow-y-auto p-2 rounded-xl bg-slate-50/80 border border-slate-100">
-                        {model.videosSeo?.metaKeywords?.map((kw) => (
-                          <Badge
-                            key={kw}
-                            variant="secondary"
-                            className="bg-rose-50 text-rose-700 border-rose-200 gap-1 rounded-full px-3 shrink-0"
-                          >
-                            {kw}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveVideoKeyword(kw)}
-                              className="ml-1 hover:text-red-600"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-700">
-                      Introductory Video Showcase Article / Story
-                    </Label>
-                    <Textarea
-                      rows={5}
-                      value={model.videosSeo?.introText || ""}
-                      onChange={(e) => updateVideosSeo("introText", e.target.value)}
-                      placeholder={`Write a keyword-rich intro for the video page describing ${model.name}'s video streams, clip formats, quality, and highlights...`}
-                      className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 text-sm leading-relaxed"
-                    />
-                    <p className="text-[11px] text-slate-400">
-                      Rendered at the top of /model/{model.slug}/videos for Google crawlers and visitors.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Videos SERP Preview */}
-            <div className="space-y-6">
-              <Card className="border-slate-200 bg-white rounded-2xl shadow-xs sticky top-6">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 text-xs font-bold uppercase tracking-wider">
-                    Google Video Snippet Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-1.5">
-                    <p className="text-sm font-bold text-blue-600 truncate hover:underline">
-                      {model.videosSeo?.metaTitle
-                        ? `${model.videosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
-                        : `${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
-                    </p>
-                    <p className="text-xs text-emerald-700 font-mono truncate">
-                      vixn.fun › model › {model.slug} › videos
-                    </p>
-                    <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                      {model.videosSeo?.metaDescription ||
-                        `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on VIXN.`}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-          </TabsContent>
-        </>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                      Cornerstone Content
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                      Primary domain authority pillar
+                    </Typography>
+                  </Box>
+                  <Switch
+                    size="small"
+                    checked={!!model.cornerstone}
+                    onChange={(e) => updateField("cornerstone", e.target.checked)}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
       )}
 
-      {/* ========== MEDIA TAB ========== */}
-      <TabsContent value="media">
-          <Card className="border-slate-200 bg-white rounded-2xl shadow-xs">
-            <CardHeader className="flex-row items-center justify-between border-b border-slate-100 pb-4">
-              <div>
-                <CardTitle className="text-slate-900 text-base font-bold">Media Sets Manager</CardTitle>
-                <CardDescription className="text-slate-500 text-xs">
-                  Upload images directly to Supabase storage or attach external video redirect links with full SEO attributes.
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                {/* Upload File / Add Media Dialog */}
-                <Dialog
-                  open={uploadDialogOpen}
-                  onOpenChange={(open) => {
-                    setUploadDialogOpen(open);
-                    if (!open) {
-                      setUploadFile(null);
-                      setUploadPreview("");
-                    }
+      {/* ======================================================== */}
+      {/* 2. MAIN SEO & TAGS TAB */}
+      {/* ======================================================== */}
+      {activeTab === "seo" && isAdmin && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 2.5,
+          }}
+        >
+          {/* Left Column: Search Optimization */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Search Engine Optimization (SEO)
+                  </Typography>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    Configure organic search indexing snippet, keyphrases, and crawler directives
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Focus Keyphrase */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Focus Keyphrase
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.focusKeyphrase || ""}
+                    onChange={(e) => updateField("focusKeyphrase", e.target.value)}
+                    placeholder="e.g. Aditi Mistry photos videos"
+                    slotProps={{
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Meta Title */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Meta Title (Google Snippet)
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          model.metaTitle.length === 0
+                            ? "#94a3b8"
+                            : model.metaTitle.length <= 60
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {model.metaTitle.length}/60{" "}
+                      {model.metaTitle.length > 60
+                        ? "(Too long!)"
+                        : model.metaTitle.length >= 25
+                        ? "(Optimal)"
+                        : ""}
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.metaTitle || ""}
+                    onChange={(e) => updateField("metaTitle", e.target.value)}
+                    placeholder="Title tag for search engines (max 60 chars)"
+                    helperText='Max 60 chars. Do NOT append "| VIXN" (added automatically).'
+                    slotProps={{
+                      htmlInput: { maxLength: 60 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Meta Description */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Meta Description (Search Snippet)
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          model.metaDescription.length === 0
+                            ? "#94a3b8"
+                            : model.metaDescription.length < 50
+                            ? "#d97706"
+                            : model.metaDescription.length <= 155
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {model.metaDescription.length}/155{" "}
+                      {model.metaDescription.length > 155
+                        ? "(Too long!)"
+                        : model.metaDescription.length >= 120
+                        ? "(Optimal: 120-155)"
+                        : model.metaDescription.length >= 50
+                        ? "(Good)"
+                        : ""}
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    value={model.metaDescription || ""}
+                    onChange={(e) => updateField("metaDescription", e.target.value)}
+                    placeholder="Search snippet description (strict limit: 50–155 characters)"
+                    helperText="Strict limit: 155 characters. Avoid stuffing comma lists; write natural sentences."
+                    slotProps={{
+                      htmlInput: { maxLength: 155 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Meta Keywords */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Meta Keywords
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {model.metaKeywords?.length || 0} keywords
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={keywordInput}
+                      onChange={(e) => setKeywordInput(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), handleAddKeyword())
+                      }
+                      placeholder="Add keyword and press Enter"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleAddKeyword}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#e2e8f0",
+                        color: "#334155",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setBulkKeywordsTarget("main");
+                        setBulkKeywordsText("");
+                        setBulkKeywordsOpen(true);
+                      }}
+                      startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#cbd5e1",
+                        color: "#1e293b",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Bulk
+                    </Button>
+                  </Box>
+
+                  {model.metaKeywords && model.metaKeywords.length > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        mt: 1.5,
+                        maxHeight: 160,
+                        overflowY: "auto",
+                        p: 1.25,
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      {model.metaKeywords.map((kw) => (
+                        <Chip
+                          key={kw}
+                          label={kw}
+                          size="small"
+                          onDelete={() => handleRemoveKeyword(kw)}
+                          sx={{
+                            borderRadius: 1,
+                            bgcolor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            color: "#334155",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Canonical & Robots */}
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Canonical URL Override
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.canonicalUrl || ""}
+                      onChange={(e) => updateField("canonicalUrl", e.target.value)}
+                      placeholder={`https://vixn.fun/model/${model.slug}`}
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      Robots Directive
+                    </Typography>
+                    <FormControl fullWidth size="small">
+                      <Select
+                        value={model.robotsDirective || "index, follow"}
+                        onChange={(e) => updateField("robotsDirective", e.target.value)}
+                        sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem" }}
+                      >
+                        <MenuItem value="index, follow">Index, Follow (Recommended)</MenuItem>
+                        <MenuItem value="noindex, follow">No Index, Follow</MenuItem>
+                        <MenuItem value="index, nofollow">Index, No Follow</MenuItem>
+                        <MenuItem value="noindex, nofollow">No Index, No Follow</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Social Media OpenGraph Card */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Social Sharing Cards (OpenGraph &amp; Twitter)
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      OG Title
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.ogTitle || ""}
+                      onChange={(e) => updateField("ogTitle", e.target.value)}
+                      placeholder="OpenGraph social title"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                      OG Image URL (1200x630)
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={model.ogImage || ""}
+                      onChange={(e) => updateField("ogImage", e.target.value)}
+                      placeholder="https://.../og-preview.jpg"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    OG Description
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={model.ogDescription || ""}
+                    onChange={(e) => updateField("ogDescription", e.target.value)}
+                    placeholder="Social snippet description..."
+                    slotProps={{
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Editorial / About Content Card */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    Editorial Article &amp; About Story
+                  </Typography>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    In-depth editorial biography for long-tail SEO ranking and indexing authority
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  value={model.aboutContent || ""}
+                  onChange={(e) => updateField("aboutContent", e.target.value)}
+                  placeholder="Write a long-form article covering career biography, photoshoot highlights, media background..."
+                  slotProps={{
+                    input: {
+                      sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.6 },
+                    },
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* Right Column: SERP Preview & Checklist */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            {/* SERP Preview */}
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+                position: "sticky",
+                top: 20,
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                    Google SERP Preview
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+              />
+              <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    border: "1px solid #e2e8f0",
+                    bgcolor: "#f8fafc",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.5,
                   }}
                 >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
-                    >
-                      <Upload className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
-                      Upload File
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                        <UploadCloud className="w-5 h-5 text-indigo-600" />
-                        Upload to Media Set
-                      </DialogTitle>
-                      <DialogDescription className="text-slate-500 text-xs">
-                        Direct upload of photos to storage, or configure external streaming redirect links for videos.
-                      </DialogDescription>
-                    </DialogHeader>
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "#1a0dab",
+                      lineHeight: 1.3,
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {model.metaTitle
+                      ? `${model.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                      : `${model.name} - Photos & Videos | VIXN`}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.6875rem",
+                      fontFamily: "monospace",
+                      color: "#006621",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    https://vixn.fun/model/{model.slug}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: "#4d5156",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {model.metaDescription ||
+                      `Explore ${model.name}'s exclusive photo gallery and video collection on VIXN.`}
+                  </Typography>
+                </Box>
 
-                    {/* Media Type Toggle */}
-                    <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setUploadType("photo")}
-                        className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                          uploadType === "photo"
-                            ? "bg-white text-slate-900 shadow-xs"
-                            : "text-slate-500 hover:text-slate-900"
-                        }`}
+                {/* SEO Checklist */}
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, pt: 1 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    SEO Checklist
+                  </Typography>
+                  {[
+                    { label: "Meta title within 60 chars", ok: model.metaTitle.length > 0 && model.metaTitle.length <= 60 },
+                    { label: "Description optimal (50–155 chars)", ok: model.metaDescription.length >= 50 && model.metaDescription.length <= 155 },
+                    { label: "Focus keyphrase specified", ok: Boolean(model.focusKeyphrase?.length) },
+                    { label: "Avatar image uploaded", ok: Boolean(model.profileImage?.length) },
+                    { label: "Has media items in gallery", ok: Boolean(model.media?.length) },
+                  ].map((item) => (
+                    <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          bgcolor: item.ok ? "#10b981" : "#cbd5e1",
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: "0.75rem",
+                          fontWeight: item.ok ? 600 : 400,
+                          color: item.ok ? "#334155" : "#94a3b8",
+                        }}
                       >
-                        <Camera className="w-4 h-4 text-indigo-600" />
-                        Photo (Upload Image)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUploadType("video")}
-                        className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                          uploadType === "video"
-                            ? "bg-white text-slate-900 shadow-xs"
-                            : "text-slate-500 hover:text-slate-900"
-                        }`}
-                      >
-                        <Film className="w-4 h-4 text-rose-600" />
-                        Video (Redirect Stream)
-                      </button>
-                    </div>
-
-                    <div className="space-y-4 py-2">
-                      {/* Photo Upload Mode */}
-                      {uploadType === "photo" && (
-                        <div className="space-y-3">
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-700">
-                              Select Image File *
-                            </Label>
-                            {!uploadFile ? (
-                              <label
-                                htmlFor="modal-photo-upload"
-                                className="flex flex-col items-center justify-center h-36 rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50/80 cursor-pointer transition-colors"
-                              >
-                                <UploadCloud className="h-8 w-8 text-indigo-500 mb-2" />
-                                <span className="text-xs font-bold text-indigo-900">
-                                  Click or drop image file here
-                                </span>
-                                <span className="text-[11px] text-slate-400 mt-0.5">
-                                  JPG, PNG, WebP, GIF, AVIF (Max 100MB)
-                                </span>
-                                <input
-                                  id="modal-photo-upload"
-                                  type="file"
-                                  className="hidden"
-                                  accept="image/*"
-                                  onChange={(e) =>
-                                    handleSelectUploadFile(e.target.files?.[0] || null)
-                                  }
-                                />
-                              </label>
-                            ) : (
-                              <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
-                                <img
-                                  src={uploadPreview}
-                                  alt="Preview"
-                                  className="w-16 h-16 rounded-lg object-cover border border-slate-200 shadow-xs"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-slate-900 truncate">
-                                    {uploadFile.name}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400">
-                                    {(uploadFile.size / (1024 * 1024)).toFixed(2)} MB
-                                  </p>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setUploadFile(null);
-                                    setUploadPreview("");
-                                  }}
-                                  className="text-red-600 hover:bg-red-50 text-xs rounded-lg"
-                                >
-                                  Change
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Video Mode */}
-                      {uploadType === "video" && (
-                        <div className="space-y-3">
-                          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/60 text-amber-800 text-xs flex items-start gap-2">
-                            <ExternalLink className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                            <p>
-                              Direct video file uploads are disabled to keep response times fast. Enter the video redirect streaming link below.
-                            </p>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-700">
-                              Video Stream / Redirect URL *
-                            </Label>
-                            <Input
-                              value={uploadForm.videoUrl}
-                              onChange={(e) =>
-                                setUploadForm({ ...uploadForm, videoUrl: e.target.value })
-                              }
-                              placeholder="https://.../video-stream-or-page"
-                              className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                            />
-                          </div>
-
-                          {/* Video Thumbnail / Poster Image */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                              <span>Video Poster / Thumbnail Image</span>
-                              <span className="text-[10px] text-slate-400 font-normal">Optional</span>
-                            </Label>
-                            {uploadForm.thumbnailPreview ? (
-                              <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
-                                <img
-                                  src={uploadForm.thumbnailPreview}
-                                  alt="Poster preview"
-                                  className="w-16 h-16 rounded-lg object-cover border border-slate-200"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-slate-900 truncate">
-                                    {uploadForm.thumbnailFile?.name}
-                                  </p>
-                                  <p className="text-[11px] text-slate-400">Selected poster image</p>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUploadForm({
-                                      ...uploadForm,
-                                      thumbnailFile: null,
-                                      thumbnailPreview: "",
-                                    })
-                                  }
-                                  className="text-red-600 hover:bg-red-50 text-xs rounded-lg"
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <Input
-                                  value={uploadForm.thumbnailUrl}
-                                  onChange={(e) =>
-                                    setUploadForm({
-                                      ...uploadForm,
-                                      thumbnailUrl: e.target.value,
-                                    })
-                                  }
-                                  placeholder="https://.../poster.jpg"
-                                  className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 flex-1"
-                                />
-                                <label className="cursor-pointer">
-                                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-2.5 rounded-xl border border-indigo-200 transition-colors">
-                                    <Upload className="w-3.5 h-3.5" />
-                                    Upload Poster
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) =>
-                                      handleSelectThumbnailFile(
-                                        e.target.files?.[0] || null
-                                      )
-                                    }
-                                  />
-                                </label>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Shared Metadata Fields (SEO & Captions) */}
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">
-                          Title Caption
-                        </Label>
-                        <Input
-                          value={uploadForm.title}
-                          onChange={(e) =>
-                            setUploadForm({ ...uploadForm, title: e.target.value })
-                          }
-                          placeholder={
-                            uploadType === "video"
-                              ? "e.g. Exclusive 4K Shoot Teaser"
-                              : "e.g. Studio Portrait Session 01"
-                          }
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                          <span>Alt Text (SEO Image/Video Ranking)</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            Crawled by Google Images
-                          </span>
-                        </Label>
-                        <Input
-                          value={uploadForm.alt}
-                          onChange={(e) =>
-                            setUploadForm({ ...uploadForm, alt: e.target.value })
-                          }
-                          placeholder="e.g. Aditi Mistry photoshoot in studio"
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                          <span>SEO Keywords</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            Comma-separated tags
-                          </span>
-                        </Label>
-                        <Input
-                          value={uploadForm.keywords}
-                          onChange={(e) =>
-                            setUploadForm({ ...uploadForm, keywords: e.target.value })
-                          }
-                          placeholder="e.g. bikini, glamour, photoshoot, 4k"
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-                    </div>
-
-                    <DialogFooter className="gap-2 sm:gap-0">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setUploadDialogOpen(false)}
-                        className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handlePerformUpload}
-                        disabled={uploading}
-                        className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl font-semibold"
-                      >
-                        {uploading ? (
-                          <>
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                            {uploadType === "photo"
-                              ? "Uploading Photo..."
-                              : "Adding Video..."}
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                            {uploadType === "photo"
-                              ? "Upload & Add to Media Set"
-                              : "Add Video to Media Set"}
-                          </>
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Add Direct URL Dialog */}
-                <Dialog
-                  open={mediaDialogOpen}
-                  onOpenChange={setMediaDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl"
-                    >
-                      <Plus className="mr-1.5 h-3.5 w-3.5" />
-                      Add Direct URL
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl shadow-xl sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle className="text-lg font-bold">Add Media by URL</DialogTitle>
-                      <DialogDescription className="text-slate-500 text-xs">
-                        Attach a photo URL or video streaming redirect link hosted externally.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">Media Type</Label>
-                        <Select
-                          value={newMedia.type}
-                          onValueChange={(v) =>
-                            setNewMedia({
-                              ...newMedia,
-                              type: v as "photo" | "video",
-                            })
-                          }
-                        >
-                          <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50 text-slate-900">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border-slate-200">
-                            <SelectItem value="photo">Photo</SelectItem>
-                            <SelectItem value="video">Video (Redirect Stream)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">
-                          {newMedia.type === "video" ? "Video Redirect / Stream URL *" : "Photo URL *"}
-                        </Label>
-                        <Input
-                          value={newMedia.url}
-                          onChange={(e) =>
-                            setNewMedia({ ...newMedia, url: e.target.value })
-                          }
-                          placeholder={newMedia.type === "video" ? "https://.../video-stream" : "https://.../photo.jpg"}
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-
-                      {newMedia.type === "video" && (
-                        <>
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                              <span>Video Thumbnail / Poster Image URL</span>
-                              <span className="text-[10px] text-slate-400 font-normal">Shown as card preview</span>
-                            </Label>
-                            <Input
-                              value={newMedia.thumbnail}
-                              onChange={(e) =>
-                                setNewMedia({ ...newMedia, thumbnail: e.target.value })
-                              }
-                              placeholder="https://.../video-thumbnail.jpg"
-                              className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                            />
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
-                            <div className="space-y-0.5 pr-2">
-                              <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5 cursor-pointer">
-                                <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
-                                External Redirect Video Link
-                              </Label>
-                              <p className="text-[11px] text-slate-500">
-                                Users are redirected to the external streaming page in a new tab
-                              </p>
-                            </div>
-                            <Switch
-                              checked={newMedia.isExternal}
-                              onCheckedChange={(checked) =>
-                                setNewMedia({ ...newMedia, isExternal: checked })
-                              }
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">Title Caption</Label>
-                        <Input
-                          value={newMedia.title}
-                          onChange={(e) =>
-                            setNewMedia({
-                              ...newMedia,
-                              title: e.target.value,
-                            })
-                          }
-                          placeholder="e.g. Exclusive Studio Session 01"
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700">Alt Text (SEO Image Ranking)</Label>
-                        <Input
-                          value={newMedia.alt}
-                          onChange={(e) =>
-                            setNewMedia({ ...newMedia, alt: e.target.value })
-                          }
-                          placeholder="Descriptive text for Google Image Search"
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                          <span>SEO Keywords</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            Comma-separated (appends to model SEO)
-                          </span>
-                        </Label>
-                        <Input
-                          value={newMedia.keywords}
-                          onChange={(e) =>
-                            setNewMedia({ ...newMedia, keywords: e.target.value })
-                          }
-                          placeholder="e.g. aditi mistry bikini, 4k shoot, exclusive clip"
-                          className="rounded-xl border-slate-200 bg-slate-50 text-slate-900"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setMediaDialogOpen(false)}
-                        className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleAddMedia}
-                        disabled={directMediaAdding}
-                        className="bg-slate-900 text-white hover:bg-slate-800 rounded-xl"
-                      >
-                        {directMediaAdding ? (
-                          <>
-                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                            Adding...
-                          </>
-                        ) : (
-                          "Add to Gallery"
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {model.media.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <ImageIcon className="h-10 w-10 text-slate-300 mb-3" />
-                  <p className="font-bold text-slate-800 text-sm">No media assets in gallery</p>
-                  <p className="text-xs text-slate-500 mt-0.5 max-w-sm">
-                    Upload photos or configure external video links to populate the media sets gallery.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {model.media.map((item) => (
-                    <div
-                      key={item._id}
-                      className="group relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-xs"
-                    >
-                      {item.type === "photo" ? (
-                        <img
-                          src={item.url}
-                          alt={item.alt || item.title}
-                          className="w-full h-44 object-cover"
-                        />
-                      ) : (
-                        <div className="relative w-full h-44 bg-slate-900 flex items-center justify-center overflow-hidden">
-                          {item.thumbnail ? (
-                            <img
-                              src={item.thumbnail}
-                              alt={item.title || "Video thumbnail"}
-                              className="w-full h-full object-cover opacity-80"
-                            />
-                          ) : null}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                              <VideoIcon className="h-5 w-5" />
-                            </div>
-                          </div>
-                          <div className="absolute top-2 left-2 flex items-center gap-1">
-                            <Badge className="bg-slate-800 text-white text-[10px] rounded-full">
-                              VIDEO
-                            </Badge>
-                            {item.isExternal && (
-                              <Badge className="bg-indigo-600 text-white text-[10px] rounded-full flex items-center gap-0.5">
-                                <ExternalLink className="w-2.5 h-2.5" />
-                                REDIRECT
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      <div className="p-3 bg-white">
-                        <p className="text-xs font-bold text-slate-900 truncate">
-                          {item.title || "Untitled Media"}
-                        </p>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                          {item.alt || "No SEO alt text set"}
-                        </p>
-                        {item.keywords && item.keywords.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {item.keywords.slice(0, 3).map((kw, ki) => (
-                              <span
-                                key={ki}
-                                className="text-[9px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded"
-                              >
-                                #{kw}
-                              </span>
-                            ))}
-                            {item.keywords.length > 3 && (
-                              <span className="text-[9px] text-slate-400 font-medium">
-                                +{item.keywords.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteMedia(item._id)}
-                        className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white/90 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:text-white cursor-pointer"
-                        title="Delete media"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                        {item.label}
+                      </Typography>
+                    </Box>
                   ))}
-                </div>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      )}
+
+      {/* ======================================================== */}
+      {/* 3. PHOTOS PAGE SEO TAB */}
+      {/* ======================================================== */}
+      {activeTab === "photos-seo" && isAdmin && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 2.5,
+          }}
+        >
+          {/* Left Column */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                      Dedicated Photos Page SEO &amp; Copy
+                    </Typography>
+                    <Chip
+                      label={`/model/${model.slug}/photos`}
+                      size="small"
+                      sx={{
+                        fontFamily: "monospace",
+                        fontSize: "0.7rem",
+                        borderRadius: 1,
+                        bgcolor: "#f1f5f9",
+                        color: "#475569",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    />
+                  </Box>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                    Target &quot;{model.name} photos&quot;, &quot;{model.name} photoshoot pics&quot;, and gallery queries
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Custom Page Heading (H1) */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Custom Page Heading (H1)
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {(model.photosSeo?.heading || "").length}/80
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.photosSeo?.heading || ""}
+                    onChange={(e) => updatePhotosSeo("heading", e.target.value)}
+                    placeholder={`e.g. ${model.name} HD Photos, Exclusive Picture Galleries`}
+                    helperText={`Defaults dynamically to "${model.name} Photo Sets & HD Gallery" if left blank.`}
+                    slotProps={{
+                      htmlInput: { maxLength: 80 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Photos Page Meta Title */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Photos Meta Title
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          (model.photosSeo?.metaTitle || "").length === 0
+                            ? "#94a3b8"
+                            : (model.photosSeo?.metaTitle || "").length <= 60
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {(model.photosSeo?.metaTitle || "").length}/60
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.photosSeo?.metaTitle || ""}
+                    onChange={(e) => updatePhotosSeo("metaTitle", e.target.value)}
+                    placeholder={`e.g. ${model.name} Photos, HD Galleries & Pictures`}
+                    helperText='Max 60 chars. Do NOT include "| VIXN" (added automatically).'
+                    slotProps={{
+                      htmlInput: { maxLength: 60 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Photos Page Meta Description */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Photos Meta Description
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          (model.photosSeo?.metaDescription || "").length === 0
+                            ? "#94a3b8"
+                            : (model.photosSeo?.metaDescription || "").length <= 155
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {(model.photosSeo?.metaDescription || "").length}/155
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2.5}
+                    value={model.photosSeo?.metaDescription || ""}
+                    onChange={(e) => updatePhotosSeo("metaDescription", e.target.value)}
+                    placeholder={`e.g. Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on VIXN.`}
+                    helperText="Strict limit: 155 characters for search engines."
+                    slotProps={{
+                      htmlInput: { maxLength: 155 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Photos SEO Keywords */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Photo Specific Keywords
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {(model.photosSeo?.metaKeywords || []).length} keywords
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={photoKeywordInput}
+                      onChange={(e) => setPhotoKeywordInput(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), handleAddPhotoKeyword())
+                      }
+                      placeholder="Add photo keyword and press Enter"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleAddPhotoKeyword}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#e2e8f0",
+                        color: "#334155",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setBulkKeywordsTarget("photos");
+                        setBulkKeywordsText("");
+                        setBulkKeywordsOpen(true);
+                      }}
+                      startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#cbd5e1",
+                        color: "#1e293b",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Bulk
+                    </Button>
+                  </Box>
+
+                  {(model.photosSeo?.metaKeywords || []).length > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        mt: 1.5,
+                        maxHeight: 140,
+                        overflowY: "auto",
+                        p: 1.25,
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      {model.photosSeo?.metaKeywords?.map((kw) => (
+                        <Chip
+                          key={kw}
+                          label={kw}
+                          size="small"
+                          onDelete={() => handleRemovePhotoKeyword(kw)}
+                          sx={{
+                            borderRadius: 1,
+                            bgcolor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            color: "#334155",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Photos Intro Text */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Photo Gallery Editorial Story / Intro Paragraph
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={model.photosSeo?.introText || ""}
+                    onChange={(e) => updatePhotosSeo("introText", e.target.value)}
+                    placeholder={`Write a descriptive intro for the photo gallery page describing ${model.name}'s photoshoot themes, styles, and photo highlights...`}
+                    helperText="Rendered at the top of /model/[slug]/photos for crawlers and visitors."
+                    slotProps={{
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.5 },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* Right Column: SERP Preview */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+                position: "sticky",
+                top: 20,
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                    Google Photos SERP Preview
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+              />
+              <CardContent sx={{ p: 2 }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    border: "1px solid #e2e8f0",
+                    bgcolor: "#f8fafc",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "#1a0dab",
+                      lineHeight: 1.3,
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {model.photosSeo?.metaTitle
+                      ? `${model.photosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                      : `${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.6875rem",
+                      fontFamily: "monospace",
+                      color: "#006621",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    https://vixn.fun/model/{model.slug}/photos
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: "#4d5156",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {model.photosSeo?.metaDescription ||
+                      `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on VIXN.`}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      )}
+
+      {/* ======================================================== */}
+      {/* 4. VIDEOS PAGE SEO TAB */}
+      {/* ======================================================== */}
+      {activeTab === "videos-seo" && isAdmin && (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+            gap: 2.5,
+          }}
+        >
+          {/* Left Column */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                      Dedicated Videos Page SEO &amp; Copy
+                    </Typography>
+                    <Chip
+                      label={`/model/${model.slug}/videos`}
+                      size="small"
+                      sx={{
+                        fontFamily: "monospace",
+                        fontSize: "0.7rem",
+                        borderRadius: 1,
+                        bgcolor: "#f1f5f9",
+                        color: "#475569",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    />
+                  </Box>
+                }
+                subheader={
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                    Target &quot;{model.name} videos&quot;, &quot;{model.name} 4k clips&quot;, and streaming reel queries
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+              />
+              <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Custom Page Heading (H1) */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Custom Page Heading (H1)
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {(model.videosSeo?.heading || "").length}/80
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.videosSeo?.heading || ""}
+                    onChange={(e) => updateVideosSeo("heading", e.target.value)}
+                    placeholder={`e.g. ${model.name} 4K Video Clips, Streams & Exclusive Reels`}
+                    helperText={`Defaults dynamically to "${model.name} Video Showcase & Clips" if left blank.`}
+                    slotProps={{
+                      htmlInput: { maxLength: 80 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Videos Page Meta Title */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Videos Meta Title
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          (model.videosSeo?.metaTitle || "").length === 0
+                            ? "#94a3b8"
+                            : (model.videosSeo?.metaTitle || "").length <= 60
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {(model.videosSeo?.metaTitle || "").length}/60
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={model.videosSeo?.metaTitle || ""}
+                    onChange={(e) => updateVideosSeo("metaTitle", e.target.value)}
+                    placeholder={`e.g. ${model.name} Videos, 4K Clips & Streaming`}
+                    helperText='Max 60 chars. Do NOT include "| VIXN" (added automatically).'
+                    slotProps={{
+                      htmlInput: { maxLength: 60 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Videos Page Meta Description */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Videos Meta Description
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.6875rem",
+                        fontWeight: 700,
+                        color:
+                          (model.videosSeo?.metaDescription || "").length === 0
+                            ? "#94a3b8"
+                            : (model.videosSeo?.metaDescription || "").length <= 155
+                            ? "#059669"
+                            : "#dc2626",
+                      }}
+                    >
+                      {(model.videosSeo?.metaDescription || "").length}/155
+                    </Typography>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2.5}
+                    value={model.videosSeo?.metaDescription || ""}
+                    onChange={(e) => updateVideosSeo("metaDescription", e.target.value)}
+                    placeholder={`e.g. Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on VIXN.`}
+                    helperText="Strict limit: 155 characters for search engines."
+                    slotProps={{
+                      htmlInput: { maxLength: 155 },
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+
+                {/* Videos SEO Keywords */}
+                <Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                      Video Specific Keywords
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {(model.videosSeo?.metaKeywords || []).length} keywords
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={videoKeywordInput}
+                      onChange={(e) => setVideoKeywordInput(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), handleAddVideoKeyword())
+                      }
+                      placeholder="Add video keyword and press Enter"
+                      slotProps={{
+                        input: {
+                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        },
+                      }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleAddVideoKeyword}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#e2e8f0",
+                        color: "#334155",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                      }}
+                    >
+                      Add
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setBulkKeywordsTarget("videos");
+                        setBulkKeywordsText("");
+                        setBulkKeywordsOpen(true);
+                      }}
+                      startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#cbd5e1",
+                        color: "#1e293b",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        px: 2,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Bulk
+                    </Button>
+                  </Box>
+
+                  {(model.videosSeo?.metaKeywords || []).length > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.75,
+                        mt: 1.5,
+                        maxHeight: 140,
+                        overflowY: "auto",
+                        p: 1.25,
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      {model.videosSeo?.metaKeywords?.map((kw) => (
+                        <Chip
+                          key={kw}
+                          label={kw}
+                          size="small"
+                          onDelete={() => handleRemoveVideoKeyword(kw)}
+                          sx={{
+                            borderRadius: 1,
+                            bgcolor: "#ffffff",
+                            border: "1px solid #e2e8f0",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            color: "#334155",
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Videos Intro Text */}
+                <Box>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    Video Showcase Editorial Story / Intro Paragraph
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={model.videosSeo?.introText || ""}
+                    onChange={(e) => updateVideosSeo("introText", e.target.value)}
+                    placeholder={`Write a descriptive intro for the video page describing ${model.name}'s video streams, clip formats, quality, and highlights...`}
+                    helperText="Rendered at the top of /model/[slug]/videos for crawlers and visitors."
+                    slotProps={{
+                      input: {
+                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.5 },
+                      },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                    }}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* Right Column: SERP Preview */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Card
+              elevation={0}
+              sx={{
+                border: "1px solid #e2e8f0",
+                borderRadius: 1.5,
+                bgcolor: "#ffffff",
+                position: "sticky",
+                top: 20,
+              }}
+            >
+              <CardHeader
+                title={
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                    Google Videos SERP Preview
+                  </Typography>
+                }
+                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+              />
+              <CardContent sx={{ p: 2 }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 1,
+                    border: "1px solid #e2e8f0",
+                    bgcolor: "#f8fafc",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      color: "#1a0dab",
+                      lineHeight: 1.3,
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {model.videosSeo?.metaTitle
+                      ? `${model.videosSeo.metaTitle.replace(/\s*(?:[|\-–—:]|\bon\b)\s*VIXN/gi, "").trim()} | VIXN`
+                      : `${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.6875rem",
+                      fontFamily: "monospace",
+                      color: "#006621",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    https://vixn.fun/model/{model.slug}/videos
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: "#4d5156",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {model.videosSeo?.metaDescription ||
+                      `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on VIXN.`}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        </Box>
+      )}
+
+      {/* ======================================================== */}
+      {/* 5. MEDIA SETS TAB */}
+      {/* ======================================================== */}
+      {activeTab === "media" && (
+        <Card
+          elevation={0}
+          sx={{
+            border: "1px solid #e2e8f0",
+            borderRadius: 1.5,
+            bgcolor: "#ffffff",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-start", sm: "center" },
+              justifyContent: "space-between",
+              p: 2.5,
+              borderBottom: "1px solid #f1f5f9",
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                Media Sets Gallery
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Upload photos directly to storage or attach external streaming video links with SEO tags
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setUploadType("photo");
+                  setUploadDialogOpen(true);
+                }}
+                startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  borderColor: "#e2e8f0",
+                  color: "#334155",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+                }}
+              >
+                Upload File
+              </Button>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setMediaDialogOpen(true)}
+                startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  bgcolor: "#0f172a",
+                  color: "#ffffff",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  boxShadow: "none",
+                  "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                }}
+              >
+                Add Direct URL
+              </Button>
+            </Box>
+          </Box>
+
+          <CardContent sx={{ p: 2.5 }}>
+            {model.media.length === 0 ? (
+              <Box sx={{ py: 10, textAlign: "center", maxWidth: 360, mx: "auto" }}>
+                <PhotoLibraryIcon sx={{ fontSize: 42, color: "#cbd5e1", mb: 1.5 }} />
+                <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  No media assets in gallery
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.5 }}>
+                  Upload photos or configure external video links to populate the public media gallery.
+                </Typography>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(3, 1fr)",
+                    md: "repeat(4, 1fr)",
+                  },
+                  gap: 2,
+                }}
+              >
+                {model.media.map((item) => (
+                  <Card
+                    key={item._id}
+                    elevation={0}
+                    sx={{
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 1.5,
+                      overflow: "hidden",
+                      position: "relative",
+                      bgcolor: "#ffffff",
+                      transition: "all 0.15s ease",
+                      "&:hover .delete-btn": { opacity: 1 },
+                    }}
+                  >
+                    {item.type === "photo" ? (
+                      <Box
+                        component="img"
+                        src={item.url}
+                        alt={item.alt || item.title}
+                        sx={{
+                          width: "100%",
+                          height: 180,
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          position: "relative",
+                          width: "100%",
+                          height: 180,
+                          bgcolor: "#0f172a",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {item.thumbnail ? (
+                          <Box
+                            component="img"
+                            src={item.thumbnail}
+                            alt={item.title || "Video thumbnail"}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              opacity: 0.75,
+                            }}
+                          />
+                        ) : null}
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            inset: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: "rgba(0,0,0,0.25)",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: "50%",
+                              bgcolor: "rgba(255,255,255,0.25)",
+                              backdropFilter: "blur(4px)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#ffffff",
+                            }}
+                          >
+                            <MovieIcon sx={{ fontSize: 20 }} />
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 0.5 }}>
+                          <Chip
+                            label="VIDEO"
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: "0.6rem",
+                              fontWeight: 700,
+                              borderRadius: 1,
+                              bgcolor: "#0f172a",
+                              color: "#ffffff",
+                            }}
+                          />
+                          {item.isExternal && (
+                            <Chip
+                              label="REDIRECT"
+                              size="small"
+                              icon={<OpenInNewIcon sx={{ fontSize: "10px !important", color: "#ffffff" }} />}
+                              sx={{
+                                height: 18,
+                                fontSize: "0.6rem",
+                                fontWeight: 700,
+                                borderRadius: 1,
+                                bgcolor: "#2563eb",
+                                color: "#ffffff",
+                              }}
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+
+                    <Box sx={{ p: 1.5 }}>
+                      <Typography
+                        sx={{
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.3,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {item.title || "Untitled Media"}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: "0.6875rem",
+                          color: "#64748b",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          mt: 0.25,
+                        }}
+                      >
+                        {item.alt || "No SEO alt text"}
+                      </Typography>
+
+                      {item.keywords && item.keywords.length > 0 && (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 1 }}>
+                          {item.keywords.slice(0, 2).map((kw, ki) => (
+                            <Chip
+                              key={ki}
+                              label={`#${kw}`}
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.625rem",
+                                fontWeight: 600,
+                                borderRadius: 0.75,
+                                bgcolor: "#f1f5f9",
+                                color: "#475569",
+                              }}
+                            />
+                          ))}
+                          {item.keywords.length > 2 && (
+                            <Typography sx={{ fontSize: "0.625rem", color: "#94a3b8", alignSelf: "center" }}>
+                              +{item.keywords.length - 2}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Delete button on hover */}
+                    <IconButton
+                      size="small"
+                      className="delete-btn"
+                      onClick={() => {
+                        setMediaToDelete(item);
+                        setDeleteMediaDialogOpen(true);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        bgcolor: "rgba(255,255,255,0.9)",
+                        color: "#dc2626",
+                        p: 0.5,
+                        opacity: 0,
+                        transition: "opacity 0.15s ease",
+                        "&:hover": { bgcolor: "#dc2626", color: "#ffffff" },
+                      }}
+                    >
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ======================================================== */}
+      {/* DIALOGS */}
+      {/* ======================================================== */}
+
+      {/* 1. File Upload Dialog */}
+      <Dialog
+        open={uploadDialogOpen}
+        onClose={() => !uploading && setUploadDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+            Upload Media to Gallery
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+            Upload high-resolution photos or configure video redirect streams
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Media Type Switcher */}
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, bgcolor: "#f1f5f9", p: 0.5, borderRadius: 1 }}>
+            <Button
+              size="small"
+              onClick={() => setUploadType("photo")}
+              startIcon={<CameraIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                ...(uploadType === "photo"
+                  ? { bgcolor: "#ffffff", color: "#0f172a", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }
+                  : { color: "#64748b" }),
+              }}
+            >
+              Photo (Image File)
+            </Button>
+            <Button
+              size="small"
+              onClick={() => setUploadType("video")}
+              startIcon={<MovieIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: 1,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                ...(uploadType === "video"
+                  ? { bgcolor: "#ffffff", color: "#0f172a", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }
+                  : { color: "#64748b" }),
+              }}
+            >
+              Video (Redirect Stream)
+            </Button>
+          </Box>
+
+          {/* Photo File Dropzone */}
+          {uploadType === "photo" && (
+            <Box>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                Select Image File *
+              </Typography>
+              {!uploadFile ? (
+                <label style={{ cursor: "pointer", display: "block" }}>
+                  <Box
+                    sx={{
+                      height: 120,
+                      borderRadius: 1,
+                      border: "2px dashed #cbd5e1",
+                      bgcolor: "#f8fafc",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 0.5,
+                      "&:hover": { bgcolor: "#f1f5f9", borderColor: "#94a3b8" },
+                    }}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 28, color: "#64748b" }} />
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#0f172a" }}>
+                      Click to choose image file
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#94a3b8" }}>
+                      JPG, PNG, WebP, AVIF (Max 50MB)
+                    </Typography>
+                  </Box>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => handleSelectUploadFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              ) : (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    p: 1.5,
+                    borderRadius: 1,
+                    border: "1px solid #e2e8f0",
+                    bgcolor: "#f8fafc",
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={uploadPreview}
+                    alt="Preview"
+                    sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1, border: "1px solid #e2e8f0" }}
+                  />
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#0f172a" }} noWrap>
+                      {uploadFile.name}
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                      {(uploadFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </Typography>
+                  </Box>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      setUploadFile(null);
+                      setUploadPreview("");
+                    }}
+                    sx={{ textTransform: "none", fontSize: "0.75rem" }}
+                  >
+                    Change
+                  </Button>
+                </Box>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      {/* Bulk Meta Keywords Dialog */}
-      <Dialog open={bulkKeywordsOpen} onOpenChange={setBulkKeywordsOpen}>
-        <DialogContent className="bg-white border-slate-200 sm:max-w-lg rounded-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="text-slate-900 text-base font-bold flex items-center gap-2">
-              <ListPlus className="w-5 h-5 text-indigo-600" />
-              Add Meta Keywords in Bulk
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 text-xs">
-              Paste keywords line-by-line (or comma-separated). Duplicates and empty lines will be automatically filtered out.
-            </DialogDescription>
-          </DialogHeader>
+            </Box>
+          )}
 
-          <div className="space-y-3 py-2 flex-1 overflow-hidden flex flex-col min-h-0">
-            <Textarea
-              value={bulkKeywordsText}
-              onChange={(e) => setBulkKeywordsText(e.target.value)}
-              placeholder={`aditi mistry photos\naditi mistry 4k videos\naditi mistry instagram\naditi mistry full portfolio`}
-              className="h-60 max-h-60 min-h-[15rem] rounded-xl border-slate-200 bg-slate-50 text-slate-900 font-mono text-xs focus:bg-white resize-none overflow-y-auto leading-relaxed"
+          {/* Video Stream URL */}
+          {uploadType === "video" && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  Video Stream / Redirect URL *
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="https://.../video-streaming-page"
+                  value={uploadForm.videoUrl}
+                  onChange={(e) => setUploadForm({ ...uploadForm, videoUrl: e.target.value })}
+                  slotProps={{
+                    input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  Video Poster / Thumbnail Image
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Poster image URL"
+                    value={uploadForm.thumbnailUrl}
+                    onChange={(e) => setUploadForm({ ...uploadForm, thumbnailUrl: e.target.value })}
+                    slotProps={{
+                      input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                    }}
+                  />
+                  <label style={{ cursor: "pointer" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      component="span"
+                      startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
+                      sx={{
+                        borderRadius: 1,
+                        borderColor: "#e2e8f0",
+                        color: "#334155",
+                        fontSize: "0.75rem",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        py: 0.9,
+                      }}
+                    >
+                      Browse
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => handleSelectThumbnailFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* Shared Metadata Fields */}
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Title Caption
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder={uploadType === "video" ? "e.g. 4K Studio Session 01" : "e.g. Portrait Shoot in Studio"}
+              value={uploadForm.title}
+              onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
             />
-            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium shrink-0">
-              <span>One keyword per line</span>
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md text-slate-700 font-semibold">
-                {
-                  bulkKeywordsText
-                    .split(/\r?\n|,/)
-                    .map((k) => k.trim())
-                    .filter(Boolean).length
-                }{" "}
-                keywords detected
-              </span>
-            </div>
-          </div>
+          </Box>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setBulkKeywordsOpen(false)}
-              className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={handleAddBulkKeywords}
-              disabled={!bulkKeywordsText.trim()}
-              className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-            >
-              Add Keywords
-            </Button>
-          </DialogFooter>
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Alt Text (SEO Image/Video Ranking)
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder={`e.g. ${model.name} photoshoot in studio`}
+              value={uploadForm.alt}
+              onChange={(e) => setUploadForm({ ...uploadForm, alt: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              SEO Keywords (Comma-separated)
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="e.g. bikini, glamour, photoshoot, 4k"
+              value={uploadForm.keywords}
+              onChange={(e) => setUploadForm({ ...uploadForm, keywords: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
         </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setUploadDialogOpen(false)}
+            disabled={uploading}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handlePerformUpload}
+            disabled={uploading}
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
+          >
+            {uploading ? "Uploading & Adding..." : "Add to Media Set"}
+          </Button>
+        </DialogActions>
       </Dialog>
-    </div>
+
+      {/* 2. Direct Media URL Dialog */}
+      <Dialog
+        open={mediaDialogOpen}
+        onClose={() => !directMediaAdding && setMediaDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+            Add Media by URL
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+            Link externally hosted images or streaming video urls
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Media Type
+            </Typography>
+            <FormControl fullWidth size="small">
+              <Select
+                value={newMedia.type}
+                onChange={(e) =>
+                  setNewMedia({ ...newMedia, type: e.target.value as "photo" | "video" })
+                }
+                sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" }}
+              >
+                <MenuItem value="photo">Photo</MenuItem>
+                <MenuItem value="video">Video (Redirect Stream)</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              {newMedia.type === "video" ? "Video Stream URL *" : "Photo Image URL *"}
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder={newMedia.type === "video" ? "https://.../video-stream" : "https://.../photo.jpg"}
+              value={newMedia.url}
+              onChange={(e) => setNewMedia({ ...newMedia, url: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
+
+          {newMedia.type === "video" && (
+            <Box>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                Video Thumbnail / Poster Image URL
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="https://.../video-thumbnail.jpg"
+                value={newMedia.thumbnail}
+                onChange={(e) => setNewMedia({ ...newMedia, thumbnail: e.target.value })}
+                slotProps={{
+                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                }}
+              />
+            </Box>
+          )}
+
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Title Caption
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="e.g. Exclusive Studio Session 01"
+              value={newMedia.title}
+              onChange={(e) => setNewMedia({ ...newMedia, title: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              Alt Text (SEO Image Ranking)
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Descriptive text for search engine images"
+              value={newMedia.alt}
+              onChange={(e) => setNewMedia({ ...newMedia, alt: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              SEO Keywords (Comma-separated)
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="e.g. glamour, portrait, 4k"
+              value={newMedia.keywords}
+              onChange={(e) => setNewMedia({ ...newMedia, keywords: e.target.value })}
+              slotProps={{
+                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+              }}
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setMediaDialogOpen(false)}
+            disabled={directMediaAdding}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddMedia}
+            disabled={directMediaAdding}
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
+          >
+            {directMediaAdding ? "Adding..." : "Add to Gallery"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 3. Bulk Keywords Dialog */}
+      <Dialog
+        open={bulkKeywordsOpen}
+        onClose={() => setBulkKeywordsOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+            Add Keywords in Bulk
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+            Paste keywords line-by-line or comma-separated. Duplicates will be deduplicated.
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={8}
+            placeholder={`aditi mistry photos\naditi mistry 4k videos\naditi mistry instagram\naditi mistry full portfolio`}
+            value={bulkKeywordsText}
+            onChange={(e) => setBulkKeywordsText(e.target.value)}
+            slotProps={{
+              input: {
+                sx: {
+                  borderRadius: 1,
+                  bgcolor: "#f8fafc",
+                  fontSize: "0.8125rem",
+                  fontFamily: "monospace",
+                  lineHeight: 1.6,
+                },
+              },
+            }}
+          />
+          <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+            Detected:{" "}
+            <strong style={{ color: "#0f172a" }}>
+              {
+                bulkKeywordsText
+                  .split(/\r?\n|,/)
+                  .map((k) => k.trim())
+                  .filter(Boolean).length
+              }
+            </strong>{" "}
+            keywords
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setBulkKeywordsOpen(false)}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddBulkKeywords}
+            disabled={!bulkKeywordsText.trim()}
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0f172a",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+            }}
+          >
+            Add Keywords
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 4. Delete Media Confirmation Dialog */}
+      <Dialog
+        open={deleteMediaDialogOpen}
+        onClose={() => setDeleteMediaDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
+          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+            Delete Media Item?
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ px: 3, py: 1 }}>
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
+            Are you sure you want to remove &quot;{mediaToDelete?.title || "this media item"}&quot; from this model&apos;s gallery?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setDeleteMediaDialogOpen(false);
+              setMediaToDelete(null);
+            }}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteMedia}
+            sx={{
+              borderRadius: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { boxShadow: "none" },
+            }}
+          >
+            Delete Media
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
