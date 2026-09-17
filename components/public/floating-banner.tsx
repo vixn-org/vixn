@@ -8,9 +8,13 @@ import { X } from "lucide-react";
 export default function FloatingBanner() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
 
   useEffect(() => {
-    if (pathname?.startsWith("/admin")) return;
+    if (pathname?.startsWith("/admin") || isLocalhost) return;
     // Always show banner again on URL change
     setIsOpen(true);
 
@@ -28,7 +32,7 @@ export default function FloatingBanner() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  if (pathname?.startsWith("/admin") || !isOpen) {
+  if (pathname?.startsWith("/admin") || isLocalhost || !isOpen) {
     return null;
   }
 

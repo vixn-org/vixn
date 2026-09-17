@@ -33,9 +33,13 @@ window.document.querySelectorAll||(document.querySelectorAll=document.body.query
 
 export default function PopunderAds() {
   const pathname = usePathname();
+  const isLocalhost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1");
 
   useEffect(() => {
-    if (pathname?.startsWith("/admin")) return;
+    if (pathname?.startsWith("/admin") || isLocalhost) return;
 
     try {
       // Re-evaluate ExoClick Popunder on URL change
@@ -49,8 +53,8 @@ export default function PopunderAds() {
     }
   }, [pathname]);
 
-  // Exclude all admin pages
-  if (pathname?.startsWith("/admin")) {
+  // Exclude all admin pages and localhost (dev environment)
+  if (pathname?.startsWith("/admin") || isLocalhost) {
     return null;
   }
 
