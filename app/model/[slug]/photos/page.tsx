@@ -152,7 +152,7 @@ export default async function ModelPhotosPage({ params }: Props) {
               href="/models"
               className="hover:text-rose-600 transition-colors"
             >
-              Models
+              Model
             </Link>
             <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
             <Link

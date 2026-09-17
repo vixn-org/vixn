@@ -11,6 +11,7 @@ import {
 } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ExploreOtherModelsVideos from "@/components/public/explore-other-models-videos";
 import {
   ChevronLeft,
   ChevronRight,
@@ -108,6 +109,43 @@ export default async function ModelVideoPage({ params }: Props) {
     .map((v: any, originalIndex: number) => ({ ...v, originalIndex }))
     .filter((v: any) => v._id?.toString() !== currentVideo._id?.toString());
 
+  // Fetch videos from other unique models (1 video per unique model)
+  const otherModelsWithVideos = await Model.find({
+    status: "published",
+    slug: { $ne: model.slug },
+    "media.type": "video",
+  })
+    .select("name slug profileImage coverImage category media")
+    .sort({ featured: -1, updatedAt: -1 })
+    .limit(12)
+    .lean();
+
+  const otherModelVideos = otherModelsWithVideos
+    .map((m: any) => {
+      const vids = (m.media || []).filter((x: any) => x.type === "video");
+      if (vids.length === 0) return null;
+      const firstVid = vids[0];
+      const origIndex = (m.media || []).findIndex(
+        (x: any) => x._id?.toString() === firstVid._id?.toString()
+      );
+      const mediaSlug = getMediaSlug(
+        firstVid,
+        "video",
+        origIndex >= 0 ? origIndex : 0
+      );
+      return {
+        modelName: m.name,
+        modelSlug: m.slug,
+        modelAvatar: m.profileImage || m.coverImage,
+        category: m.category,
+        video: firstVid,
+        mediaSlug,
+        url: `/model/${m.slug}/video/${mediaSlug}`,
+        totalVideos: vids.length,
+      };
+    })
+    .filter(Boolean);
+
   const { videoSchema, breadcrumbSchema } = generateVideoJsonLd(
     model,
     currentVideo,
@@ -153,7 +191,7 @@ export default async function ModelVideoPage({ params }: Props) {
               href="/models"
               className="hover:text-rose-600 transition-colors"
             >
-              Models
+              Model
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <Link
@@ -167,7 +205,7 @@ export default async function ModelVideoPage({ params }: Props) {
               href={`/model/${model.slug}/videos`}
               className="hover:text-rose-600 transition-colors"
             >
-              Videos
+              Video
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-violet-600 font-bold truncate max-w-[160px]">
@@ -535,6 +573,12 @@ export default async function ModelVideoPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Explore Other Models Videos Section */}
+        <ExploreOtherModelsVideos
+          videos={otherModelVideos as any}
+          currentModelName={model.name}
+        />
       </div>
     </div>
   );

@@ -18,12 +18,18 @@ export function slugify(text: string): string {
  * Strips existing brand suffixes (e.g. "| VIXN", "| Vixn", "- VIXN", "on VIXN") to prevent double branding.
  * Clamps cleanly at word boundaries so that the final title with suffix is strictly <= 65 chars.
  */
-export function formatSeoTitle(rawTitle: string, brandSuffix: string = SITE_NAME): string {
+export function formatSeoTitle(
+  rawTitle: string,
+  brandSuffix: string = SITE_NAME,
+): string {
   if (!rawTitle) return `${brandSuffix} - Free HD Videos & Photos`;
 
   // Remove existing site suffix like "| VIXN", "- VIXN", "| Vixn", "on VIXN.fun", "on Vixn", "| vixn.fun"
   let clean = rawTitle
-    .replace(/(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i, "")
+    .replace(
+      /(?:\s*(?:[|\-–—:]|\bon\b)\s*(?:vixn(?:\.fun)?|VIXN(?:\.FUN)?))+\s*$/i,
+      "",
+    )
     .replace(/\s+/g, " ")
     .trim();
 
@@ -52,7 +58,10 @@ export function formatSeoTitle(rawTitle: string, brandSuffix: string = SITE_NAME
  * Uses the raw description if available and long enough, otherwise falls back.
  * Clamps cleanly at word boundaries.
  */
-export function formatSeoDescription(rawDesc: string | undefined | null, fallbackDesc: string): string {
+export function formatSeoDescription(
+  rawDesc: string | undefined | null,
+  fallbackDesc: string,
+): string {
   let text = (rawDesc || "").trim().replace(/\s+/g, " ");
 
   // Use fallback if raw description is empty or too short
@@ -137,9 +146,10 @@ export function generateModelMetadata(model: IModel): Metadata {
       card: "summary_large_image",
       title,
       description,
-      images: model.twitterImage || model.ogImage || model.profileImage
-        ? [model.twitterImage || model.ogImage || model.profileImage]
-        : [],
+      images:
+        model.twitterImage || model.ogImage || model.profileImage
+          ? [model.twitterImage || model.ogImage || model.profileImage]
+          : [],
     },
     robots,
   };
@@ -148,7 +158,10 @@ export function generateModelMetadata(model: IModel): Metadata {
 export function generateModelJsonLd(model: IModel) {
   const url = `${SITE_URL}/model/${model.slug}`;
   const fallbackDesc = `Watch exclusive ${model.name} HD photos, 4K streaming videos and viral leaks on ${SITE_NAME}.`;
-  const cleanDescription = formatSeoDescription(model.metaDescription, fallbackDesc);
+  const cleanDescription = formatSeoDescription(
+    model.metaDescription,
+    fallbackDesc,
+  );
 
   const personSchema = {
     "@context": "https://schema.org",
@@ -211,8 +224,8 @@ export function generateModelJsonLd(model: IModel) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Models",
-        item: `${SITE_URL}/models`,
+        name: "Model",
+        item: `${SITE_URL}/model`,
       },
       {
         "@type": "ListItem",
@@ -238,7 +251,10 @@ export function generateModelPhotosMetadata(model: any): Metadata {
   const title = formatSeoTitle(rawTitle);
 
   const fallbackDesc = `Browse all exclusive high-definition photoshoot pictures and photo sets of ${model.name} on ${SITE_NAME}. Free 4K HD photo collection updated daily.`;
-  const description = formatSeoDescription(custom?.metaDescription, fallbackDesc);
+  const description = formatSeoDescription(
+    custom?.metaDescription,
+    fallbackDesc,
+  );
 
   const url = `${SITE_URL}/model/${model.slug}/photos`;
   const ogImage = model.ogImage || model.coverImage || model.profileImage || "";
@@ -287,7 +303,10 @@ export function generateModelPhotosJsonLd(model: any) {
   const url = `${SITE_URL}/model/${model.slug}/photos`;
   const photos = model.media?.filter((m: any) => m.type === "photo") || [];
   const fallbackDesc = `HD photo collection and pictures of ${model.name} on ${SITE_NAME}.`;
-  const cleanDescription = formatSeoDescription(model.photosSeo?.metaDescription, fallbackDesc);
+  const cleanDescription = formatSeoDescription(
+    model.photosSeo?.metaDescription,
+    fallbackDesc,
+  );
 
   const imageGallerySchema = {
     "@context": "https://schema.org",
@@ -329,8 +348,8 @@ export function generateModelPhotosJsonLd(model: any) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Models",
-        item: `${SITE_URL}/models`,
+        name: "Model",
+        item: `${SITE_URL}/model`,
       },
       {
         "@type": "ListItem",
@@ -362,15 +381,15 @@ export function generateModelVideosMetadata(model: any): Metadata {
   const title = formatSeoTitle(rawTitle);
 
   const fallbackDesc = `Watch exclusive high-definition video clips, 4K reels, and streaming videos of ${model.name} on ${SITE_NAME}. Free full-length streaming updated daily.`;
-  const description = formatSeoDescription(custom?.metaDescription, fallbackDesc);
+  const description = formatSeoDescription(
+    custom?.metaDescription,
+    fallbackDesc,
+  );
 
   const url = `${SITE_URL}/model/${model.slug}/videos`;
   const firstVideo = model.media?.find((m: any) => m.type === "video");
   const ogImage =
-    firstVideo?.thumbnail ||
-    model.coverImage ||
-    model.profileImage ||
-    "";
+    firstVideo?.thumbnail || model.coverImage || model.profileImage || "";
   const robots = model.robotsDirective || "index, follow";
 
   const keywords =
@@ -416,7 +435,10 @@ export function generateModelVideosJsonLd(model: any) {
   const url = `${SITE_URL}/model/${model.slug}/videos`;
   const videos = model.media?.filter((m: any) => m.type === "video") || [];
   const fallbackDesc = `Video collection and 4K streaming clips of ${model.name} on ${SITE_NAME}.`;
-  const cleanDescription = formatSeoDescription(model.videosSeo?.metaDescription, fallbackDesc);
+  const cleanDescription = formatSeoDescription(
+    model.videosSeo?.metaDescription,
+    fallbackDesc,
+  );
 
   const videoCollectionSchema = {
     "@context": "https://schema.org",
@@ -458,8 +480,8 @@ export function generateModelVideosJsonLd(model: any) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Models",
-        item: `${SITE_URL}/models`,
+        name: "Model",
+        item: `${SITE_URL}/model`,
       },
       {
         "@type": "ListItem",
@@ -514,7 +536,9 @@ export function generateOrganizationJsonLd() {
   };
 }
 
-export function generateFaqJsonLd(faqs: { question: string; answer: string }[]) {
+export function generateFaqJsonLd(
+  faqs: { question: string; answer: string }[],
+) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -529,7 +553,9 @@ export function generateFaqJsonLd(faqs: { question: string; answer: string }[]) 
   };
 }
 
-export function generateHomepageItemListJsonLd(models: { name: string; slug: string }[]) {
+export function generateHomepageItemListJsonLd(
+  models: { name: string; slug: string }[],
+) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -591,7 +617,8 @@ export function generateBlogMetadata(blog: any): Metadata {
       card: "summary_large_image",
       title: blog.twitterTitle || blog.ogTitle || title,
       description: blog.twitterDescription || blog.ogDescription || description,
-      images: blog.twitterImage || ogImage ? [blog.twitterImage || ogImage] : [],
+      images:
+        blog.twitterImage || ogImage ? [blog.twitterImage || ogImage] : [],
     },
     robots,
   };
@@ -657,7 +684,7 @@ export function generateBlogJsonLd(blog: any) {
       {
         "@type": "ListItem",
         position: 3,
-        name: blog.title,
+        name: blog.title || blog.slug,
         item: url,
       },
     ],
@@ -666,15 +693,25 @@ export function generateBlogJsonLd(blog: any) {
   return { articleSchema, breadcrumbSchema };
 }
 
-export function getMediaSlug(item: any, type: "photo" | "video" = "photo", fallbackIndex: number = 0): string {
+export function getMediaSlug(
+  item: any,
+  type: "photo" | "video" = "photo",
+  fallbackIndex: number = 0,
+): string {
   const baseTitle = item.title || item.alt || `${type}-${fallbackIndex + 1}`;
   const cleanTitleSlug = slugify(baseTitle);
-  const idPart = item._id?.toString() || item.order?.toString() || `${fallbackIndex + 1}`;
+  const idPart =
+    item._id?.toString() || item.order?.toString() || `${fallbackIndex + 1}`;
   return cleanTitleSlug ? `${cleanTitleSlug}-${idPart}` : idPart;
 }
 
-export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
-  const photoTitle = mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
+export function generatePhotoMetadata(
+  model: any,
+  mediaItem: any,
+  fallbackIndex: number = 0,
+): Metadata {
+  const photoTitle =
+    mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
   const baseTitle = photoTitle.toLowerCase().includes(model.name.toLowerCase())
     ? photoTitle
     : `${photoTitle} - ${model.name}`;
@@ -689,8 +726,11 @@ export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex:
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
     : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
-    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-    : [];
+      ? mediaItem.keywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [];
   const mediaKeywordsStr = mediaKeywordsList.join(", ");
 
   const baseKeywords = model.metaKeywords?.length
@@ -735,18 +775,26 @@ export function generatePhotoMetadata(model: any, mediaItem: any, fallbackIndex:
   };
 }
 
-export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
+export function generatePhotoJsonLd(
+  model: any,
+  mediaItem: any,
+  fallbackIndex: number = 0,
+) {
   const mediaSlug = getMediaSlug(mediaItem, "photo", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/photo/${mediaSlug}`;
-  const photoTitle = mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
+  const photoTitle =
+    mediaItem.title || `${model.name} HD Photo ${fallbackIndex + 1}`;
   const fallbackDesc = `HD photo of ${model.name} on ${SITE_NAME}.`;
   const cleanDescription = formatSeoDescription(mediaItem.alt, fallbackDesc);
 
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
     : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
-    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-    : [];
+      ? mediaItem.keywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [];
   const mediaKeywordsStr = mediaKeywordsList.join(", ");
 
   const imageSchema = {
@@ -791,8 +839,8 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 2,
-        name: "Models",
-        item: `${SITE_URL}/models`,
+        name: "Model",
+        item: `${SITE_URL}/model`,
       },
       {
         "@type": "ListItem",
@@ -803,7 +851,7 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 4,
-        name: "Photos",
+        name: "Photo",
         item: `${SITE_URL}/model/${model.slug}/photos`,
       },
       {
@@ -818,8 +866,13 @@ export function generatePhotoJsonLd(model: any, mediaItem: any, fallbackIndex: n
   return { imageSchema, breadcrumbSchema };
 }
 
-export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex: number = 0): Metadata {
-  const videoTitle = mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
+export function generateVideoMetadata(
+  model: any,
+  mediaItem: any,
+  fallbackIndex: number = 0,
+): Metadata {
+  const videoTitle =
+    mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
   const baseTitle = videoTitle.toLowerCase().includes(model.name.toLowerCase())
     ? videoTitle
     : `${videoTitle} - ${model.name}`;
@@ -834,8 +887,11 @@ export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex:
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
     : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
-    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-    : [];
+      ? mediaItem.keywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [];
   const mediaKeywordsStr = mediaKeywordsList.join(", ");
 
   const baseKeywords = model.metaKeywords?.length
@@ -880,19 +936,28 @@ export function generateVideoMetadata(model: any, mediaItem: any, fallbackIndex:
   };
 }
 
-export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: number = 0) {
+export function generateVideoJsonLd(
+  model: any,
+  mediaItem: any,
+  fallbackIndex: number = 0,
+) {
   const mediaSlug = getMediaSlug(mediaItem, "video", fallbackIndex);
   const url = `${SITE_URL}/model/${model.slug}/video/${mediaSlug}`;
-  const videoTitle = mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
-  const thumbnail = mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
+  const videoTitle =
+    mediaItem.title || `${model.name} HD Video ${fallbackIndex + 1}`;
+  const thumbnail =
+    mediaItem.thumbnail || model.profileImage || `${SITE_URL}/logo.jpg`;
   const fallbackDesc = `HD streaming video of ${model.name} on ${SITE_NAME}.`;
   const cleanDescription = formatSeoDescription(mediaItem.alt, fallbackDesc);
 
   const mediaKeywordsList: string[] = Array.isArray(mediaItem.keywords)
     ? mediaItem.keywords.filter(Boolean)
     : typeof mediaItem.keywords === "string" && mediaItem.keywords.trim()
-    ? mediaItem.keywords.split(",").map((k: string) => k.trim()).filter(Boolean)
-    : [];
+      ? mediaItem.keywords
+          .split(",")
+          .map((k: string) => k.trim())
+          .filter(Boolean)
+      : [];
   const mediaKeywordsStr = mediaKeywordsList.join(", ");
 
   const videoSchema = {
@@ -937,8 +1002,8 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 2,
-        name: "Models",
-        item: `${SITE_URL}/models`,
+        name: "Model",
+        item: `${SITE_URL}/model`,
       },
       {
         "@type": "ListItem",
@@ -949,7 +1014,7 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
       {
         "@type": "ListItem",
         position: 4,
-        name: "Videos",
+        name: "Video",
         item: `${SITE_URL}/model/${model.slug}/videos`,
       },
       {
@@ -965,7 +1030,3 @@ export function generateVideoJsonLd(model: any, mediaItem: any, fallbackIndex: n
 }
 
 export { SITE_URL, SITE_NAME };
-
-
-
-

@@ -123,7 +123,9 @@ export default async function TagPage({ params }: Props) {
         { name: { $regex: tagPattern } },
       ],
     })
-      .select("name slug profileImage coverImage category tags metaKeywords photosSeo videosSeo media bio updatedAt")
+      .select(
+        "name slug profileImage coverImage category tags metaKeywords photosSeo videosSeo media bio updatedAt",
+      )
       .sort({ updatedAt: -1 })
       .limit(50)
       .lean();
@@ -173,19 +175,31 @@ export default async function TagPage({ params }: Props) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Models", item: `${SITE_URL}/models` },
-      { "@type": "ListItem", position: 3, name: capitalTag, item: `${SITE_URL}/tag/${slug}` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Tag",
+        item: `${SITE_URL}/tag`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: capitalTag,
+        item: `${SITE_URL}/tag/${slug}`,
+      },
     ],
   };
 
   // Compute total media items across all matched models
   const totalVideos = models.reduce(
-    (sum, m) => sum + (m.media?.filter((x: any) => x.type === "video").length || 0),
-    0
+    (sum, m) =>
+      sum + (m.media?.filter((x: any) => x.type === "video").length || 0),
+    0,
   );
   const totalPhotos = models.reduce(
-    (sum, m) => sum + (m.media?.filter((x: any) => x.type === "photo").length || 0),
-    0
+    (sum, m) =>
+      sum + (m.media?.filter((x: any) => x.type === "photo").length || 0),
+    0,
   );
 
   const modelNames = models.map((m) => m.name).join(", ");
@@ -222,8 +236,8 @@ export default async function TagPage({ params }: Props) {
               <Home className="w-3.5 h-3.5" />
             </Link>
             <ChevronRight className="w-3 h-3" />
-            <Link href="/models" className="hover:text-slate-600 transition-colors">
-              Models
+            <Link href="/tag" className="hover:text-slate-600 transition-colors">
+              Tag
             </Link>
             <ChevronRight className="w-3 h-3" />
             <span className="text-slate-600 font-semibold">{capitalTag}</span>
@@ -243,10 +257,23 @@ export default async function TagPage({ params }: Props) {
             {/* Rich Intent Editorial Article (150+ Words for Google Keyword Ranking & BERT Understanding) */}
             <div className="bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80 text-sm text-slate-700 leading-relaxed space-y-3">
               <p>
-                Browse <strong>{tagLabel}</strong> video clips, photo galleries, and exclusive media on {SITE_NAME}. This collection features verified content from <strong>{modelNames}</strong> in HD and 4K quality.
+                Browse <strong>{tagLabel}</strong> video clips, photo galleries,
+                and exclusive media on {SITE_NAME}. This collection features
+                verified content from <strong>{modelNames}</strong> in HD and 4K
+                quality.
               </p>
               <p>
-                Explore photo sets, video streams, and exclusive content updated regularly. Browse through <strong>{totalVideos} video{totalVideos !== 1 ? "s" : ""}</strong> and <strong>{totalPhotos} photo{totalPhotos !== 1 ? "s" : ""}</strong> across {models.length} creator portfolio{models.length !== 1 ? "s" : ""}.
+                Explore photo sets, video streams, and exclusive content updated
+                regularly. Browse through{" "}
+                <strong>
+                  {totalVideos} video{totalVideos !== 1 ? "s" : ""}
+                </strong>{" "}
+                and{" "}
+                <strong>
+                  {totalPhotos} photo{totalPhotos !== 1 ? "s" : ""}
+                </strong>{" "}
+                across {models.length} creator portfolio
+                {models.length !== 1 ? "s" : ""}.
               </p>
             </div>
 
@@ -276,8 +303,12 @@ export default async function TagPage({ params }: Props) {
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {models.map((model: any) => {
-                const videoCount = model.media?.filter((m: any) => m.type === "video").length || 0;
-                const photoCount = model.media?.filter((m: any) => m.type === "photo").length || 0;
+                const videoCount =
+                  model.media?.filter((m: any) => m.type === "video").length ||
+                  0;
+                const photoCount =
+                  model.media?.filter((m: any) => m.type === "photo").length ||
+                  0;
                 return (
                   <div
                     key={model._id.toString()}
@@ -346,7 +377,7 @@ export default async function TagPage({ params }: Props) {
                         modelName: model.name,
                         modelSlug: model.slug,
                         vIdx: idx,
-                      }))
+                      })),
                   )
                   .slice(0, 12)
                   .map((v: any, idx: number) => {
@@ -363,7 +394,9 @@ export default async function TagPage({ params }: Props) {
                           {v.thumbnail ? (
                             <img
                               src={v.thumbnail}
-                              alt={v.title || `${v.modelName} ${tagLabel} video`}
+                              alt={
+                                v.title || `${v.modelName} ${tagLabel} video`
+                              }
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               loading="lazy"
                             />

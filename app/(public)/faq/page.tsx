@@ -158,7 +158,10 @@ export default function FAQPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white pt-10 pb-12 border-b border-slate-100">
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="flex justify-center items-center gap-2 text-xs font-semibold text-slate-500 mb-4">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex justify-center items-center gap-2 text-xs font-semibold text-slate-500 mb-4"
+          >
             <Link href="/" className="hover:text-rose-600 transition-colors">
               Home
             </Link>
@@ -178,7 +181,8 @@ export default function FAQPage() {
             </span>
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-            Everything you need to know about browsing, streaming HD/4K videos, creator folders, and platform safety on VIXN.fun.
+            Everything you need to know about browsing, streaming HD/4K videos,
+            creator folders, and platform safety on VIXN.fun.
           </p>
 
           {/* Quick CTA to Models */}

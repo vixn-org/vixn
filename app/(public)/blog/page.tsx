@@ -93,12 +93,16 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
       .sort({ publishedAt: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select("title slug excerpt category coverImage publishedAt readTime tags featured")
+      .select(
+        "title slug excerpt category coverImage publishedAt readTime tags featured",
+      )
       .lean(),
     BlogPost.countDocuments(query),
     BlogPost.findOne({ status: "published", featured: true })
       .sort({ publishedAt: -1 })
-      .select("title slug excerpt category coverImage publishedAt readTime tags")
+      .select(
+        "title slug excerpt category coverImage publishedAt readTime tags",
+      )
       .lean(),
   ]);
 
@@ -166,8 +170,14 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
       />
 
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs font-semibold text-slate-600">
-        <Link href="/" className="hover:text-rose-600 transition-colors flex items-center gap-1">
+      <nav
+        aria-label="Breadcrumb"
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs font-semibold text-slate-600"
+      >
+        <Link
+          href="/"
+          className="hover:text-rose-600 transition-colors flex items-center gap-1"
+        >
           <Home className="w-3.5 h-3.5" />
           <span>Home</span>
         </Link>
@@ -176,7 +186,9 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
         {category && category !== "all" && (
           <>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-rose-600 font-bold capitalize">{category}</span>
+            <span className="text-rose-600 font-bold capitalize">
+              {category}
+            </span>
           </>
         )}
       </nav>
@@ -191,7 +203,8 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
           Articles, Insights &amp; Industry Guides
         </h1>
         <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
-          Explore modeling insights, high-definition photography tips, creator spotlights, and platform guides.
+          Explore modeling insights, high-definition photography tips, creator
+          spotlights, and platform guides.
         </p>
       </div>
 
@@ -199,7 +212,10 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
       <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
         {categories.map((cat) => {
           const isActive = (category || "all") === cat;
-          const href = cat === "all" ? "/blog" : `/blog?category=${encodeURIComponent(cat)}`;
+          const href =
+            cat === "all"
+              ? "/blog"
+              : `/blog?category=${encodeURIComponent(cat)}`;
           return (
             <Link
               key={cat}
@@ -257,7 +273,8 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
                 </h2>
 
                 <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
-                  {featuredBlog.excerpt || "Read the full in-depth article on VIXN..."}
+                  {featuredBlog.excerpt ||
+                    "Read the full in-depth article on VIXN..."}
                 </p>
               </div>
 
@@ -269,9 +286,13 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
                     className="w-8 h-8 rounded-full object-cover border border-slate-200"
                   />
                   <div className="text-xs">
-                    <p className="font-bold text-slate-900">{featuredBlog.author?.name || "VIXN Editorial"}</p>
+                    <p className="font-bold text-slate-900">
+                      {featuredBlog.author?.name || "VIXN Editorial"}
+                    </p>
                     <p className="text-[10px] text-slate-400">
-                      {new Date(featuredBlog.publishedAt || featuredBlog.createdAt).toLocaleDateString("en-US", {
+                      {new Date(
+                        featuredBlog.publishedAt || featuredBlog.createdAt,
+                      ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -297,9 +318,12 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
       {blogs.length === 0 ? (
         <div className="py-24 text-center rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50/50">
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-slate-900">No Articles Found</h3>
+          <h3 className="text-lg font-bold text-slate-900">
+            No Articles Found
+          </h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
-            New editorial articles are currently being written and published. Check back shortly for fresh content.
+            New editorial articles are currently being written and published.
+            Check back shortly for fresh content.
           </p>
           <Link
             href="/blog"
@@ -316,7 +340,10 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
               className="group flex flex-col rounded-3xl bg-white border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-xl hover:border-slate-300 transition-all duration-300 transform hover:-translate-y-1"
             >
               {/* Cover Image */}
-              <Link href={`/blog/${blog.slug}`} className="relative aspect-16/10 w-full overflow-hidden bg-slate-100 block">
+              <Link
+                href={`/blog/${blog.slug}`}
+                className="relative aspect-16/10 w-full overflow-hidden bg-slate-100 block"
+              >
                 {blog.coverImage ? (
                   <img
                     src={blog.coverImage}
@@ -340,7 +367,9 @@ export default async function BlogDirectoryPage({ searchParams }: Props) {
                   <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {new Date(blog.publishedAt || blog.createdAt).toLocaleDateString("en-US", {
+                      {new Date(
+                        blog.publishedAt || blog.createdAt,
+                      ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",

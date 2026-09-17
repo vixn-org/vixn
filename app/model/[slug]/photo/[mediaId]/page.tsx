@@ -11,6 +11,7 @@ import {
 } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import ExploreOtherModelsPhotos from "@/components/public/explore-other-models-photos";
 import {
   ChevronLeft,
   ChevronRight,
@@ -111,6 +112,43 @@ export default async function ModelPhotoPage({ params }: Props) {
     .map((p: any, originalIndex: number) => ({ ...p, originalIndex }))
     .filter((p: any) => p._id?.toString() !== currentPhoto._id?.toString());
 
+  // Fetch photos from other unique models (1 photo per unique model)
+  const otherModelsWithPhotos = await Model.find({
+    status: "published",
+    slug: { $ne: model.slug },
+    "media.type": "photo",
+  })
+    .select("name slug profileImage coverImage category media")
+    .sort({ featured: -1, updatedAt: -1 })
+    .limit(12)
+    .lean();
+
+  const otherModelPhotos = otherModelsWithPhotos
+    .map((m: any) => {
+      const photos = (m.media || []).filter((x: any) => x.type === "photo");
+      if (photos.length === 0) return null;
+      const firstPhoto = photos[0];
+      const origIndex = (m.media || []).findIndex(
+        (x: any) => x._id?.toString() === firstPhoto._id?.toString()
+      );
+      const mediaSlug = getMediaSlug(
+        firstPhoto,
+        "photo",
+        origIndex >= 0 ? origIndex : 0
+      );
+      return {
+        modelName: m.name,
+        modelSlug: m.slug,
+        modelAvatar: m.profileImage || m.coverImage,
+        category: m.category,
+        photo: firstPhoto,
+        mediaSlug,
+        url: `/model/${m.slug}/photo/${mediaSlug}`,
+        totalPhotos: photos.length,
+      };
+    })
+    .filter(Boolean);
+
   const { imageSchema, breadcrumbSchema } = generatePhotoJsonLd(
     model,
     currentPhoto,
@@ -152,7 +190,7 @@ export default async function ModelPhotoPage({ params }: Props) {
               href="/models"
               className="hover:text-rose-600 transition-colors"
             >
-              Models
+              Model
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <Link
@@ -166,7 +204,7 @@ export default async function ModelPhotoPage({ params }: Props) {
               href={`/model/${model.slug}/photos`}
               className="hover:text-rose-600 transition-colors"
             >
-              Photos
+              Photo
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-rose-600 font-bold truncate max-w-[160px]">
@@ -497,6 +535,12 @@ export default async function ModelPhotoPage({ params }: Props) {
             </div>
           </section>
         )}
+
+        {/* Explore Photos from Other Models Section */}
+        <ExploreOtherModelsPhotos
+          photos={otherModelPhotos as any}
+          currentModelName={model.name}
+        />
       </div>
     </div>
   );
