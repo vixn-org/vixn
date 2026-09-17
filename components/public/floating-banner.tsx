@@ -5,17 +5,78 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
+const TWO_MINUTES_MS = 2 * 60 * 1000;
+const STORAGE_KEY = "vixn_banner_dismissed_until";
+
+const getDismissedUntil = (): number => {
+  try {
+    const val =
+      localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+    return val ? Number(val) : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const setDismissedUntil = (timestamp: number) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, timestamp.toString());
+  } catch {}
+  try {
+    sessionStorage.setItem(STORAGE_KEY, timestamp.toString());
+  } catch {}
+};
+
+const clearDismissed = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {}
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {}
+};
+
 export default function FloatingBanner() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
+  // Check cooldown on mount and on route change
   useEffect(() => {
     setIsClient(true);
     if (pathname?.startsWith("/admin")) return;
 
-    // Reset visibility on navigation
-    setIsOpen(true);
+    let reappearTimer: NodeJS.Timeout | null = null;
+
+    try {
+      const dismissedUntil = getDismissedUntil();
+      const now = Date.now();
+
+      if (dismissedUntil && now < dismissedUntil) {
+        // Still within the 2-minute cooldown window
+        setIsOpen(false);
+        const remainingTime = dismissedUntil - now;
+        reappearTimer = setTimeout(() => {
+          clearDismissed();
+          setIsOpen(true);
+        }, remainingTime);
+      } else {
+        // Cooldown has expired or no previous dismissal
+        clearDismissed();
+        setIsOpen(true);
+      }
+    } catch {
+      setIsOpen(true);
+    }
+
+    return () => {
+      if (reappearTimer) clearTimeout(reappearTimer);
+    };
+  }, [pathname]);
+
+  // When isOpen becomes true, trigger ad provider to serve ad creative
+  useEffect(() => {
+    if (!isOpen || pathname?.startsWith("/admin")) return;
 
     const timer = setTimeout(() => {
       try {
@@ -26,10 +87,22 @@ export default function FloatingBanner() {
       } catch (e) {
         console.error(e);
       }
-    }, 100);
+    }, 150);
 
     return () => clearTimeout(timer);
-  }, [pathname]);
+  }, [isOpen, pathname]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    const reappearAt = Date.now() + TWO_MINUTES_MS;
+    setDismissedUntil(reappearAt);
+
+    // Schedule reappearance after 2 minutes if user remains on page
+    setTimeout(() => {
+      clearDismissed();
+      setIsOpen(true);
+    }, TWO_MINUTES_MS);
+  };
 
   if (!isClient || pathname?.startsWith("/admin") || !isOpen) {
     return null;
@@ -54,7 +127,7 @@ export default function FloatingBanner() {
 
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className="pointer-events-auto w-5 h-5 sm:w-5 sm:h-5 rounded-full bg-black/80 hover:bg-rose-600 text-slate-300 hover:text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer border-none shadow-md"
             aria-label="Close Advertisement"
             title="Close Ad"
@@ -65,7 +138,7 @@ export default function FloatingBanner() {
 
         {/* ExoClick Banner Slot Element */}
         <div
-          key={pathname}
+          key={`${pathname}-${isOpen}`}
           className="relative w-full min-w-[280px] sm:min-w-[300px] min-h-[50px] sm:min-h-[100px] flex items-center justify-center overflow-hidden rounded-lg bg-black/40 border-none"
         >
           <ins className="eas6a97888e2" data-zoneid="6012542"></ins>
@@ -77,7 +150,7 @@ export default function FloatingBanner() {
                 Sponsored Ad (300×100)
               </span>
               <span className="text-[9px] text-slate-500">
-                ExoClick #6012542
+                ExoClick #6012542 • Reappears 2m after close
               </span>
             </div>
           )}
