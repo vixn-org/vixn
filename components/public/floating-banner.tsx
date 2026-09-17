@@ -43,44 +43,41 @@ export default function FloatingBanner() {
   return (
     <aside
       aria-label="Sponsored Advertisement"
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 sm:bottom-5 sm:right-5 sm:left-auto sm:translate-x-0 z-50 w-[calc(100vw-24px)] max-w-[330px] sm:w-auto transition-all duration-300 animate-in fade-in slide-in-from-bottom-3"
+      className="fixed bottom-2 left-1/2 -translate-x-1/2 sm:bottom-5 sm:right-5 sm:left-auto sm:translate-x-0 z-50 max-w-[calc(100vw-16px)] sm:max-w-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
     >
-      <div className="relative bg-[#121826]/95 backdrop-blur-2xl p-2 sm:p-2.5 rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/90 border-none ring-1 ring-white/[0.08] flex flex-col items-center">
-        {/* Top Control Bar with Sponsored Label & Integrated Close Button */}
-        <div className="w-full flex items-center justify-between pb-1.5 px-1 text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Sponsored
-            </span>
-          </div>
+      <div className="relative bg-[#0e1424]/95 backdrop-blur-2xl p-1 sm:p-1.5 rounded-xl sm:rounded-2xl shadow-2xl shadow-black/90 border-none ring-1 ring-white/[0.08] flex flex-col items-center">
+        {/* Minimal Overlaid Control Bar - 0px extra vertical height on mobile */}
+        <div className="absolute top-1.5 left-1.5 right-1.5 z-20 flex items-center justify-between pointer-events-none">
+          <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider bg-black/80 backdrop-blur-md text-slate-300 px-1.5 py-0.5 rounded shadow-sm border-none">
+            Ad
+          </span>
 
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="w-6 h-6 rounded-full bg-white/[0.06] hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer border-none shadow-sm"
+            className="pointer-events-auto w-5 h-5 sm:w-5 sm:h-5 rounded-full bg-black/80 hover:bg-rose-600 text-slate-300 hover:text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer border-none shadow-md"
             aria-label="Close Advertisement"
             title="Close Ad"
           >
-            <CloseRoundedIcon sx={{ fontSize: 14 }} />
+            <CloseRoundedIcon sx={{ fontSize: 13 }} />
           </button>
         </div>
 
         {/* ExoClick Banner Slot Element */}
         <div
           key={pathname}
-          className="w-full min-w-[280px] sm:min-w-[300px] min-h-[100px] flex items-center justify-center overflow-hidden rounded-xl bg-black/40 border-none"
+          className="relative w-full min-w-[280px] sm:min-w-[300px] min-h-[50px] sm:min-h-[100px] flex items-center justify-center overflow-hidden rounded-lg bg-black/40 border-none"
         >
           <ins className="eas6a97888e2" data-zoneid="6012542"></ins>
 
-          {/* Localhost Preview placeholder when real ad network doesn't serve locally */}
+          {/* Localhost Preview placeholder */}
           {isLocalhost && (
-            <div className="w-full h-[100px] flex flex-col items-center justify-center text-center p-3 select-none">
-              <span className="text-xs font-bold text-slate-300 tracking-wide">
-                Sponsored Ad Area (300×100)
+            <div className="w-full h-[60px] sm:h-[100px] flex flex-col items-center justify-center text-center px-2 py-1 select-none">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-300 tracking-wide">
+                Sponsored Ad (300×100)
               </span>
-              <span className="text-[10px] text-slate-500 mt-1">
-                ExoClick Zone #6012542
+              <span className="text-[9px] text-slate-500">
+                ExoClick #6012542
               </span>
             </div>
           )}
