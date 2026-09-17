@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, HelpCircle, Sparkles } from "lucide-react";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 
 export interface FAQItem {
   question: string;
@@ -28,30 +29,30 @@ export default function FAQAccordion({ items }: FAQAccordionProps) {
         return (
           <div
             key={index}
-            className={`rounded-2xl border transition-all duration-300 overflow-hidden bg-white ${
+            className={`rounded-2xl transition-all duration-300 overflow-hidden border-none ${
               isOpen
-                ? "border-slate-300 shadow-md ring-1 ring-slate-200/60"
-                : "border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-xs"
+                ? "bg-white/[0.06] shadow-xl shadow-black/20"
+                : "bg-white/[0.03] hover:bg-white/[0.05]"
             }`}
           >
             <button
               onClick={() => toggleItem(index)}
-              className="w-full py-4 px-5 sm:px-6 flex items-center justify-between gap-4 text-left transition-colors cursor-pointer"
+              className="w-full py-4 px-5 sm:px-6 flex items-center justify-between gap-4 text-left transition-colors cursor-pointer border-none"
               aria-expanded={isOpen}
             >
               <div className="flex items-center gap-3.5 min-w-0">
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-all border-none ${
                     isOpen
-                      ? "bg-rose-500 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-500"
+                      ? "bg-rose-600 text-white shadow-md shadow-rose-900/40"
+                      : "bg-white/[0.06] text-slate-400"
                   }`}
                 >
                   {index + 1}
                 </span>
                 <span
                   className={`text-sm sm:text-base font-bold leading-snug transition-colors ${
-                    isOpen ? "text-slate-950" : "text-slate-800"
+                    isOpen ? "text-white" : "text-slate-200"
                   }`}
                 >
                   {item.question}
@@ -59,22 +60,22 @@ export default function FAQAccordion({ items }: FAQAccordionProps) {
               </div>
 
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 border-none ${
                   isOpen
-                    ? "bg-slate-100 rotate-180 text-rose-600"
-                    : "bg-slate-50 text-slate-400"
+                    ? "bg-white/[0.08] rotate-180 text-rose-400"
+                    : "bg-white/[0.03] text-slate-500"
                 }`}
               >
-                <ChevronDown className="h-4 w-4" />
+                <ExpandMoreRoundedIcon sx={{ fontSize: 20 }} />
               </div>
             </button>
 
             {isOpen && (
-              <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 animate-fade-in">
-                <p className="mt-2 text-slate-600">{item.answer}</p>
+              <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-none">
+                <p className="mt-1 text-slate-300 leading-relaxed">{item.answer}</p>
                 {item.category && (
-                  <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-rose-600">
-                    <Sparkles className="w-3 h-3" />
+                  <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border-none">
+                    <AutoAwesomeRoundedIcon sx={{ fontSize: 13 }} />
                     <span>Category: {item.category}</span>
                   </div>
                 )}

@@ -1,11 +1,8 @@
 import Link from "next/link";
-import {
-  Sparkles,
-  ChevronRight,
-  Video as VideoIcon,
-  Play,
-  Flame,
-} from "lucide-react";
+import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
 
 export interface OtherModelVideoItem {
   modelName: string;
@@ -36,43 +33,45 @@ export default function ExploreOtherModelsVideos({
   if (!videos || videos.length === 0) return null;
 
   return (
-    <section className="pt-12 border-t border-slate-200 space-y-6">
+    <section className="pt-12 space-y-6 border-none">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-xs font-bold mb-2">
-            <Flame className="w-3.5 h-3.5 text-rose-500" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 text-rose-300 text-xs font-bold mb-2 border-none">
+            <WhatshotRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
             <span>Discover More Creators</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
             <span>Explore Videos from Other Models</span>
-            <Sparkles className="w-5 h-5 text-amber-500 fill-amber-400 shrink-0" />
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Watch trending videos from other popular adult models and creators
           </p>
         </div>
 
         <Link
           href="/models"
-          className="text-xs font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 shrink-0 transition-colors"
+          className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
         >
           <span>View All Models</span>
-          <ChevronRight className="w-4 h-4" />
+          <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {videos.map((item) => {
           const poster =
             item.video.thumbnail || item.modelAvatar || "/logo.jpg";
 
           return (
-            <Link
+            <div
               key={`${item.modelSlug}-${item.mediaSlug}`}
-              href={item.url}
-              className="group relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block flex flex-col"
+              className="w-full transition-all duration-300 group flex flex-col border-none bg-transparent"
             >
-              <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
+              {/* Video Thumbnail Container */}
+              <Link
+                href={item.url}
+                className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
+              >
                 <img
                   src={poster}
                   alt={item.video.alt || `${item.modelName} video`}
@@ -80,49 +79,55 @@ export default function ExploreOtherModelsVideos({
                   loading="lazy"
                 />
 
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                  <div className="w-11 h-11 rounded-full bg-rose-600/60 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-rose-600 transition-transform">
-                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                    <PlayArrowRoundedIcon sx={{ fontSize: 26 }} />
                   </div>
                 </div>
 
-                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-xs flex items-center gap-1 border border-white/10">
-                  <VideoIcon className="w-3 h-3 text-rose-400" />
+                <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1">
+                  <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
                   <span>VIDEO</span>
                 </div>
 
                 {item.category && (
-                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-xs border border-white/10">
+                  <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md">
                     {item.category}
                   </div>
                 )}
-              </div>
+              </Link>
 
-              <div className="p-3 bg-white flex-1 flex flex-col justify-between space-y-2 border-t border-slate-100">
-                <p className="text-xs font-bold text-slate-900 line-clamp-1 group-hover:text-rose-600 transition-colors">
-                  {item.video.title || `${item.modelName} Video Clip`}
-                </p>
+              {/* Title and Info Below Thumbnail - Completely Transparent */}
+              <div className="pt-3 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1.5 bg-transparent">
+                <Link href={item.url} className="block">
+                  <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-snug">
+                    {item.video.title || `${item.modelName} Video Clip`}
+                  </h4>
+                </Link>
 
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center justify-between pt-1 text-xs text-slate-400 bg-transparent border-none">
+                  <Link
+                    href={`/model/${item.modelSlug}`}
+                    className="flex items-center gap-2 min-w-0 group/author hover:text-white transition-colors"
+                  >
                     {item.modelAvatar && (
                       <img
                         src={item.modelAvatar}
                         alt={item.modelName}
-                        className="w-5 h-5 rounded-full object-cover shrink-0 border border-slate-200"
+                        className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-white/10"
                       />
                     )}
-                    <span className="font-semibold text-slate-700 truncate text-[11px]">
+                    <span className="font-semibold text-slate-300 group-hover/author:text-rose-400 truncate text-[11px]">
                       {item.modelName}
                     </span>
-                  </div>
+                  </Link>
 
-                  <span className="text-[10px] font-bold text-slate-400 shrink-0">
+                  <span className="text-[10px] font-semibold text-slate-400 shrink-0">
                     {item.totalVideos} videos
                   </span>
                 </div>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>

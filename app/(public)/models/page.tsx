@@ -2,19 +2,13 @@ import { Metadata } from "next";
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
-import {
-  Flame,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Sparkles,
-  Search,
-  CheckCircle2,
-  FolderOpen,
-  ArrowRight,
-  Filter,
-  Grid,
-} from "lucide-react";
 import ModelsDirectoryClient from "./models-directory-client";
+
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
@@ -107,7 +101,7 @@ export default async function ModelsPage() {
 
   // Extract unique categories
   const categories = Array.from(
-    new Set(models.map((m) => m.category).filter(Boolean)),
+    new Set(models.map((m) => m.category).filter(Boolean))
   ) as string[];
 
   // SEO: CollectionPage & ItemList Schema
@@ -151,7 +145,7 @@ export default async function ModelsPage() {
   };
 
   return (
-    <div className="space-y-12 pb-16">
+    <div className="space-y-10 pb-16 text-slate-100">
       {/* Inject Structured Data */}
       <script
         type="application/ld+json"
@@ -163,41 +157,49 @@ export default async function ModelsPage() {
       />
 
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white pt-10 pb-12 border-b border-slate-100">
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative overflow-hidden pt-8 pb-10 border-none">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-4">
           {/* Breadcrumb Visual */}
           <nav
             aria-label="Breadcrumb"
-            className="flex justify-center items-center gap-2 text-xs font-semibold text-slate-500 mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#121826]/85 backdrop-blur-xl shadow-xl text-xs font-semibold text-slate-300 border-none mb-2"
           >
-            <Link href="/" className="hover:text-rose-600 transition-colors">
-              Home
+            <Link href="/" className="hover:text-rose-400 transition-colors flex items-center gap-1">
+              <HomeRoundedIcon sx={{ fontSize: 15 }} />
+              <span>Home</span>
             </Link>
-            <span>/</span>
-            <span className="text-slate-900">Models Directory</span>
+            <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} />
+            <span className="text-rose-400 font-bold">Models Directory</span>
           </nav>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-950 tracking-tight">
-            Explore All{" "}
-            <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-              Models &amp; Creators
-            </span>
-          </h1>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-            Browse our complete collection of verified creator folders,
-            high-definition photo sets, and 4K streaming videos.
-          </p>
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 text-rose-300 text-xs font-bold border-none shadow-md">
+              <WhatshotRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
+              <span>Verified Creator Portfolios</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
+              Explore All{" "}
+              <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-indigo-400 bg-clip-text text-transparent">
+                Models &amp; Creators
+              </span>
+            </h1>
+            <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Browse our complete collection of verified creator folders,
+              high-definition photo sets, and 4K streaming videos.
+            </p>
+          </div>
 
           {/* Quick Metrics */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs font-bold text-slate-700">
-            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-rose-500" />
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs font-bold text-slate-200">
+            <div className="bg-[#121826]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border-none">
+              <PhotoCameraRoundedIcon sx={{ fontSize: 16, color: "#818cf8" }} />
               <span>
                 {models.reduce((acc, m) => acc + m.photoCount, 0)} Photos
               </span>
             </div>
-            <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2">
-              <VideoIcon className="w-4 h-4 text-violet-600" />
+            <div className="bg-[#121826]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border-none">
+              <VideocamRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
               <span>
                 {models.reduce((acc, m) => acc + m.videoCount, 0)} Videos
               </span>

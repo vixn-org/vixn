@@ -2,16 +2,14 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import {
-  Search,
-  Filter,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  CheckCircle2,
-  FolderOpen,
-  ArrowUpDown,
-  Layers,
-} from "lucide-react";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
+import SortRoundedIcon from "@mui/icons-material/SortRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 
 interface ModelItem {
   _id: string;
@@ -73,22 +71,25 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
   return (
     <div className="space-y-8">
       {/* Controls Bar: Search & Sort */}
-      <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-[#121826]/90 backdrop-blur-2xl p-5 sm:p-6 rounded-3xl shadow-2xl space-y-4 border-none">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search Input */}
           <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <SearchRoundedIcon
+              sx={{ fontSize: 18, color: "#94a3b8" }}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            />
             <input
               type="text"
               placeholder="Search model name, tag, or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+              className="w-full pl-10 pr-12 py-2.5 rounded-2xl bg-white/[0.04] text-sm text-slate-100 placeholder:text-slate-500 border-none shadow-inner focus:outline-none focus:ring-2 focus:ring-rose-500 transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-600"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-white border-none cursor-pointer"
               >
                 Clear
               </button>
@@ -97,37 +98,39 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
 
           {/* Sort By Selector */}
           <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-            <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
-              <ArrowUpDown className="w-3.5 h-3.5" /> Sort:
+            <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
+              <SortRoundedIcon sx={{ fontSize: 16 }} />
+              <span>Sort:</span>
             </span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               aria-label="Sort models by"
-              className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 cursor-pointer"
+              className="px-3.5 py-2 rounded-2xl bg-white/[0.06] text-xs font-bold text-slate-200 border-none focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
             >
-              <option value="newest">Newest Added</option>
-              <option value="photos">Most Photos</option>
-              <option value="videos">Most Videos</option>
-              <option value="alpha">Alphabetical (A-Z)</option>
+              <option value="newest" className="bg-[#121826] text-slate-100">Newest Added</option>
+              <option value="photos" className="bg-[#121826] text-slate-100">Most Photos</option>
+              <option value="videos" className="bg-[#121826] text-slate-100">Most Videos</option>
+              <option value="alpha" className="bg-[#121826] text-slate-100">Alphabetical (A-Z)</option>
             </select>
           </div>
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-none">
           <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-            <Filter className="w-3 h-3" /> Categories:
+            <FilterListRoundedIcon sx={{ fontSize: 16 }} />
+            <span>Categories:</span>
           </span>
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border-none ${
               selectedCategory === "all"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                ? "bg-rose-600 text-white shadow-lg shadow-rose-900/40"
+                : "bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] hover:text-white"
             }`}
           >
-            All Categories ({models.length})
+            All ({models.length})
           </button>
           {categories.map((cat) => {
             const count = models.filter((m) => m.category === cat).length;
@@ -135,10 +138,10 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer border-none ${
                   selectedCategory === cat
-                    ? "bg-rose-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-rose-600 text-white shadow-lg shadow-rose-900/40"
+                    : "bg-white/[0.05] text-slate-300 hover:bg-white/[0.1] hover:text-white"
                 }`}
               >
                 {cat} ({count})
@@ -149,20 +152,18 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          Showing {filteredModels.length} of {models.length} Models
-        </p>
+      <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <p>Showing {filteredModels.length} of {models.length} Models</p>
       </div>
 
       {/* Model Cards Grid */}
       {filteredModels.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-          <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-slate-800">
+        <div className="text-center py-20 bg-[#121826]/60 rounded-3xl border-none space-y-3">
+          <PeopleAltRoundedIcon sx={{ fontSize: 44, color: "#64748b" }} className="mx-auto" />
+          <h3 className="text-lg font-bold text-white">
             No models match your criteria
           </h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <p className="text-xs text-slate-400 max-w-sm mx-auto">
             Try adjusting your search query or switching category filters.
           </p>
           <button
@@ -170,94 +171,79 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
               setSearchQuery("");
               setSelectedCategory("all");
             }}
-            className="mt-4 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer"
+            className="mt-2 px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer border-none"
           >
             Reset Filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
           {filteredModels.map((model) => (
             <div
               key={model._id}
-              className="group relative flex flex-col overflow-hidden rounded-3xl bg-white border border-slate-200/80 shadow-xs hover:shadow-xl hover:shadow-slate-200/50 hover:border-rose-200 transition-all duration-300 transform hover:-translate-y-1 justify-between"
+              className="group flex flex-col border-none bg-transparent transition-all duration-300"
             >
               <Link href={`/model/${model.slug}`} className="block">
-                {/* Media Preview / Cover */}
-                <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
+                {/* Media Preview Thumbnail */}
+                <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300">
                   {model.profileImage || model.coverImage ? (
                     <img
                       src={model.profileImage || model.coverImage}
                       alt={model.name}
                       className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-4xl">
+                    <div className="h-full w-full flex items-center justify-center bg-[#0e1424] text-slate-500 font-bold text-4xl">
                       {model.name.charAt(0)}
                     </div>
                   )}
 
                   {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+
+                  {/* Verified Badge */}
+                  <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1 border-none">
+                    <CheckCircleRoundedIcon sx={{ fontSize: 13, color: "#10b981" }} />
+                    <span>VERIFIED</span>
+                  </div>
 
                   {/* Category Badge */}
                   {model.category && (
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider text-rose-600 shadow-xs border border-white/50">
+                    <span className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[9px] font-bold text-slate-300 shadow-md border-none">
                       {model.category}
                     </span>
                   )}
 
-                  {/* Media Counts */}
-                  <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                    <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                      <ImageIcon className="w-3 h-3 text-rose-400" />
-                      {model.photoCount}
-                    </span>
-                    <span className="bg-slate-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border border-white/10">
-                      <VideoIcon className="w-3 h-3 text-violet-400" />
-                      {model.videoCount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Body Content */}
-                <div className="p-5 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-base font-black text-slate-900 group-hover:text-rose-600 transition-colors line-clamp-1">
+                  {/* Thumbnail Bottom Info */}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-white">
+                    <p className="font-bold text-sm leading-tight truncate group-hover:text-rose-400 transition-colors">
                       {model.name}
-                    </h2>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  </div>
-
-                  {model.bio && (
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                      {model.bio}
                     </p>
-                  )}
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
+                      <span>{model.videoCount}V</span>
+                      <span>•</span>
+                      <span>{model.photoCount}P</span>
+                    </div>
+                  </div>
                 </div>
               </Link>
 
-              {/* Direct Crawlable Links to Photos, Videos & Profile */}
-              <div className="px-5 pb-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
+              {/* Direct Crawlable Links to Photos, Videos & Profile - Transparent */}
+              <div className="pt-2.5 pb-1 px-0.5 flex items-center justify-between gap-2 text-[11px] font-bold bg-transparent border-none">
                 <Link
                   href={`/model/${model.slug}/photos`}
-                  className="text-slate-600 hover:text-indigo-600 flex items-center gap-1 transition-colors text-[11px]"
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                 >
-                  <ImageIcon className="w-3 h-3 text-indigo-500" />
+                  <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
                   <span>{model.photoCount} Photos</span>
                 </Link>
                 <Link
                   href={`/model/${model.slug}/videos`}
-                  className="text-slate-600 hover:text-rose-600 flex items-center gap-1 transition-colors text-[11px]"
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                 >
-                  <VideoIcon className="w-3 h-3 text-rose-500" />
+                  <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
                   <span>{model.videoCount} Videos</span>
-                </Link>
-                <Link
-                  href={`/model/${model.slug}`}
-                  className="text-slate-900 hover:text-rose-600 font-bold text-xs"
-                >
-                  Profile →
                 </Link>
               </div>
             </div>

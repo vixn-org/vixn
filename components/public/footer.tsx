@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ShieldCheck, Tag } from "lucide-react";
+import VerifiedUserRoundedIcon from "@mui/icons-material/VerifiedUserRounded";
+import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import { slugify } from "@/lib/seo";
@@ -33,25 +34,25 @@ export default async function PublicFooter() {
   }
 
   return (
-    <footer className="border-t border-slate-200 bg-slate-50 mt-16">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-slate-200">
-          <div className="space-y-3 md:col-span-2">
+    <footer className="bg-[#070a11] text-slate-400 mt-20 border-none">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10">
+          <div className="space-y-4 md:col-span-2">
             <div>
               <img
                 src="/logo.jpg"
                 alt="VIXN.fun"
-                className="h-8 w-auto object-contain rounded-md"
+                className="h-8 w-auto object-contain rounded-lg"
               />
             </div>
-            <p className="text-sm text-slate-600 max-w-md leading-relaxed">
+            <p className="text-sm text-slate-400 max-w-md leading-relaxed">
               The premier model discovery platform featuring high-definition
               photo galleries, exclusive videos, biographical data, and
               structured creator portfolios.
             </p>
-            <div className="flex items-center gap-3 text-xs text-slate-500 pt-2">
-              <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                <ShieldCheck className="w-4 h-4" /> Verified Profiles
+            <div className="flex items-center gap-3 text-xs text-slate-400 pt-1">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                <VerifiedUserRoundedIcon sx={{ fontSize: 16 }} /> Verified Profiles
               </span>
               <span>•</span>
               <span>Fast CDN Delivery</span>
@@ -61,14 +62,14 @@ export default async function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               Quick Navigation
             </h4>
-            <ul className="space-y-2 text-sm text-slate-600">
+            <ul className="space-y-2.5 text-sm text-slate-400">
               <li>
                 <Link
                   href="/models"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   All Models Directory
                 </Link>
@@ -76,7 +77,7 @@ export default async function PublicFooter() {
               <li>
                 <Link
                   href="/blog"
-                  className="hover:text-rose-600 transition-colors font-medium text-rose-600"
+                  className="hover:text-rose-400 transition-colors font-semibold text-rose-400"
                 >
                   Blog &amp; Insights
                 </Link>
@@ -84,7 +85,7 @@ export default async function PublicFooter() {
               <li>
                 <Link
                   href="/#featured-models"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   Featured Creators
                 </Link>
@@ -92,7 +93,7 @@ export default async function PublicFooter() {
               <li>
                 <Link
                   href="/faq"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   Platform FAQ
                 </Link>
@@ -101,14 +102,14 @@ export default async function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               Discovery &amp; SEO
             </h4>
-            <ul className="space-y-2 text-sm text-slate-600">
+            <ul className="space-y-2.5 text-sm text-slate-400">
               <li>
                 <Link
                   href="/sitemap.xml"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   XML Sitemap Index
                 </Link>
@@ -116,7 +117,7 @@ export default async function PublicFooter() {
               <li>
                 <Link
                   href="/sitemaps/tags"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   Keyword Tags Index
                 </Link>
@@ -124,7 +125,7 @@ export default async function PublicFooter() {
               <li>
                 <Link
                   href="/robots.txt"
-                  className="hover:text-rose-600 transition-colors"
+                  className="hover:text-rose-400 transition-colors"
                 >
                   Robots.txt Directives
                 </Link>
@@ -135,9 +136,9 @@ export default async function PublicFooter() {
 
         {/* Global Popular Keyword Hubs for Internal Linking */}
         {topTags.length > 0 && (
-          <div className="py-6 border-b border-slate-200">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-rose-500" />
+          <div className="py-8 bg-white/[0.02] rounded-3xl p-6 sm:p-8 mb-8 border-none">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3.5 flex items-center gap-1.5">
+              <LocalOfferRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />
               Popular Search Tags &amp; Collections
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -147,7 +148,7 @@ export default async function PublicFooter() {
                   <Link
                     key={tag}
                     href={`/tag/${tagSlug}`}
-                    className="text-xs font-medium text-slate-600 bg-white hover:text-rose-600 hover:border-rose-200 px-3 py-1 rounded-full border border-slate-200 transition-colors shadow-xs"
+                    className="text-xs font-medium text-slate-300 bg-white/[0.05] hover:bg-white/[0.1] hover:text-white px-3.5 py-1.5 rounded-full transition-colors shadow-sm border-none"
                   >
                     #{tag}
                   </Link>
@@ -157,7 +158,7 @@ export default async function PublicFooter() {
           </div>
         )}
 
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} VIXN.fun. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <span>Privacy Protected</span>

@@ -1,10 +1,8 @@
 import Link from "next/link";
-import {
-  Sparkles,
-  ChevronRight,
-  Image as ImageIcon,
-  Flame,
-} from "lucide-react";
+import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import HighQualityRoundedIcon from "@mui/icons-material/HighQualityRounded";
 
 export interface OtherModelPhotoItem {
   modelName: string;
@@ -34,65 +32,86 @@ export default function ExploreOtherModelsPhotos({
   if (!photos || photos.length === 0) return null;
 
   return (
-    <section className="pt-12 border-t border-slate-200 space-y-6">
+    <section className="pt-12 space-y-6 border-none">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-xs font-bold mb-2">
-            <Flame className="w-3.5 h-3.5 text-rose-500" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 text-rose-300 text-xs font-bold mb-2 border-none">
+            <WhatshotRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
             <span>Discover More Creators</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
             <span>Explore Photos from Other Models</span>
-            <Sparkles className="w-5 h-5 text-amber-500 fill-amber-400 shrink-0" />
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Browse high-definition photoshoots and pictures from other adult creators
           </p>
         </div>
 
         <Link
           href="/models"
-          className="text-xs font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1 shrink-0 transition-colors"
+          className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
         >
           <span>View All Models</span>
-          <ChevronRight className="w-4 h-4" />
+          <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
         {photos.map((item) => {
           const photoUrl =
             item.photo.url || item.modelAvatar || "/logo.jpg";
 
           return (
-            <Link
+            <div
               key={`${item.modelSlug}-${item.mediaSlug}`}
-              href={item.url}
-              className="group relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 block"
+              className="w-full transition-all duration-300 group flex flex-col border-none bg-transparent"
             >
-              <img
-                src={photoUrl}
-                alt={item.photo.alt || `${item.modelName} photo`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
+              {/* Photo Thumbnail Container */}
+              <Link
+                href={item.url}
+                className="relative aspect-4/5 w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+              >
+                <img
+                  src={photoUrl}
+                  alt={item.photo.alt || `${item.modelName} photo`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1 border-none">
+                  <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
+                  <span>4K</span>
+                </div>
 
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold text-white shadow-xs flex items-center gap-1 border border-white/10">
-                <ImageIcon className="w-2.5 h-2.5 text-sky-400" />
-                <span>HD</span>
+                {item.category && (
+                  <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-bold text-slate-300 shadow-md border-none">
+                    {item.category}
+                  </div>
+                )}
+              </Link>
+
+              {/* Title and Info Below Thumbnail - Completely Transparent */}
+              <div className="pt-2.5 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1 bg-transparent">
+                <Link href={item.url} className="block">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-1 leading-snug">
+                    {item.modelName}
+                  </h4>
+                </Link>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-400 bg-transparent border-none">
+                  <span className="text-slate-400 truncate max-w-[90px]">
+                    {item.totalPhotos} photos
+                  </span>
+                  <Link
+                    href={item.url}
+                    className="font-bold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-0.5"
+                  >
+                    <span>View</span>
+                    <ArrowForwardRoundedIcon sx={{ fontSize: 12 }} />
+                  </Link>
+                </div>
               </div>
-
-              <div className="absolute inset-x-0 bottom-0 p-2.5 text-white space-y-0.5">
-                <p className="text-xs font-bold truncate leading-tight">
-                  {item.modelName}
-                </p>
-                <p className="text-[10px] text-slate-300 truncate">
-                  {item.photo.title || `${item.totalPhotos} photos in gallery`}
-                </p>
-              </div>
-            </Link>
+            </div>
           );
         })}
       </div>

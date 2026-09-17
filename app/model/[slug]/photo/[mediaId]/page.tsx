@@ -9,20 +9,23 @@ import {
   getMediaSlug,
   slugify,
 } from "@/lib/seo";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import HeaderSearch from "@/components/public/header-search";
 import ExploreOtherModelsPhotos from "@/components/public/explore-other-models-photos";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Home,
-  ArrowLeft,
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Tag,
-  Sparkles,
-  Maximize2,
-} from "lucide-react";
+import PublicMuiThemeProvider from "@/components/public/public-mui-theme-provider";
+import PublicFooter from "@/components/public/footer";
+
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
+import FileDownloadRoundedIcon from "@mui/icons-material/FileDownloadRounded";
+import HighQualityRoundedIcon from "@mui/icons-material/HighQualityRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -37,7 +40,7 @@ function findPhotoIndex(photos: any[], param: string): number {
   // 1. Match exact ID or order
   let idx = photos.findIndex(
     (m: any) =>
-      m._id?.toString() === decoded || m.order?.toString() === decoded,
+      m._id?.toString() === decoded || m.order?.toString() === decoded
   );
   if (idx !== -1) return idx;
 
@@ -67,7 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!model) return { title: { absolute: "Photo Not Found | VIXN" } };
 
     const allPhotos = (model.media || []).filter(
-      (m: any) => m.type === "photo",
+      (m: any) => m.type === "photo"
     );
     const photoIndex = findPhotoIndex(allPhotos, mediaId);
 
@@ -96,6 +99,7 @@ export default async function ModelPhotoPage({ params }: Props) {
   }
 
   const allPhotos = (model.media || []).filter((m: any) => m.type === "photo");
+  const allVideos = (model.media || []).filter((m: any) => m.type === "video");
   const currentIndex = findPhotoIndex(allPhotos, mediaId);
 
   if (currentIndex === -1) {
@@ -152,7 +156,7 @@ export default async function ModelPhotoPage({ params }: Props) {
   const { imageSchema, breadcrumbSchema } = generatePhotoJsonLd(
     model,
     currentPhoto,
-    currentIndex,
+    currentIndex
   );
 
   const photoTitle =
@@ -160,388 +164,444 @@ export default async function ModelPhotoPage({ params }: Props) {
     `${model.name} - Exclusive HD Photo #${currentIndex + 1}`;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(imageSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* Navigation & Breadcrumbs Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <nav
-            aria-label="Breadcrumb"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100/80 border border-slate-200 text-xs font-semibold text-slate-600"
-          >
+    <PublicMuiThemeProvider>
+      <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans selection:bg-rose-500 selection:text-white flex flex-col">
+        {/* Floating Top Navigation Header - Transparent with Logo */}
+        <header className="fixed top-0 left-0 right-0 z-40 bg-[#090d16]/80 backdrop-blur-xl border-none">
+          <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
+            {/* Logo */}
             <Link
               href="/"
-              className="hover:text-rose-600 transition-colors flex items-center gap-1"
+              className="flex items-center gap-2 hover:opacity-90 transition-opacity shrink-0"
             >
-              <Home className="w-3.5 h-3.5" />
-              <span>Home</span>
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <Link
-              href="/models"
-              className="hover:text-rose-600 transition-colors"
-            >
-              Model
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <Link
-              href={`/model/${model.slug}`}
-              className="hover:text-rose-600 transition-colors"
-            >
-              {model.name}
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <Link
-              href={`/model/${model.slug}/photos`}
-              className="hover:text-rose-600 transition-colors"
-            >
-              Photo
-            </Link>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-rose-600 font-bold truncate max-w-[160px]">
-              Photo #{currentIndex + 1}
-            </span>
-          </nav>
-
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="rounded-xl border-slate-200 text-slate-700 text-xs font-bold"
-          >
-            <Link href={`/model/${model.slug}`}>
-              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to {model.name}
-            </Link>
-          </Button>
-        </div>
-
-        {/* Main Photo Showcase */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main Photo Display */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 shadow-xl flex items-center justify-center group">
               <img
-                src={currentPhoto.url}
-                alt={currentPhoto.alt || photoTitle}
-                className="w-full h-auto max-h-[85vh] object-contain mx-auto"
+                src="/logo.jpg"
+                alt="VIXN"
+                className="h-8 w-auto object-contain rounded-xl shadow-lg"
               />
+            </Link>
 
-              {/* Prev Button Overlay */}
-              {prevPhoto && (
+            {/* Header Search Bar */}
+            <div className="flex-1 max-w-lg">
+              <HeaderSearch />
+            </div>
+
+            {/* Quick Nav Links */}
+            <div className="hidden md:flex items-center gap-2">
+              <Link
+                href="/models"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-colors border-none"
+              >
+                Models
+              </Link>
+              <Link
+                href={`/model/${model.slug}`}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-colors border-none"
+              >
+                {model.name}
+              </Link>
+              <Link
+                href={`/model/${model.slug}/photos`}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors border-none"
+              >
+                Photos ({allPhotos.length})
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(imageSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+
+        <main className="flex-1 pt-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-8">
+            {/* Navigation & Breadcrumbs Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-none">
+              <nav
+                aria-label="Breadcrumb"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#121826]/85 backdrop-blur-xl shadow-xl text-xs font-semibold text-slate-300 border-none overflow-x-auto whitespace-nowrap"
+              >
                 <Link
-                  href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
-                  title="Previous Photo"
+                  href="/"
+                  className="hover:text-rose-400 transition-colors flex items-center gap-1"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <HomeRoundedIcon sx={{ fontSize: 15 }} />
+                  <span>Home</span>
                 </Link>
-              )}
-
-              {/* Next Button Overlay */}
-              {nextPhoto && (
+                <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
                 <Link
-                  href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-lg"
-                  title="Next Photo"
+                  href="/models"
+                  className="hover:text-rose-400 transition-colors"
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  Models
                 </Link>
-              )}
-
-              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-white/40 flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-rose-600" />
-                <span>
-                  Photo {currentIndex + 1} of {allPhotos.length}
+                <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
+                <Link
+                  href={`/model/${model.slug}`}
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  {model.name}
+                </Link>
+                <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
+                <Link
+                  href={`/model/${model.slug}/photos`}
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  Photos
+                </Link>
+                <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
+                <span className="text-indigo-400 font-bold truncate max-w-[160px]">
+                  Photo #{currentIndex + 1}
                 </span>
-              </div>
-            </div>
-
-            {/* Quick Browse Bar */}
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
-                {prevPhoto ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="rounded-xl border-slate-200 text-xs font-semibold"
-                  >
-                    <Link
-                      href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Photo
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="rounded-xl border-slate-200 text-xs font-semibold"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Prev Photo
-                  </Button>
-                )}
-
-                {nextPhoto ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="rounded-xl border-slate-200 text-xs font-semibold"
-                  >
-                    <Link
-                      href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
-                    >
-                      Next Photo <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="rounded-xl border-slate-200 text-xs font-semibold"
-                  >
-                    Next Photo <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={currentPhoto.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Download 4K Ultra HD</span>
-                </a>
-                <a
-                  href={currentPhoto.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-all"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>View Original</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Sidebar: Details & Model Profile */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Photo Metadata Card */}
-            <div className="bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80 space-y-4 shadow-xs">
-              <div className="space-y-1.5">
-                <h1 className="text-xl font-black text-slate-900 leading-tight">
-                  {photoTitle}
-                </h1>
-                {currentPhoto.alt && (
-                  <p className="text-xs text-slate-600 leading-relaxed pt-1">
-                    {currentPhoto.alt}
-                  </p>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-200/80 space-y-2 text-xs text-slate-600">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-medium">Model:</span>
-                  <Link
-                    href={`/model/${model.slug}`}
-                    className="font-bold text-slate-900 hover:text-rose-600 transition-colors"
-                  >
-                    {model.name}
-                  </Link>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-medium">Category:</span>
-                  <Badge
-                    variant="secondary"
-                    className="bg-white border-slate-200 text-slate-700 font-semibold"
-                  >
-                    {model.category || "Fashion & Glamour"}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 font-medium">Quality:</span>
-                  <span className="font-bold text-emerald-600">
-                    4K Ultra HD
-                  </span>
-                </div>
-
-                {(() => {
-                  const photoKeywords: string[] = Array.isArray(
-                    currentPhoto.keywords,
-                  )
-                    ? currentPhoto.keywords.filter(Boolean)
-                    : typeof currentPhoto.keywords === "string" &&
-                        currentPhoto.keywords.trim()
-                      ? currentPhoto.keywords
-                          .split(",")
-                          .map((k: string) => k.trim())
-                          .filter(Boolean)
-                      : [];
-
-                  if (photoKeywords.length === 0) return null;
-
-                  return (
-                    <div className="pt-3 border-t border-slate-200/80 space-y-1.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        SEO Tags &amp; Keywords
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {photoKeywords.map((kw, i) => {
-                          const kwSlug = kw.toLowerCase().replace(/[^\w\s-]/g, "").replace(/[\s_]+/g, "-").replace(/^-+|-+$/g, "").trim();
-                          return (
-                            <Link
-                              key={i}
-                              href={`/tag/${kwSlug}`}
-                              className="text-[10px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-0.5 rounded-md border border-rose-100 transition-colors"
-                            >
-                              #{kw}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Model Profile Teaser Card */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={model.profileImage || model.coverImage || "/logo.jpg"}
-                  alt={model.name}
-                  className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-base text-slate-900 truncate">
-                    {model.name}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {allPhotos.length} Photos •{" "}
-                    {
-                      (model.media || []).filter((m: any) => m.type === "video")
-                        .length
-                    }{" "}
-                    Videos
-                  </p>
-                </div>
-              </div>
-
-              {model.bio && (
-                <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                  {model.bio}
-                </p>
-              )}
-
-              <div className="space-y-2 pt-1">
-                <Button
-                  asChild
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-xs"
-                >
-                  <Link href={`/model/${model.slug}`}>
-                    Explore {model.name}&apos;s Full Profile
-                  </Link>
-                </Button>
-
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <Link
-                    href={`/model/${model.slug}/photos`}
-                    className="py-2 px-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center gap-1 border border-indigo-100 transition-colors"
-                  >
-                    <ImageIcon className="w-3 h-3" />
-                    <span>Photos ({allPhotos.length})</span>
-                  </Link>
-                  <Link
-                    href={`/model/${model.slug}/videos`}
-                    className="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1 border border-rose-100 transition-colors"
-                  >
-                    <VideoIcon className="w-3 h-3" />
-                    <span>Videos ({(model.media || []).filter((m: any) => m.type === "video").length})</span>
-                  </Link>
-                </div>
-
-                <Link
-                  href={`/tag/${slugify(model.name)}`}
-                  className="w-full py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-[11px] flex items-center justify-center gap-1 transition-colors block text-center"
-                >
-                  <Tag className="w-3 h-3 text-rose-500" />
-                  <span>#{model.name} Tag Collection</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* More Photos from Same Model */}
-        {relatedPhotos.length > 0 && (
-          <section className="pt-12 border-t border-slate-200 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  More Photos of {model.name}
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Browse the complete photo collection ({allPhotos.length}{" "}
-                  total)
-                </p>
-              </div>
+              </nav>
 
               <Link
                 href={`/model/${model.slug}`}
-                className="text-xs font-bold text-rose-600 hover:text-rose-700 inline-flex items-center gap-1"
+                className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
               >
-                View Full Model Profile <ChevronRight className="w-3.5 h-3.5" />
+                <ArrowBackRoundedIcon sx={{ fontSize: 15 }} />
+                <span>Back to {model.name}</span>
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {relatedPhotos.slice(0, 12).map((photo: any) => (
-                <Link
-                  key={photo._id?.toString() || photo.originalIndex}
-                  href={`/model/${model.slug}/photo/${getMediaSlug(photo, "photo", photo.originalIndex)}`}
-                  className="group relative aspect-4/5 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs hover:shadow-lg transition-all transform hover:-translate-y-1 block"
-                >
+            {/* Main Photo Showcase */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Main Photo Display */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="relative rounded-3xl overflow-hidden bg-black/60 shadow-2xl flex items-center justify-center group border-none min-h-[420px] sm:min-h-[520px]">
                   <img
-                    src={photo.url}
-                    alt={photo.alt || `${model.name} photo`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
+                    src={currentPhoto.url}
+                    alt={currentPhoto.alt || photoTitle}
+                    className="w-full h-auto max-h-[85vh] object-contain mx-auto transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                    <span className="text-[11px] font-bold text-white truncate">
-                      {photo.title || `Photo #${photo.originalIndex + 1}`}
+
+                  {/* Prev Button Overlay */}
+                  {prevPhoto && (
+                    <Link
+                      href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-xl border-none"
+                      title="Previous Photo"
+                    >
+                      <ChevronLeftRoundedIcon sx={{ fontSize: 28 }} />
+                    </Link>
+                  )}
+
+                  {/* Next Button Overlay */}
+                  {nextPhoto && (
+                    <Link
+                      href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-xl border-none"
+                      title="Next Photo"
+                    >
+                      <ChevronRightRoundedIcon sx={{ fontSize: 28 }} />
+                    </Link>
+                  )}
+
+                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 border-none pointer-events-none">
+                    <PhotoCameraRoundedIcon sx={{ fontSize: 15, color: "#818cf8" }} />
+                    <span>
+                      Photo {currentIndex + 1} of {allPhotos.length}
                     </span>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+                </div>
 
-        {/* Explore Photos from Other Models Section */}
-        <ExploreOtherModelsPhotos
-          photos={otherModelPhotos as any}
-          currentModelName={model.name}
-        />
+                {/* Quick Browse & Action Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {prevPhoto ? (
+                      <Link
+                        href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
+                      >
+                        <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
+                        <span>Prev Photo</span>
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
+                      >
+                        <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
+                        <span>Prev Photo</span>
+                      </button>
+                    )}
+
+                    {nextPhoto ? (
+                      <Link
+                        href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
+                      >
+                        <span>Next Photo</span>
+                        <ChevronRightRoundedIcon sx={{ fontSize: 16 }} />
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
+                      >
+                        <span>Next Photo</span>
+                        <ChevronRightRoundedIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <a
+                      href={currentPhoto.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-all shadow-lg shadow-rose-900/40 inline-flex items-center gap-1.5 border-none"
+                    >
+                      <FileDownloadRoundedIcon sx={{ fontSize: 16 }} />
+                      <span>Download 4K Ultra HD</span>
+                    </a>
+                    <a
+                      href={currentPhoto.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] transition-all inline-flex items-center gap-1 border-none"
+                    >
+                      <span>View Full Size</span>
+                      <OpenInNewRoundedIcon sx={{ fontSize: 13 }} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Sidebar: Details & Model Profile */}
+              <div className="lg:col-span-4 space-y-6">
+                {/* Photo Metadata Card */}
+                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 border-none">
+                  <div className="space-y-1.5">
+                    <h1 className="text-xl font-black text-white leading-tight">
+                      {photoTitle}
+                    </h1>
+                    {currentPhoto.alt && (
+                      <p className="text-xs text-slate-400 leading-relaxed pt-1">
+                        {currentPhoto.alt}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-white/[0.03] p-4 rounded-2xl space-y-2.5 text-xs text-slate-300 border-none">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Model:</span>
+                      <Link
+                        href={`/model/${model.slug}`}
+                        className="font-bold text-white hover:text-rose-400 transition-colors"
+                      >
+                        {model.name}
+                      </Link>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Category:</span>
+                      <span className="bg-white/[0.08] text-slate-200 font-semibold px-3 py-0.5 rounded-full text-[11px] border-none">
+                        {model.category || "Fashion & Glamour"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Quality:</span>
+                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                        <HighQualityRoundedIcon sx={{ fontSize: 16 }} />
+                        <span>4K Ultra HD</span>
+                      </span>
+                    </div>
+
+                    {(() => {
+                      const photoKeywords: string[] = Array.isArray(
+                        currentPhoto.keywords
+                      )
+                        ? currentPhoto.keywords.filter(Boolean)
+                        : typeof currentPhoto.keywords === "string" &&
+                            currentPhoto.keywords.trim()
+                          ? currentPhoto.keywords
+                              .split(",")
+                              .map((k: string) => k.trim())
+                              .filter(Boolean)
+                          : [];
+
+                      if (photoKeywords.length === 0) return null;
+
+                      return (
+                        <div className="pt-2 space-y-2 border-none">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            SEO Tags &amp; Keywords
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {photoKeywords.map((kw, i) => {
+                              const kwSlug = slugify(kw);
+                              return (
+                                <Link
+                                  key={i}
+                                  href={`/tag/${kwSlug}`}
+                                  className="text-[10px] font-semibold text-rose-300 bg-rose-500/15 hover:bg-rose-500/25 px-2.5 py-1 rounded-full transition-colors border-none"
+                                >
+                                  #{kw}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Model Profile Teaser Card */}
+                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl space-y-4 border-none">
+                  <div className="flex items-center gap-3.5">
+                    <img
+                      src={model.profileImage || model.coverImage || "/logo.jpg"}
+                      alt={model.name}
+                      className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/[0.08] shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-bold text-base text-white truncate">
+                          {model.name}
+                        </h3>
+                        <CheckCircleRoundedIcon sx={{ fontSize: 16, color: "#10b981" }} />
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {allPhotos.length} Photos • {allVideos.length} Videos
+                      </p>
+                    </div>
+                  </div>
+
+                  {model.bio && (
+                    <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed">
+                      {model.bio}
+                    </p>
+                  )}
+
+                  <div className="space-y-2.5 pt-1">
+                    <Link
+                      href={`/model/${model.slug}`}
+                      className="w-full py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-lg shadow-rose-900/40 text-center block transition-all border-none"
+                    >
+                      Explore {model.name}&apos;s Full Profile
+                    </Link>
+
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <Link
+                        href={`/model/${model.slug}/photos`}
+                        className="py-2 px-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
+                      >
+                        <PhotoCameraRoundedIcon sx={{ fontSize: 14, color: "#818cf8" }} />
+                        <span>Photos ({allPhotos.length})</span>
+                      </Link>
+                      <Link
+                        href={`/model/${model.slug}/videos`}
+                        className="py-2 px-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
+                      >
+                        <VideocamRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />
+                        <span>Videos ({allVideos.length})</span>
+                      </Link>
+                    </div>
+
+                    <Link
+                      href={`/tag/${slugify(model.name)}`}
+                      className="w-full py-2 px-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 font-medium text-[11px] flex items-center justify-center gap-1.5 transition-colors block text-center border-none"
+                    >
+                      <LocalOfferRoundedIcon sx={{ fontSize: 12, color: "#f43f5e" }} />
+                      <span>#{model.name} Tag Collection</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* More Photos of Same Model Grid (SEO Internal Linking) */}
+            {relatedPhotos.length > 0 && (
+              <section className="pt-12 space-y-6 border-none">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      More Photos of {model.name}
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Browse the complete photo collection ({allPhotos.length} total)
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/model/${model.slug}/photos`}
+                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
+                  >
+                    <span>View All Photos</span>
+                    <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5">
+                  {relatedPhotos.slice(0, 12).map((photo: any) => {
+                    const photoSlug = getMediaSlug(photo, "photo", photo.originalIndex);
+                    const title = photo.title || `Photo #${photo.originalIndex + 1}`;
+
+                    return (
+                      <div
+                        key={photo._id?.toString() || photo.originalIndex}
+                        className="w-full transition-all duration-300 group flex flex-col border-none bg-transparent"
+                      >
+                        <Link
+                          href={`/model/${model.slug}/photo/${photoSlug}`}
+                          className="relative aspect-4/5 rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+                        >
+                          <img
+                            src={photo.url}
+                            alt={photo.alt || `${model.name} photo`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1 border-none">
+                            <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
+                            <span>4K</span>
+                          </div>
+                        </Link>
+
+                        {/* Title Below Thumbnail - Transparent */}
+                        <div className="pt-2.5 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1 bg-transparent">
+                          <Link href={`/model/${model.slug}/photo/${photoSlug}`} className="block">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-1 leading-snug">
+                              {title}
+                            </h4>
+                          </Link>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 bg-transparent border-none">
+                            <span className="text-emerald-400 font-semibold">4K UHD</span>
+                            <Link
+                              href={`/model/${model.slug}/photo/${photoSlug}`}
+                              className="font-bold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-0.5"
+                            >
+                              <span>View</span>
+                              <ArrowForwardRoundedIcon sx={{ fontSize: 12 }} />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Explore Photos from Other Models Section */}
+            <ExploreOtherModelsPhotos
+              photos={otherModelPhotos as any}
+              currentModelName={model.name}
+            />
+          </div>
+        </main>
+        <PublicFooter />
       </div>
-    </div>
+    </PublicMuiThemeProvider>
   );
 }

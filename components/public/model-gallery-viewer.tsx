@@ -3,19 +3,19 @@
 import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { getMediaSlug } from "@/lib/seo";
-import {
-  Image as ImageIcon,
-  Video as VideoIcon,
-  Maximize2,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Layers,
-  Sparkles,
-  Download,
-  Play,
-  ExternalLink,
-} from "lucide-react";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
+import PlayArrowRoundedIcon from "@mui/icons-material/PlayArrowRounded";
+import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import ZoomOutMapRoundedIcon from "@mui/icons-material/ZoomOutMapRounded";
+import FileDownloadRoundedIcon from "@mui/icons-material/FileDownloadRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import NavigateBeforeRoundedIcon from "@mui/icons-material/NavigateBeforeRounded";
+import NavigateNextRoundedIcon from "@mui/icons-material/NavigateNextRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import LayersRoundedIcon from "@mui/icons-material/LayersRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import HighQualityRoundedIcon from "@mui/icons-material/HighQualityRounded";
 
 export interface MediaItemProps {
   _id?: string;
@@ -48,7 +48,6 @@ function distributeMediaItems(
   const colHeights = Array(colCount).fill(0);
 
   items.forEach((item, index) => {
-    // Find column with the lowest accumulated height
     let shortestCol = 0;
     for (let i = 1; i < colCount; i++) {
       if (colHeights[i] < colHeights[shortestCol]) {
@@ -57,9 +56,8 @@ function distributeMediaItems(
     }
 
     cols[shortestCol].push({ item, originalIndex: index });
-    // Photo (portrait 4:5) has weight 1.25. Video (widescreen 16:9) has weight 0.5625.
-    // 2 videos (0.5625 * 2 = 1.125) stack naturally to match 1 photo (1.25)
-    const heightWeight = item.type === "photo" ? 1.25 : 0.5625;
+    // Adjust height weight to accommodate the title bar below
+    const heightWeight = item.type === "photo" ? 1.4 : 0.85;
     colHeights[shortestCol] += heightWeight;
   });
 
@@ -72,28 +70,18 @@ export default function ModelGalleryViewer({
   modelSlug,
 }: GalleryViewerProps) {
   const galleryRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"all" | "photos" | "videos">(
-    "all",
-  );
   const [currentPage, setCurrentPage] = useState(1);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [playingVideoId, setPlayingVideoId] = useState<string | number | null>(
     null,
   );
 
-  const photos = media.filter((item) => item.type === "photo");
-  const videos = media.filter((item) => item.type === "video");
+  const totalPages = Math.ceil(media.length / ITEMS_PER_PAGE) || 1;
 
-  const filteredMedia =
-    activeTab === "photos" ? photos : activeTab === "videos" ? videos : media;
-
-  const totalPages = Math.ceil(filteredMedia.length / ITEMS_PER_PAGE) || 1;
-
-  // Paginated subset of filtered media
   const paginatedMedia = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredMedia.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredMedia, currentPage]);
+    return media.slice(start, start + ITEMS_PER_PAGE);
+  }, [media, currentPage]);
 
   const cols3 = useMemo(
     () => distributeMediaItems(paginatedMedia, 3),
@@ -105,12 +93,7 @@ export default function ModelGalleryViewer({
   );
 
   const currentItem =
-    lightboxIndex !== null ? filteredMedia[lightboxIndex] : null;
-
-  const handleTabChange = (tab: "all" | "photos" | "videos") => {
-    setActiveTab(tab);
-    setCurrentPage(1);
-  };
+    lightboxIndex !== null ? media[lightboxIndex] : null;
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -124,14 +107,14 @@ export default function ModelGalleryViewer({
   const handlePrev = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! > 0 ? prev! - 1 : filteredMedia.length - 1,
+      prev! > 0 ? prev! - 1 : media.length - 1,
     );
   };
 
   const handleNext = () => {
     if (lightboxIndex === null) return;
     setLightboxIndex((prev) =>
-      prev! < filteredMedia.length - 1 ? prev! + 1 : 0,
+      prev! < media.length - 1 ? prev! + 1 : 0,
     );
   };
 
@@ -148,17 +131,23 @@ export default function ModelGalleryViewer({
       ? `/model/${modelSlug}/video/${getMediaSlug(item, "video", globalIndex)}`
       : null;
 
+    const titleText =
+      item.title ||
+      (item.type === "video"
+        ? `${modelName} HD Video #${globalIndex + 1}`
+        : `${modelName} Photo Capture #${globalIndex + 1}`);
+
     return (
       <div
         key={mediaKey}
-        className="w-full rounded-xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-slate-300 transition-all duration-300 group relative bg-slate-900"
+        className="w-full transition-all duration-300 group flex flex-col border-none bg-transparent"
       >
+        {/* Media Preview Container */}
         {item.type === "photo" ? (
           photoHref ? (
-            /* Dedicated Photo Link */
             <Link
               href={photoHref}
-              className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden block"
+              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden block rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
             >
               <img
                 src={item.url}
@@ -170,27 +159,30 @@ export default function ModelGalleryViewer({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                 <div className="w-full flex items-center justify-between text-white">
-                  <span className="text-xs font-medium bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
+                  <span className="text-xs font-semibold bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full">
                     View HD Photo
                   </span>
                   <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                    <Maximize2 className="w-4 h-4" />
+                    <ZoomOutMapRoundedIcon sx={{ fontSize: 18 }} />
                   </div>
                 </div>
               </div>
               {/* Badge */}
-              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
-                <ImageIcon className="w-3 h-3 text-rose-500" />
-                PHOTO
+              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
+                <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
+                <span>PHOTO</span>
+              </div>
+              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md z-10 flex items-center gap-0.5">
+                <HighQualityRoundedIcon sx={{ fontSize: 14, color: "#38bdf8" }} />
+                <span>4K HD</span>
               </div>
             </Link>
           ) : (
-            /* Lightbox Fallback */
             <div
-              className="relative aspect-4/5 w-full bg-slate-100 cursor-pointer overflow-hidden"
+              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
               onClick={() => setLightboxIndex(globalIndex)}
             >
               <img
@@ -203,17 +195,16 @@ export default function ModelGalleryViewer({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
-              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
-                <ImageIcon className="w-3 h-3 text-rose-500" />
-                PHOTO
+              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
+                <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
+                <span>PHOTO</span>
               </div>
             </div>
           )
         ) : videoHref ? (
-          /* Dedicated Video Link */
           <Link
             href={videoHref}
-            className="relative aspect-video w-full bg-slate-900 overflow-hidden cursor-pointer group/video block"
+            className="relative aspect-video w-full bg-[#0e1424] overflow-hidden cursor-pointer group/video block rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
           >
             {posterSrc ? (
               <img
@@ -226,32 +217,35 @@ export default function ModelGalleryViewer({
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-400">
-                <VideoIcon className="w-12 h-12 text-slate-600" />
+              <div className="w-full h-full flex items-center justify-center bg-[#0e1424] text-slate-500">
+                <VideocamRoundedIcon sx={{ fontSize: 44, color: "#64748b" }} />
               </div>
             )}
             {/* Play button overlay */}
-            <div className="absolute inset-0 bg-black/10 group-hover/video:bg-transparent transition-colors flex items-center justify-center">
-              <div className="w-14 h-14 rounded-full bg-rose-600/40 group-hover/video:bg-rose-600/70 text-white flex items-center justify-center shadow-lg transform group-hover/video:scale-110 transition-all">
-                <Play className="w-6 h-6 fill-current ml-0.5" />
+            <div className="absolute inset-0 bg-black/30 group-hover/video:bg-black/15 transition-colors flex items-center justify-center">
+              <div className="w-13 h-13 rounded-full bg-rose-600/90 group-hover/video:bg-rose-600 text-white flex items-center justify-center shadow-xl transform group-hover/video:scale-110 transition-all">
+                <PlayArrowRoundedIcon sx={{ fontSize: 30 }} />
               </div>
             </div>
             {/* Badges */}
-            <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
-              <div className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1">
-                <VideoIcon className="w-3 h-3 text-violet-600" />
-                VIDEO
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+              <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1">
+                <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
+                <span>VIDEO</span>
               </div>
               {item.isExternal && (
-                <div className="bg-indigo-600/90 backdrop-blur-md text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-xs flex items-center gap-1">
-                  <ExternalLink className="w-3 h-3" />
+                <div className="bg-indigo-600/90 backdrop-blur-md text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1">
+                  <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
                 </div>
               )}
             </div>
+            <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md z-10 flex items-center gap-0.5">
+              <HighQualityRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />
+              <span>STREAM</span>
+            </div>
           </Link>
         ) : (
-          /* Fallback Direct Player */
-          <div className="relative aspect-video w-full bg-slate-950 overflow-hidden flex items-center justify-center">
+          <div className="relative aspect-video w-full bg-[#0a0e1a] overflow-hidden flex items-center justify-center rounded-2xl shadow-xl">
             <video
               src={item.url}
               poster={posterSrc}
@@ -266,12 +260,67 @@ export default function ModelGalleryViewer({
             >
               Your browser does not support the video element.
             </video>
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-800 shadow-xs border border-white/50 flex items-center gap-1 z-10">
-              <VideoIcon className="w-3 h-3 text-violet-600" />
-              VIDEO
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
+              <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
+              <span>VIDEO</span>
             </div>
           </div>
         )}
+
+        {/* Video / Photo Title and Info Below Thumbnail - Completely Transparent */}
+        <div className="pt-3 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1.5 bg-transparent">
+          {photoHref ? (
+            <Link href={photoHref} className="block">
+              <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-snug">
+                {titleText}
+              </h4>
+            </Link>
+          ) : videoHref ? (
+            <Link href={videoHref} className="block">
+              <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-snug">
+                {titleText}
+              </h4>
+            </Link>
+          ) : (
+            <h4 className="text-sm font-bold text-slate-100 line-clamp-2 leading-snug">
+              {titleText}
+            </h4>
+          )}
+
+          <div className="flex items-center justify-between text-xs text-slate-400 pt-0.5 bg-transparent border-none">
+            <div className="flex items-center gap-1.5">
+              {item.type === "video" ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 font-semibold text-[11px]">
+                  <VideocamRoundedIcon sx={{ fontSize: 13 }} />
+                  Full Clip
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 font-semibold text-[11px]">
+                  <PhotoCameraRoundedIcon sx={{ fontSize: 13 }} />
+                  HD Photo
+                </span>
+              )}
+            </div>
+
+            {photoHref ? (
+              <Link
+                href={photoHref}
+                className="text-[11px] font-bold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-0.5"
+              >
+                <span>View</span>
+                <ArrowForwardRoundedIcon sx={{ fontSize: 13 }} />
+              </Link>
+            ) : videoHref ? (
+              <Link
+                href={videoHref}
+                className="text-[11px] font-bold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-0.5"
+              >
+                <span>Watch</span>
+                <ArrowForwardRoundedIcon sx={{ fontSize: 13 }} />
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </div>
     );
   };
@@ -314,16 +363,16 @@ export default function ModelGalleryViewer({
             <button
               key={idx}
               onClick={() => handlePageChange(p)}
-              className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer border-none ${
                 currentPage === p
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  ? "bg-rose-600 text-white shadow-lg shadow-rose-900/40"
+                  : "bg-white/[0.06] text-slate-300 hover:bg-white/[0.12] hover:text-white"
               }`}
             >
               {p}
             </button>
           ) : (
-            <span key={idx} className="w-8 text-center text-slate-400 text-xs">
+            <span key={idx} className="w-8 text-center text-slate-500 text-xs">
               ...
             </span>
           ),
@@ -334,93 +383,32 @@ export default function ModelGalleryViewer({
 
   return (
     <div ref={galleryRef} className="w-full space-y-6">
-      {/* Gallery Filter Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 border-b border-slate-200 pb-4">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <button
-            onClick={() => handleTabChange("all")}
-            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-              activeTab === "all"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>All Content</span>
-            <span
-              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-                activeTab === "all"
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {media.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("photos")}
-            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-              activeTab === "photos"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Photos</span>
-            <span
-              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-                activeTab === "photos"
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {photos.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange("videos")}
-            className={`shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-              activeTab === "videos"
-                ? "bg-slate-900 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            <VideoIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Videos</span>
-            <span
-              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${
-                activeTab === "videos"
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-200 text-slate-700"
-              }`}
-            >
-              {videos.length}
-            </span>
-          </button>
-        </div>
-
-        <div className="text-[11px] sm:text-xs font-medium text-slate-500">
-          Showing {paginatedMedia.length} of {filteredMedia.length} items
-          {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
-        </div>
+      {/* Gallery Header Info */}
+      <div className="flex items-center justify-between text-xs font-medium text-slate-400">
+        <span className="font-semibold text-slate-300">
+          Showing {paginatedMedia.length} of {media.length} media items
+        </span>
+        {totalPages > 1 && (
+          <span className="text-slate-400">
+            Page {currentPage} of {totalPages}
+          </span>
+        )}
       </div>
 
       {/* Gallery Grid */}
-      {filteredMedia.length === 0 ? (
-        <div className="py-20 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50">
-          <Sparkles className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-800">
+      {media.length === 0 ? (
+        <div className="py-20 text-center rounded-3xl bg-[#121826]/70 backdrop-blur-xl border-none">
+          <AutoAwesomeRoundedIcon sx={{ fontSize: 40, color: "#475569" }} className="mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-slate-200">
             No media available in this section
           </h3>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             Check back later for fresh updates.
           </p>
         </div>
       ) : (
         <>
-          {/* Desktop 3 Columns - Smart Auto-Balanced */}
+          {/* Desktop 3 Columns */}
           <div className="hidden lg:grid lg:grid-cols-3 gap-6 items-start">
             {cols3.map((col, colIdx) => (
               <div key={`col3-${colIdx}`} className="flex flex-col gap-6">
@@ -431,7 +419,7 @@ export default function ModelGalleryViewer({
             ))}
           </div>
 
-          {/* Tablet 2 Columns - Smart Auto-Balanced */}
+          {/* Tablet 2 Columns */}
           <div className="hidden sm:grid sm:grid-cols-2 lg:hidden gap-6 items-start">
             {cols2.map((col, colIdx) => (
               <div key={`col2-${colIdx}`} className="flex flex-col gap-6">
@@ -443,27 +431,27 @@ export default function ModelGalleryViewer({
           </div>
 
           {/* Mobile 1 Column */}
-          <div className="flex flex-col sm:hidden gap-6">
+          <div className="flex flex-col sm:hidden gap-5">
             {paginatedMedia.map((item, index) => renderMediaCard(item, index))}
           </div>
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="pt-6 pb-2 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-xs font-semibold text-slate-500">
+            <div className="pt-8 pb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs font-semibold text-slate-400">
                 Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredMedia.length)}{" "}
-                of {filteredMedia.length} assets
+                {Math.min(currentPage * ITEMS_PER_PAGE, media.length)}{" "}
+                of {media.length} assets
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-white/[0.06] text-slate-300 hover:bg-white/[0.12] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer border-none"
                   aria-label="Previous page"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <NavigateBeforeRoundedIcon sx={{ fontSize: 16 }} />
                   <span>Prev</span>
                 </button>
 
@@ -472,11 +460,11 @@ export default function ModelGalleryViewer({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-white/[0.06] text-slate-300 hover:bg-white/[0.12] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all inline-flex items-center gap-1 cursor-pointer border-none"
                   aria-label="Next page"
                 >
                   <span>Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <NavigateNextRoundedIcon sx={{ fontSize: 16 }} />
                 </button>
               </div>
             </div>
@@ -486,12 +474,12 @@ export default function ModelGalleryViewer({
 
       {/* Fullscreen Lightbox Modal */}
       {lightboxIndex !== null && currentItem && (
-        <div className="fixed inset-0 z-100 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-fade-in">
+        <div className="fixed inset-0 z-100 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-8 animate-fade-in">
           {/* Top action bar */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between text-white z-10">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold bg-white/10 px-3 py-1.5 rounded-full border border-white/10">
-                {lightboxIndex + 1} / {filteredMedia.length}
+              <span className="text-sm font-semibold bg-white/10 px-3.5 py-1.5 rounded-full">
+                {lightboxIndex + 1} / {media.length}
               </span>
               <span className="text-sm font-medium text-slate-300 hidden sm:inline-block">
                 {currentItem.title || `${modelName} Gallery`}
@@ -504,10 +492,10 @@ export default function ModelGalleryViewer({
                 target="_blank"
                 rel="noopener noreferrer"
                 download
-                className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+                className="px-3.5 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-lg border-none"
                 title="Download Ultra HD 4K"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />
                 <span>Download 4K</span>
               </a>
               <a
@@ -515,17 +503,17 @@ export default function ModelGalleryViewer({
                 target="_blank"
                 rel="noreferrer"
                 download
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer border-none"
                 title="Download original"
               >
-                <Download className="w-5 h-5" />
+                <FileDownloadRoundedIcon sx={{ fontSize: 20 }} />
               </a>
               <button
                 onClick={() => setLightboxIndex(null)}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer border-none"
                 title="Close"
               >
-                <X className="w-5 h-5" />
+                <CloseRoundedIcon sx={{ fontSize: 20 }} />
               </button>
             </div>
           </div>
@@ -533,18 +521,18 @@ export default function ModelGalleryViewer({
           {/* Navigation buttons */}
           <button
             onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer border-none"
             aria-label="Previous image"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <NavigateBeforeRoundedIcon sx={{ fontSize: 28 }} />
           </button>
 
           <button
             onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10 cursor-pointer border-none"
             aria-label="Next image"
           >
-            <ChevronRight className="w-6 h-6" />
+            <NavigateNextRoundedIcon sx={{ fontSize: 28 }} />
           </button>
 
           {/* Main Media Display */}
@@ -553,7 +541,7 @@ export default function ModelGalleryViewer({
               <img
                 src={currentItem.url}
                 alt={currentItem.alt || modelName}
-                className="max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl"
+                className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl"
               />
             ) : (
               <video
@@ -561,7 +549,7 @@ export default function ModelGalleryViewer({
                 poster={currentItem.thumbnail}
                 controls
                 autoPlay
-                className="max-h-[75vh] max-w-full rounded-lg shadow-2xl"
+                className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl"
               />
             )}
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 
 interface ModelInfoAccordionProps {
   content?: string;
@@ -26,21 +27,21 @@ export default function ModelInfoAccordion({
     .filter((p) => p.length > 0);
 
   return (
-    <div className="w-full pt-2 pb-2">
+    <div className="w-full pt-4 pb-2">
       {/* Icon-Only Trigger Button (Left Aligned & Compact) */}
       <div className="flex justify-start">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 shadow-xs cursor-pointer ${
+          className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 shadow-md cursor-pointer border-none ${
             isOpen
-              ? "bg-slate-900 text-white border-slate-900 rotate-180"
-              : "bg-white text-slate-500 hover:text-slate-900 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+              ? "bg-rose-600 text-white rotate-180 shadow-rose-900/40"
+              : "bg-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.15]"
           }`}
           title={isOpen ? "Collapse Information" : `Expand about ${modelName}`}
           aria-label={`Toggle information about ${modelName}`}
           aria-expanded={isOpen}
         >
-          <ChevronDown className="w-4 h-4 transition-transform" />
+          <KeyboardArrowDownRoundedIcon sx={{ fontSize: 20 }} />
         </button>
       </div>
 
@@ -52,15 +53,15 @@ export default function ModelInfoAccordion({
             : "max-h-0 opacity-0 overflow-hidden mt-0"
         }`}
       >
-        <article className="w-full bg-slate-50/80 rounded-2xl border border-slate-200/80 p-6 sm:p-8 space-y-4 shadow-xs">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-slate-800">
-            <Sparkles className="w-4 h-4 text-rose-500" />
-            <h3 className="text-sm font-bold tracking-tight uppercase">
+        <article className="w-full bg-[#121826]/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl border-none">
+          <div className="flex items-center gap-2 pb-3 text-slate-200">
+            <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#f43f5e" }} />
+            <h3 className="text-sm font-bold tracking-tight uppercase text-white">
               About {modelName}
             </h3>
           </div>
 
-          <div className="text-sm text-slate-600 leading-relaxed space-y-3 font-normal">
+          <div className="text-sm text-slate-300 leading-relaxed space-y-3.5 font-normal">
             {paragraphs.map((para, i) => (
               <p key={i} className="leading-7">
                 {para}
