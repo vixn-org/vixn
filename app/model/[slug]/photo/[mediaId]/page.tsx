@@ -303,13 +303,6 @@ export default async function ModelPhotoPage({ params }: Props) {
                       <ChevronRightRoundedIcon sx={{ fontSize: 28 }} />
                     </Link>
                   )}
-
-                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 border-none pointer-events-none">
-                    <PhotoCameraRoundedIcon sx={{ fontSize: 15, color: "#818cf8" }} />
-                    <span>
-                      Photo {currentIndex + 1} of {allPhotos.length}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Quick Browse & Action Bar */}
@@ -561,10 +554,6 @@ export default async function ModelPhotoPage({ params }: Props) {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             loading="lazy"
                           />
-                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1 border-none">
-                            <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
-                            <span>4K</span>
-                          </div>
                         </Link>
 
                         {/* Title Below Thumbnail - Transparent */}

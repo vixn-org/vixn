@@ -490,16 +490,11 @@ export default async function TagPage({ params }: Props) {
                               loading="lazy"
                             />
 
-                            {/* Play Button Overlay (Icon only, no text badge) */}
-                            <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <div className="w-13 h-13 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                            {/* Play Button Overlay - visible only on hover */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                              <div className="w-13 h-13 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-110 transition-transform">
                                 <PlayArrowRoundedIcon sx={{ fontSize: 30 }} />
                               </div>
-                            </div>
-
-                            <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1 border-none">
-                              <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
-                              <span>VIDEO</span>
                             </div>
                           </Link>
 

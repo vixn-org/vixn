@@ -370,27 +370,15 @@ export default async function ModelVideosPage({ params }: Props) {
                             </div>
                           )}
 
-                          {/* Play Overlay CTA */}
+                          {/* Play Overlay CTA - visible only on hover */}
                           <Link
                             href={`/model/${model.slug}/video/${videoSlug}`}
-                            className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center"
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                           >
-                            <div className="w-14 h-14 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                            <div className="w-14 h-14 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-110 transition-transform">
                               <PlayArrowRoundedIcon sx={{ fontSize: 32 }} />
                             </div>
                           </Link>
-
-                          {/* Video Badges */}
-                          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-md">
-                            <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
-                            <span>Clip #{index + 1}</span>
-                          </div>
-
-                          {video.isExternal && (
-                            <div className="absolute top-3 right-3 bg-indigo-600/90 backdrop-blur-md text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-md">
-                              External Stream
-                            </div>
-                          )}
                         </div>
 
                         {/* Video Info Below Thumbnail - Completely Transparent */}

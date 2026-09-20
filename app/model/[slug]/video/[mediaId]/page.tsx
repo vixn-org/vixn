@@ -28,6 +28,7 @@ import FileDownloadRoundedIcon from "@mui/icons-material/FileDownloadRounded";
 import HighQualityRoundedIcon from "@mui/icons-material/HighQualityRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 
 interface Props {
   params: Promise<{ slug: string; mediaId: string }>;
@@ -291,16 +292,11 @@ export default async function ModelVideoPage({ params }: Props) {
                         </div>
                       )}
 
-                      {/* Play CTA Overlay */}
-                      <div className="absolute inset-0 bg-black/40 group-hover/player:bg-black/25 transition-colors flex items-center justify-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-2xl transform group-hover/player:scale-110 transition-all">
-                          <PlayArrowRoundedIcon sx={{ fontSize: 40 }} />
+                      {/* Play Button - Clean, no thumbnail image overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center shadow-2xl border border-white/30 group-hover/player:scale-110 group-hover/player:bg-black/80 transition-all">
+                          <PlayArrowRoundedIcon sx={{ fontSize: 30, color: "#ffffff" }} />
                         </div>
-                      </div>
-
-                      <div className="absolute top-4 right-4 bg-indigo-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
-                        <OpenInNewRoundedIcon sx={{ fontSize: 13 }} />
-                        <span>External Stream</span>
                       </div>
                     </a>
                   ) : (
@@ -316,11 +312,22 @@ export default async function ModelVideoPage({ params }: Props) {
                       Your browser does not support the video tag.
                     </video>
                   )}
+                </div>
 
-                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 pointer-events-none border-none">
-                    <VideocamRoundedIcon sx={{ fontSize: 15, color: "#f43f5e" }} />
-                    <span>
-                      Video {currentIndex + 1} of {allVideos.length}
+                {/* Player Duration Strip Directly Below Main Video */}
+                <div className="bg-[#121826]/75 backdrop-blur-xl rounded-md p-3 px-4 flex flex-wrap items-center justify-between gap-3 text-xs border-none shadow-md">
+                  <div className="flex items-center gap-4 text-slate-300">
+                    <span className="flex items-center gap-1.5 font-bold text-white">
+                      <AccessTimeRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
+                      <span>Duration: 00:00</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 text-[11px] font-medium">
+                      Full HD 1080p
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[11px] font-semibold">
+                      Stream Ready
                     </span>
                   </div>
                 </div>
@@ -425,6 +432,13 @@ export default async function ModelVideoPage({ params }: Props) {
                       <span className="text-slate-400 font-medium">Category:</span>
                       <span className="bg-white/[0.08] text-slate-200 font-semibold px-3 py-0.5 rounded-full text-[11px] border-none">
                         {model.category || "Videos & Streaming"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Duration:</span>
+                      <span className="font-bold text-white flex items-center gap-1">
+                        <AccessTimeRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
+                        00:00
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -586,14 +600,11 @@ export default async function ModelVideoPage({ params }: Props) {
                               <VideocamRoundedIcon sx={{ fontSize: 44, color: "#64748b" }} />
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/35 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                            <div className="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                          {/* Play button overlay - visible only on hover */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-110 transition-transform">
                               <PlayArrowRoundedIcon sx={{ fontSize: 26 }} />
                             </div>
-                          </div>
-                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white shadow-md flex items-center gap-1">
-                            <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
-                            <span>VIDEO</span>
                           </div>
                         </Link>
 

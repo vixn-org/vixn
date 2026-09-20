@@ -460,80 +460,6 @@ export default async function ModelPage({ params }: Props) {
                 modelSlug={model.slug}
               />
 
-              {/* Direct Crawlable Media Directory for Googlebot Discovery - High Quality Cards */}
-              <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-md p-6 sm:p-8 space-y-5 shadow-xl border-none">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <AutoAwesomeRoundedIcon sx={{ fontSize: 18, color: "#f43f5e" }} />
-                      Complete Index of {model.name} Pages
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Direct links to each high-resolution photo set and 4K
-                      streaming clip
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    {photos.length > 0 && (
-                      <Link
-                        href={`/model/${model.slug}/photos`}
-                        className="text-xs font-bold text-indigo-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/30 px-4 py-2 rounded-md transition-colors flex items-center gap-1.5 border-none"
-                      >
-                        <PhotoCameraRoundedIcon sx={{ fontSize: 14 }} />
-                        <span>View {photos.length} Photos →</span>
-                      </Link>
-                    )}
-                    {videos.length > 0 && (
-                      <Link
-                        href={`/model/${model.slug}/videos`}
-                        className="text-xs font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-4 py-2 rounded-md transition-colors flex items-center gap-1.5 border-none"
-                      >
-                        <VideocamRoundedIcon sx={{ fontSize: 14 }} />
-                        <span>Watch {videos.length} Videos →</span>
-                      </Link>
-                    )}
-                  </div>
-                </div>
-
-                {/* Direct Links Grid for All Photos and Videos - Professional Media Items */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
-                  {photos.map((photo: any, idx: number) => {
-                    const photoSlug = getMediaSlug(photo, "photo", idx);
-                    return (
-                      <Link
-                        key={photo._id || idx}
-                        href={`/model/${model.slug}/photo/${photoSlug}`}
-                        className="p-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
-                      >
-                        <div className="w-8 h-8 rounded-md bg-indigo-500/15 flex items-center justify-center shrink-0 text-indigo-400 group-hover:scale-110 transition-transform">
-                          <PhotoCameraRoundedIcon sx={{ fontSize: 16 }} />
-                        </div>
-                        <span className="truncate text-slate-200 group-hover:text-white font-medium">
-                          {photo.title || `${model.name} Photo #${idx + 1}`}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                  {videos.map((video: any, idx: number) => {
-                    const videoSlug = getMediaSlug(video, "video", idx);
-                    return (
-                      <Link
-                        key={video._id || idx}
-                        href={`/model/${model.slug}/video/${videoSlug}`}
-                        className="p-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
-                      >
-                        <div className="w-8 h-8 rounded-md bg-rose-500/15 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-110 transition-transform">
-                          <VideocamRoundedIcon sx={{ fontSize: 16 }} />
-                        </div>
-                        <span className="truncate text-slate-200 group-hover:text-white font-medium">
-                          {video.title || `${model.name} Video #${idx + 1}`}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Expandable Model Information / SEO Article Accordion */}
               <ModelInfoAccordion
                 content={model.aboutContent}
@@ -622,6 +548,81 @@ export default async function ModelPage({ params }: Props) {
                 </div>
               </section>
             )}
+
+            {/* Compact Crawlable Media Index for Googlebot Discovery - Placed after Explore More Models */}
+            <section className="pt-8 space-y-3">
+              <div className="bg-[#121826]/70 backdrop-blur-xl rounded-md p-4 sm:p-5 space-y-3 shadow-lg border-none">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <AutoAwesomeRoundedIcon sx={{ fontSize: 15, color: "#f43f5e" }} />
+                      Complete Index of {model.name} Pages
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Direct links to each high-resolution photo set and 4K streaming clip
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {photos.length > 0 && (
+                      <Link
+                        href={`/model/${model.slug}/photos`}
+                        className="text-[11px] font-bold text-indigo-300 hover:text-white bg-indigo-500/15 hover:bg-indigo-500/25 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 border-none"
+                      >
+                        <PhotoCameraRoundedIcon sx={{ fontSize: 12 }} />
+                        <span>{photos.length} Photos →</span>
+                      </Link>
+                    )}
+                    {videos.length > 0 && (
+                      <Link
+                        href={`/model/${model.slug}/videos`}
+                        className="text-[11px] font-bold text-rose-300 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 border-none"
+                      >
+                        <VideocamRoundedIcon sx={{ fontSize: 12 }} />
+                        <span>{videos.length} Videos →</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {/* Congested, Tight Links Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 text-[11px]">
+                  {photos.map((photo: any, idx: number) => {
+                    const photoSlug = getMediaSlug(photo, "photo", idx);
+                    return (
+                      <Link
+                        key={photo._id || idx}
+                        href={`/model/${model.slug}/photo/${photoSlug}`}
+                        className="py-1.5 px-2 rounded-md bg-white/[0.03] hover:bg-white/[0.08] transition-all flex items-center gap-1.5 group border-none"
+                      >
+                        <div className="w-5 h-5 rounded bg-indigo-500/15 flex items-center justify-center shrink-0 text-indigo-400 group-hover:scale-105 transition-transform">
+                          <PhotoCameraRoundedIcon sx={{ fontSize: 12 }} />
+                        </div>
+                        <span className="truncate text-slate-300 group-hover:text-white font-medium">
+                          {photo.title || `${model.name} Photo #${idx + 1}`}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                  {videos.map((video: any, idx: number) => {
+                    const videoSlug = getMediaSlug(video, "video", idx);
+                    return (
+                      <Link
+                        key={video._id || idx}
+                        href={`/model/${model.slug}/video/${videoSlug}`}
+                        className="py-1.5 px-2 rounded-md bg-white/[0.03] hover:bg-white/[0.08] transition-all flex items-center gap-1.5 group border-none"
+                      >
+                        <div className="w-5 h-5 rounded bg-rose-500/15 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-105 transition-transform">
+                          <VideocamRoundedIcon sx={{ fontSize: 12 }} />
+                        </div>
+                        <span className="truncate text-slate-300 group-hover:text-white font-medium">
+                          {video.title || `${model.name} Video #${idx + 1}`}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
 
             {/* Associated Tags & Keyword Topics */}
             {allModelTags.length > 0 && (

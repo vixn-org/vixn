@@ -372,15 +372,6 @@ export default async function ModelPhotosPage({ params }: Props) {
                               View HD Photo
                             </span>
                           </div>
-
-                          {/* Badges */}
-                          <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-md">
-                            #{index + 1}
-                          </div>
-                          <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md flex items-center gap-0.5">
-                            <HighQualityRoundedIcon sx={{ fontSize: 14, color: "#818cf8" }} />
-                            <span>4K HD</span>
-                          </div>
                         </Link>
 
                         {/* Title and Action Below Thumbnail - Completely Transparent */}

@@ -33,6 +33,7 @@ import {
   LinearProgress,
   Checkbox,
   FormControlLabel,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -59,6 +60,8 @@ import {
   CheckBoxOutlineBlankOutlined as CheckBoxBlankIcon,
   ContentPasteOutlined as ContentPasteIcon,
   LinkOutlined as LinkIcon,
+  StorageOutlined as StorageIcon,
+  CloudSyncOutlined as CloudSyncIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -211,6 +214,12 @@ export default function ModelManagementPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  // Bulk Upload Photo with Links State (Direct, No AI)
+  const [bulkLinksDialogOpen, setBulkLinksDialogOpen] = useState(false);
+  const [bulkLinksText, setBulkLinksText] = useState("");
+  const [bulkLinksUploading, setBulkLinksUploading] = useState(false);
+  const [bulkLinksError, setBulkLinksError] = useState("");
+
   // AI Crawl Import States
   const [crawlDialogOpen, setCrawlDialogOpen] = useState(false);
   const [crawlMode, setCrawlMode] = useState<"url" | "paste">("url");
@@ -232,6 +241,9 @@ export default function ModelManagementPage() {
   >([]);
   const [importingCrawled, setImportingCrawled] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
+  const [uploadingToDbIndices, setUploadingToDbIndices] = useState<number[]>([]);
+  const [uploadingAllToDb, setUploadingAllToDb] = useState(false);
+  const [uploadAllProgress, setUploadAllProgress] = useState({ current: 0, total: 0 });
 
   const fetchModel = useCallback(async () => {
     try {
@@ -798,6 +810,73 @@ export default function ModelManagementPage() {
     }
   };
 
+  // ── Bulk Upload Photo with Links Handler (Direct, No AI) ──
+  const handleBulkUploadPhotoLinks = async () => {
+    if (!bulkLinksText.trim()) {
+      toast.error("Please paste at least one image URL");
+      return;
+    }
+
+    const rawLines = bulkLinksText.split(/\r?\n/);
+    const validUrls: string[] = [];
+    for (const line of rawLines) {
+      const trimmed = line.trim().replace(/^[,"'<>\s]+|[,"'<>\s]+$/g, "");
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        validUrls.push(trimmed);
+      }
+    }
+
+    if (validUrls.length === 0) {
+      toast.error("No valid http:// or https:// image URLs found");
+      return;
+    }
+
+    setBulkLinksUploading(true);
+    setBulkLinksError("");
+
+    try {
+      const existingPhotosCount = (model?.media || []).filter(
+        (m: any) => m.type === "photo"
+      ).length;
+
+      const items = validUrls.map((url, i) => {
+        const photoNum = existingPhotosCount + i + 1;
+        const photoTitle = `${model?.name || "Model"} nude photo ${photoNum}`;
+        return {
+          type: "photo",
+          url,
+          thumbnail: "",
+          title: photoTitle,
+          alt: photoTitle,
+          keywords: [],
+          isExternal: true,
+        };
+      });
+
+      const res = await fetch(`/api/models/${modelId}/media`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.model) {
+        throw new Error(data.error || "Failed to add photos from links");
+      }
+
+      setModel(data.model);
+      toast.success(`Successfully uploaded ${validUrls.length} photo${validUrls.length > 1 ? "s" : ""}!`);
+      setBulkLinksDialogOpen(false);
+      setBulkLinksText("");
+    } catch (err: any) {
+      console.error("Bulk links upload error:", err);
+      setBulkLinksError(err.message || "Failed to upload photos");
+      toast.error(err.message || "Failed to upload photos");
+    } finally {
+      setBulkLinksUploading(false);
+    }
+  };
+
   // ── AI Crawl Import Handlers ──
   const handleCrawlExtract = async () => {
     if (crawlMode === "url" && !crawlUrl.trim()) {
@@ -854,6 +933,124 @@ export default function ModelManagementPage() {
     setCrawledItems((prev) =>
       prev.map((item) => ({ ...item, selected: selectAll }))
     );
+  };
+
+  // Upload an individual crawled item's photo/thumbnail to Supabase DB storage
+  const handleUploadCrawledItemToDb = async (index: number) => {
+    const item = crawledItems[index];
+    if (!item) return;
+
+    // URL to download and upload: for video use thumbnail (or url if it's an image), for photo use url
+    const targetUrl = item.type === "video" ? (item.thumbnail || item.url) : item.url;
+    if (!targetUrl || (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))) {
+      toast.error("No valid image URL found to download and upload");
+      return;
+    }
+
+    setUploadingToDbIndices((prev) => [...prev, index]);
+    try {
+      const res = await fetch("/api/admin/upload-remote-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl: targetUrl,
+          filenameHint: `${model?.name || "model"}-${item.type}-${index + 1}`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to download and upload image to DB");
+        return;
+      }
+
+      // Update the item in preview with the permanent Supabase URL
+      // For video: update thumbnail and keep video url as external redirect
+      // For photo: update url with the Supabase image URL
+      setCrawledItems((prev) =>
+        prev.map((it, i) => {
+          if (i !== index) return it;
+          if (it.type === "video") {
+            return {
+              ...it,
+              thumbnail: data.url,
+            };
+          } else {
+            return {
+              ...it,
+              url: data.url,
+            };
+          }
+        })
+      );
+
+      toast.success(
+        item.type === "video"
+          ? "Video thumbnail downloaded and uploaded to DB!"
+          : "Photo downloaded and uploaded to DB!"
+      );
+    } catch {
+      toast.error("Network error while uploading image to DB");
+    } finally {
+      setUploadingToDbIndices((prev) => prev.filter((i) => i !== index));
+    }
+  };
+
+  // Upload ALL crawled items' photos and thumbnails to Supabase DB storage
+  const handleUploadAllCrawledToDb = async () => {
+    if (crawledItems.length === 0) return;
+
+    setUploadingAllToDb(true);
+    setUploadAllProgress({ current: 0, total: crawledItems.length });
+    let successCount = 0;
+
+    for (let i = 0; i < crawledItems.length; i++) {
+      const item = crawledItems[i];
+      const targetUrl = item.type === "video" ? (item.thumbnail || item.url) : item.url;
+
+      // If already on Supabase or no valid URL, skip
+      if (
+        !targetUrl ||
+        targetUrl.includes("supabase.co") ||
+        (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))
+      ) {
+        setUploadAllProgress({ current: i + 1, total: crawledItems.length });
+        continue;
+      }
+
+      try {
+        const res = await fetch("/api/admin/upload-remote-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: targetUrl,
+            filenameHint: `${model?.name || "model"}-${item.type}-${i + 1}`,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setCrawledItems((prev) =>
+            prev.map((it, idx) => {
+              if (idx !== i) return it;
+              if (it.type === "video") {
+                return { ...it, thumbnail: data.url };
+              } else {
+                return { ...it, url: data.url };
+              }
+            })
+          );
+          successCount++;
+        }
+      } catch {
+        // continue with next item
+      }
+
+      setUploadAllProgress({ current: i + 1, total: crawledItems.length });
+    }
+
+    setUploadingAllToDb(false);
+    toast.success(`Uploaded ${successCount} photos/thumbnails to your DB storage!`);
   };
 
   const handleImportCrawled = async () => {
@@ -2836,6 +3033,35 @@ export default function ModelManagementPage() {
                 variant="outlined"
                 size="small"
                 onClick={() => {
+                  setBulkLinksText("");
+                  setBulkLinksError("");
+                  setBulkLinksDialogOpen(true);
+                }}
+                startIcon={<LinkIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  borderColor: "#0284c7",
+                  color: "#0284c7",
+                  bgcolor: "#f0f9ff",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  "&:hover": {
+                    borderColor: "#0369a1",
+                    bgcolor: "#e0f2fe",
+                    color: "#0369a1",
+                  },
+                }}
+              >
+                Upload Photo with Link
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
                   setCrawlUrl("");
                   setPastedHtml("");
                   setCrawlError("");
@@ -3732,6 +3958,214 @@ export default function ModelManagementPage() {
         </DialogActions>
       </Dialog>
 
+      {/* 4.5. Bulk Upload Photo with Links Dialog (Direct, No AI) */}
+      <Dialog
+        open={bulkLinksDialogOpen}
+        onClose={() => !bulkLinksUploading && setBulkLinksDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 6,
+            sx: { borderRadius: 2, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{
+            pt: 2.5,
+            px: 3,
+            pb: 1.5,
+            borderBottom: "1px solid #f1f5f9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                bgcolor: "#f0f9ff",
+                color: "#0284c7",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <LinkIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: "#0f172a", fontSize: "1.0625rem" }}>
+                Upload Photos with Links
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Paste image URLs line by line. Direct bulk import without AI.
+              </Typography>
+            </Box>
+          </Box>
+          <Chip
+            size="small"
+            label="Direct Bulk Import"
+            sx={{
+              bgcolor: "#f0f9ff",
+              color: "#0284c7",
+              fontWeight: 600,
+              fontSize: "0.725rem",
+              border: "1px solid #bae6fd",
+            }}
+          />
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
+          {bulkLinksError && (
+            <Alert severity="error" sx={{ fontSize: "0.8125rem" }}>
+              {bulkLinksError}
+            </Alert>
+          )}
+
+          <Typography sx={{ fontSize: "0.8125rem", color: "#475569", lineHeight: 1.6 }}>
+            Paste image links in bulk below (one URL per line). Each photo will be directly saved with the title:{" "}
+            <strong style={{ color: "#0f172a" }}>
+              {model?.name} nude photo &lt;photo number&gt;
+            </strong>
+          </Typography>
+
+          <TextField
+            multiline
+            rows={10}
+            fullWidth
+            disabled={bulkLinksUploading}
+            placeholder={`https://example.com/photos/image_01.jpg\nhttps://example.com/photos/image_02.jpg\nhttps://example.com/photos/image_03.jpg`}
+            value={bulkLinksText}
+            onChange={(e) => setBulkLinksText(e.target.value)}
+            slotProps={{
+              input: {
+                sx: {
+                  borderRadius: 1.5,
+                  fontSize: "0.8125rem",
+                  fontFamily: "monospace",
+                  bgcolor: "#f8fafc",
+                  "& fieldset": { borderColor: "#cbd5e1" },
+                  "&:hover fieldset": { borderColor: "#94a3b8" },
+                  "&.Mui-focused fieldset": { borderColor: "#0284c7" },
+                },
+              },
+            }}
+          />
+
+          {/* Realtime Link Detection and Title Preview */}
+          {(() => {
+            const raw = bulkLinksText.split(/\r?\n/);
+            const valid = raw
+              .map((l) => l.trim().replace(/^[,"'<>\s]+|[,"'<>\s]+$/g, ""))
+              .filter((l) => l.startsWith("http://") || l.startsWith("https://"));
+            const existingCount = (model?.media || []).filter((m: any) => m.type === "photo").length;
+
+            return (
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1.5,
+                  bgcolor: valid.length > 0 ? "#f0f9ff" : "#f8fafc",
+                  border: `1px solid ${valid.length > 0 ? "#bae6fd" : "#e2e8f0"}`,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.75,
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#0f172a" }}>
+                    Detected Links:{" "}
+                    <span style={{ color: valid.length > 0 ? "#0284c7" : "#64748b" }}>
+                      {valid.length} valid URL{valid.length === 1 ? "" : "s"}
+                    </span>
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                    Existing photos in gallery: {existingCount}
+                  </Typography>
+                </Box>
+
+                {valid.length > 0 && (
+                  <Typography sx={{ fontSize: "0.75rem", color: "#0369a1" }}>
+                    <strong>Generated Titles:</strong>{" "}
+                    &quot;{model?.name} nude photo {existingCount + 1}&quot;
+                    {valid.length > 1 && (
+                      <>
+                        {" "}to &quot;{model?.name} nude photo {existingCount + valid.length}&quot;
+                      </>
+                    )}
+                  </Typography>
+                )}
+              </Box>
+            );
+          })()}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            disabled={bulkLinksUploading}
+            onClick={() => {
+              setBulkLinksDialogOpen(false);
+              setBulkLinksError("");
+            }}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handleBulkUploadPhotoLinks}
+            disabled={bulkLinksUploading || !bulkLinksText.trim()}
+            startIcon={
+              bulkLinksUploading ? (
+                <CircularProgress size={16} sx={{ color: "#ffffff" }} />
+              ) : (
+                <LinkIcon sx={{ fontSize: 16 }} />
+              )
+            }
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#0284c7",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              px: 2.5,
+              py: 0.85,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#0369a1", boxShadow: "none" },
+              "&:disabled": { bgcolor: "#93c5fd", color: "#ffffff" },
+            }}
+          >
+            {bulkLinksUploading
+              ? "Uploading Photos…"
+              : `Upload ${
+                  (() => {
+                    const count = bulkLinksText
+                      .split(/\r?\n/)
+                      .map((l) => l.trim().replace(/^[,"'<>\s]+|[,"'<>\s]+$/g, ""))
+                      .filter((l) => l.startsWith("http://") || l.startsWith("https://")).length;
+                    return count > 0 ? `${count} Photos` : "Photos";
+                  })()
+                }`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* 5. AI Crawl — URL Input / Paste Source Dialog */}
       <Dialog
         open={crawlDialogOpen}
@@ -4207,7 +4641,76 @@ export default function ModelManagementPage() {
             {crawledItems.filter((i) => i.type === "photo").length} photos ·{" "}
             {crawledItems.filter((i) => i.type === "video").length} videos
           </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleUploadAllCrawledToDb}
+            disabled={uploadingAllToDb || importingCrawled || crawledItems.length === 0}
+            startIcon={
+              uploadingAllToDb ? (
+                <CircularProgress size={12} color="inherit" />
+              ) : (
+                <CloudSyncIcon sx={{ fontSize: 14 }} />
+              )
+            }
+            sx={{
+              textTransform: "none",
+              fontSize: "0.725rem",
+              fontWeight: 700,
+              color: "#059669",
+              borderColor: "#a7f3d0",
+              bgcolor: "#ecfdf5",
+              py: 0.4,
+              px: 1.25,
+              borderRadius: 1,
+              "&:hover": {
+                bgcolor: "#d1fae5",
+                borderColor: "#6ee7b7",
+                color: "#047857",
+              },
+            }}
+          >
+            {uploadingAllToDb
+              ? `Uploading to DB (${uploadAllProgress.current}/${uploadAllProgress.total})…`
+              : "Upload All to DB"}
+          </Button>
         </Box>
+
+        {uploadingAllToDb && (
+          <Box sx={{ px: 3, pt: 1.5 }}>
+            <LinearProgress
+              variant="determinate"
+              value={
+                uploadAllProgress.total > 0
+                  ? Math.round(
+                      (uploadAllProgress.current / uploadAllProgress.total) * 100
+                    )
+                  : 0
+              }
+              sx={{
+                borderRadius: 1,
+                height: 5,
+                bgcolor: "#f1f5f9",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: "#059669",
+                  borderRadius: 1,
+                },
+              }}
+            />
+            <Typography
+              sx={{
+                fontSize: "0.725rem",
+                color: "#059669",
+                mt: 0.5,
+                fontWeight: 600,
+              }}
+            >
+              Downloading and uploading photos/thumbnails to database storage… (
+              {uploadAllProgress.current} of {uploadAllProgress.total})
+            </Typography>
+          </Box>
+        )}
 
         {importingCrawled && (
           <Box sx={{ px: 3, pt: 1.5 }}>
@@ -4444,6 +4947,81 @@ export default function ModelManagementPage() {
                         ))}
                     </Box>
                   )}
+
+                  {/* Upload to DB Action Button */}
+                  <Box
+                    sx={{
+                      mt: 1.25,
+                      pt: 1,
+                      borderTop: "1px solid #f1f5f9",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    {((item.type === "video" && item.thumbnail?.includes("supabase.co")) ||
+                      (item.type === "photo" && item.url?.includes("supabase.co"))) ? (
+                      <Chip
+                        icon={<CheckCircleIcon sx={{ fontSize: "14px !important", color: "#059669 !important" }} />}
+                        label="Saved in DB"
+                        size="small"
+                        sx={{
+                          height: 22,
+                          fontSize: "0.65rem",
+                          fontWeight: 700,
+                          bgcolor: "#ecfdf5",
+                          color: "#059669",
+                          border: "1px solid #a7f3d0",
+                        }}
+                      />
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUploadCrawledItemToDb(idx);
+                        }}
+                        disabled={
+                          uploadingToDbIndices.includes(idx) ||
+                          uploadingAllToDb ||
+                          importingCrawled
+                        }
+                        startIcon={
+                          uploadingToDbIndices.includes(idx) ? (
+                            <CircularProgress size={12} color="inherit" />
+                          ) : (
+                            <StorageIcon sx={{ fontSize: 13 }} />
+                          )
+                        }
+                        sx={{
+                          textTransform: "none",
+                          fontSize: "0.675rem",
+                          fontWeight: 700,
+                          py: 0.25,
+                          px: 1,
+                          height: 24,
+                          color: "#7c3aed",
+                          borderColor: "#ddd6fe",
+                          bgcolor: "#f5f3ff",
+                          borderRadius: 0.75,
+                          "&:hover": {
+                            bgcolor: "#ede9fe",
+                            borderColor: "#c4b5fd",
+                            color: "#6d28d9",
+                          },
+                        }}
+                      >
+                        {uploadingToDbIndices.includes(idx)
+                          ? "Uploading to DB…"
+                          : "Upload to DB"}
+                      </Button>
+                    )}
+
+                    <Typography sx={{ fontSize: "0.6rem", color: "#94a3b8" }}>
+                      {item.type === "video" ? "Thumbnail" : "Photo"}
+                    </Typography>
+                  </Box>
                 </CardContent>
               </Card>
             ))}

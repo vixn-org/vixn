@@ -33,6 +33,8 @@ import {
   DialogActions,
   Menu,
   Tooltip,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -44,6 +46,7 @@ import {
   WhatshotOutlined as FlameIcon,
   EditOutlined as EditIcon,
   Refresh as RefreshIcon,
+  AutoAwesome as SparklesIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
@@ -108,6 +111,12 @@ export default function AdminModelsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<ModelItem | null>(null);
 
+  // AI Create Dialog State
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiInputText, setAiInputText] = useState("");
+  const [generatingWithAi, setGeneratingWithAi] = useState(false);
+  const [aiError, setAiError] = useState("");
+
   const fetchModels = useCallback(async () => {
     setLoading(true);
     try {
@@ -170,10 +179,49 @@ export default function AdminModelsPage() {
         status: "draft",
       });
       router.push(`/admin/models/${data.model._id}`);
-    } catch {
-      toast.error("Failed to create model");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create model");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCreateWithAi = async () => {
+    if (!aiInputText.trim()) {
+      toast.error("Please paste model details or unstructured text first");
+      return;
+    }
+    setGeneratingWithAi(true);
+    setAiError("");
+    try {
+      const res = await fetch("/api/admin/models/ai-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rawText: aiInputText,
+          saveDirectly: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to structure content with AI");
+      }
+
+      toast.success("Model created and structured across all 4 tabs with AI!");
+      setAiDialogOpen(false);
+      setAiInputText("");
+      if (data.model?._id) {
+        router.push(`/admin/models/${data.model._id}`);
+      } else {
+        fetchModels();
+      }
+    } catch (err: any) {
+      console.error(err);
+      setAiError(err.message || "Failed to process text with AI");
+      toast.error(err.message || "Failed to process text with AI");
+    } finally {
+      setGeneratingWithAi(false);
     }
   };
 
@@ -290,25 +338,55 @@ export default function AdminModelsPage() {
           </Tooltip>
 
           {isAdmin && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setCreateOpen(true)}
-              sx={{
-                bgcolor: "#0f172a",
-                color: "#ffffff",
-                borderRadius: 1,
-                textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.8125rem",
-                px: 1.75,
-                py: 0.75,
-                boxShadow: "none",
-                "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
-              }}
-            >
-              Create Model Route
-            </Button>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateOpen(true)}
+                sx={{
+                  bgcolor: "#0f172a",
+                  color: "#ffffff",
+                  borderRadius: 1,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  px: 1.75,
+                  py: 0.75,
+                  boxShadow: "none",
+                  "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                }}
+              >
+                Create Model Route
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<SparklesIcon sx={{ fontSize: 18, color: "#7c3aed" }} />}
+                onClick={() => {
+                  setAiError("");
+                  setAiDialogOpen(true);
+                }}
+                sx={{
+                  borderColor: "#c4b5fd",
+                  bgcolor: "#f5f3ff",
+                  color: "#6d28d9",
+                  borderRadius: 1,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  px: 1.75,
+                  py: 0.75,
+                  boxShadow: "none",
+                  "&:hover": {
+                    borderColor: "#8b5cf6",
+                    bgcolor: "#ede9fe",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                Create with AI
+              </Button>
+            </Box>
           )}
         </Box>
       </Box>
@@ -1178,6 +1256,181 @@ export default function AdminModelsPage() {
             }}
           >
             Delete Permanently
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create with AI Dialog */}
+      <Dialog
+        open={aiDialogOpen}
+        onClose={() => !generatingWithAi && setAiDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 8,
+            sx: {
+              borderRadius: 2,
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{
+            pt: 2.5,
+            px: 3,
+            pb: 1.5,
+            borderBottom: "1px solid #f1f5f9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                bgcolor: "#f5f3ff",
+                color: "#7c3aed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <SparklesIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontWeight: 700, color: "#0f172a", fontSize: "1.0625rem" }}>
+                Create Model with AI
+              </Typography>
+              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                Fill all 4 tabs (General Info, Main SEO, Photos SEO, Videos SEO) from unstructured text
+              </Typography>
+            </Box>
+          </Box>
+          <Chip
+            size="small"
+            label="AI Auto-Structuring"
+            sx={{
+              bgcolor: "#f5f3ff",
+              color: "#7c3aed",
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              border: "1px solid #ddd6fe",
+            }}
+          />
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, py: 2.5 }}>
+          {aiError && (
+            <Alert severity="error" sx={{ mb: 2, fontSize: "0.8125rem" }}>
+              {aiError}
+            </Alert>
+          )}
+
+          <Typography sx={{ fontSize: "0.8125rem", color: "#475569", mb: 1 }}>
+            Paste any unstructured creator biography, wiki, social bio, or notes below. The AI will parse
+            and structure every field across the 4 tabs while keeping your provided data intact.
+            Images are left empty for you to upload manually.
+          </Typography>
+
+          <TextField
+            multiline
+            rows={10}
+            fullWidth
+            disabled={generatingWithAi}
+            placeholder="Paste unstructured model details here, for example:&#10;&#10;Louisa Khovanski is a Ukrainian model and content creator born on August 5, 1994 in Kyiv, Ukraine. She has over 3M followers on Instagram and creates fashion, glamour and lifestyle content...&#10;&#10;Focus keyphrase: louisa khovanski hd gallery&#10;Tags: ukrainian, glamour, lingerie, instagram model..."
+            value={aiInputText}
+            onChange={(e) => setAiInputText(e.target.value)}
+            slotProps={{
+              input: {
+                sx: {
+                  borderRadius: 1.5,
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  bgcolor: "#f8fafc",
+                  "& fieldset": { borderColor: "#cbd5e1" },
+                  "&:hover fieldset": { borderColor: "#94a3b8" },
+                  "&.Mui-focused fieldset": { borderColor: "#7c3aed" },
+                },
+              },
+            }}
+          />
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mt: 1.5,
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Chip size="small" variant="outlined" label="General Info & Bio" sx={{ fontSize: "0.7rem" }} />
+              <Chip size="small" variant="outlined" label="Main SEO & Meta Tags" sx={{ fontSize: "0.7rem" }} />
+              <Chip size="small" variant="outlined" label="Photos Page SEO" sx={{ fontSize: "0.7rem" }} />
+              <Chip size="small" variant="outlined" label="Videos Page SEO" sx={{ fontSize: "0.7rem" }} />
+            </Box>
+            <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+              {aiInputText.length} characters (optimized prompt load)
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <Button
+            variant="outlined"
+            disabled={generatingWithAi}
+            onClick={() => {
+              setAiDialogOpen(false);
+              setAiError("");
+            }}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={handleCreateWithAi}
+            disabled={generatingWithAi || !aiInputText.trim()}
+            startIcon={
+              generatingWithAi ? (
+                <CircularProgress size={16} sx={{ color: "#ffffff" }} />
+              ) : (
+                <SparklesIcon sx={{ fontSize: 16 }} />
+              )
+            }
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#7c3aed",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              px: 2.5,
+              py: 0.85,
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
+              "&:disabled": { bgcolor: "#c4b5fd", color: "#ffffff" },
+            }}
+          >
+            {generatingWithAi ? "Structuring with AI..." : "Generate & Create Model"}
           </Button>
         </DialogActions>
       </Dialog>

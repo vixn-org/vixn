@@ -174,15 +174,6 @@ export default function ModelGalleryViewer({
                   </div>
                 </div>
               </div>
-              {/* Badge */}
-              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
-                <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
-                <span>PHOTO</span>
-              </div>
-              <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md z-10 flex items-center gap-0.5">
-                <HighQualityRoundedIcon sx={{ fontSize: 14, color: "#38bdf8" }} />
-                <span>4K HD</span>
-              </div>
             </Link>
           ) : (
             <div
@@ -199,10 +190,6 @@ export default function ModelGalleryViewer({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="lazy"
               />
-              <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
-                <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
-                <span>PHOTO</span>
-              </div>
             </div>
           )
         ) : videoHref ? (
@@ -225,27 +212,11 @@ export default function ModelGalleryViewer({
                 <VideocamRoundedIcon sx={{ fontSize: 44, color: "#64748b" }} />
               </div>
             )}
-            {/* Play button overlay */}
-            <div className="absolute inset-0 bg-black/30 group-hover/video:bg-black/15 transition-colors flex items-center justify-center">
-              <div className="w-13 h-13 rounded-full bg-rose-600/90 group-hover/video:bg-rose-600 text-white flex items-center justify-center shadow-xl transform group-hover/video:scale-110 transition-all">
+            {/* Play button overlay - visible only on hover */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/video:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <div className="w-13 h-13 rounded-full bg-rose-600/90 group-hover/video:bg-rose-600 text-white flex items-center justify-center shadow-xl transform scale-90 group-hover/video:scale-110 transition-transform">
                 <PlayArrowRoundedIcon sx={{ fontSize: 30 }} />
               </div>
-            </div>
-            {/* Badges */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-              <div className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1">
-                <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
-                <span>VIDEO</span>
-              </div>
-              {item.isExternal && (
-                <div className="bg-indigo-600/90 backdrop-blur-md text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1">
-                  <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
-                </div>
-              )}
-            </div>
-            <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold text-slate-300 shadow-md z-10 flex items-center gap-0.5">
-              <HighQualityRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />
-              <span>STREAM</span>
             </div>
           </Link>
         ) : (
@@ -264,10 +235,6 @@ export default function ModelGalleryViewer({
             >
               Your browser does not support the video element.
             </video>
-            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-lg flex items-center gap-1 z-10">
-              <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
-              <span>VIDEO</span>
-            </div>
           </div>
         )}
 
