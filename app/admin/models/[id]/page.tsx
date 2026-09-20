@@ -996,15 +996,24 @@ export default function ModelManagementPage() {
     }
   };
 
-  // Upload ALL crawled items' photos and thumbnails to Supabase DB storage
+  // Upload selected crawled items' photos and thumbnails to DB storage
   const handleUploadAllCrawledToDb = async () => {
-    if (crawledItems.length === 0) return;
+    const selectedIndices: number[] = [];
+    crawledItems.forEach((item, idx) => {
+      if (item.selected) selectedIndices.push(idx);
+    });
+
+    if (selectedIndices.length === 0) {
+      toast.error("No items selected. Please select at least one item to upload.");
+      return;
+    }
 
     setUploadingAllToDb(true);
-    setUploadAllProgress({ current: 0, total: crawledItems.length });
+    setUploadAllProgress({ current: 0, total: selectedIndices.length });
     let successCount = 0;
 
-    for (let i = 0; i < crawledItems.length; i++) {
+    for (let step = 0; step < selectedIndices.length; step++) {
+      const i = selectedIndices[step];
       const item = crawledItems[i];
       const targetUrl = item.type === "video" ? (item.thumbnail || item.url) : item.url;
 
@@ -1014,7 +1023,7 @@ export default function ModelManagementPage() {
         targetUrl.includes("supabase.co") ||
         (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))
       ) {
-        setUploadAllProgress({ current: i + 1, total: crawledItems.length });
+        setUploadAllProgress({ current: step + 1, total: selectedIndices.length });
         continue;
       }
 
@@ -1046,11 +1055,11 @@ export default function ModelManagementPage() {
         // continue with next item
       }
 
-      setUploadAllProgress({ current: i + 1, total: crawledItems.length });
+      setUploadAllProgress({ current: step + 1, total: selectedIndices.length });
     }
 
     setUploadingAllToDb(false);
-    toast.success(`Uploaded ${successCount} photos/thumbnails to your DB storage!`);
+    toast.success(`Uploaded ${successCount} selected photos/thumbnails to your DB storage!`);
   };
 
   const handleImportCrawled = async () => {
@@ -4646,7 +4655,11 @@ export default function ModelManagementPage() {
             size="small"
             variant="outlined"
             onClick={handleUploadAllCrawledToDb}
-            disabled={uploadingAllToDb || importingCrawled || crawledItems.length === 0}
+            disabled={
+              uploadingAllToDb ||
+              importingCrawled ||
+              crawledItems.filter((i) => i.selected).length === 0
+            }
             startIcon={
               uploadingAllToDb ? (
                 <CircularProgress size={12} color="inherit" />
@@ -4672,8 +4685,8 @@ export default function ModelManagementPage() {
             }}
           >
             {uploadingAllToDb
-              ? `Uploading to DB (${uploadAllProgress.current}/${uploadAllProgress.total})…`
-              : "Upload All to DB"}
+              ? `Uploading Selected (${uploadAllProgress.current}/${uploadAllProgress.total})…`
+              : `Upload Selected to DB (${crawledItems.filter((i) => i.selected).length})`}
           </Button>
         </Box>
 
@@ -4706,7 +4719,7 @@ export default function ModelManagementPage() {
                 fontWeight: 600,
               }}
             >
-              Downloading and uploading photos/thumbnails to database storage… (
+              Downloading and uploading selected photos/thumbnails to database storage… (
               {uploadAllProgress.current} of {uploadAllProgress.total})
             </Typography>
           </Box>
