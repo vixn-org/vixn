@@ -83,6 +83,10 @@ export default function ModelGalleryViewer({
     return media.slice(start, start + ITEMS_PER_PAGE);
   }, [media, currentPage]);
 
+  const cols4 = useMemo(
+    () => distributeMediaItems(paginatedMedia, 4),
+    [paginatedMedia],
+  );
   const cols3 = useMemo(
     () => distributeMediaItems(paginatedMedia, 3),
     [paginatedMedia],
@@ -147,7 +151,7 @@ export default function ModelGalleryViewer({
           photoHref ? (
             <Link
               href={photoHref}
-              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden block rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
+              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden block rounded-md shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
             >
               <img
                 src={item.url}
@@ -182,7 +186,7 @@ export default function ModelGalleryViewer({
             </Link>
           ) : (
             <div
-              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
+              className="relative aspect-4/5 w-full bg-[#182238] cursor-pointer overflow-hidden rounded-md shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
               onClick={() => setLightboxIndex(globalIndex)}
             >
               <img
@@ -204,7 +208,7 @@ export default function ModelGalleryViewer({
         ) : videoHref ? (
           <Link
             href={videoHref}
-            className="relative aspect-video w-full bg-[#0e1424] overflow-hidden cursor-pointer group/video block rounded-2xl shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
+            className="relative aspect-video w-full bg-[#0e1424] overflow-hidden cursor-pointer group/video block rounded-md shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300"
           >
             {posterSrc ? (
               <img
@@ -245,7 +249,7 @@ export default function ModelGalleryViewer({
             </div>
           </Link>
         ) : (
-          <div className="relative aspect-video w-full bg-[#0a0e1a] overflow-hidden flex items-center justify-center rounded-2xl shadow-xl">
+          <div className="relative aspect-video w-full bg-[#0a0e1a] overflow-hidden flex items-center justify-center rounded-md shadow-xl">
             <video
               src={item.url}
               poster={posterSrc}
@@ -397,7 +401,7 @@ export default function ModelGalleryViewer({
 
       {/* Gallery Grid */}
       {media.length === 0 ? (
-        <div className="py-20 text-center rounded-3xl bg-[#121826]/70 backdrop-blur-xl border-none">
+        <div className="py-20 text-center rounded-md bg-[#121826]/70 backdrop-blur-xl border-none">
           <AutoAwesomeRoundedIcon sx={{ fontSize: 40, color: "#475569" }} className="mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-200">
             No media available in this section
@@ -408,10 +412,10 @@ export default function ModelGalleryViewer({
         </div>
       ) : (
         <>
-          {/* Desktop 3 Columns */}
-          <div className="hidden lg:grid lg:grid-cols-3 gap-6 items-start">
-            {cols3.map((col, colIdx) => (
-              <div key={`col3-${colIdx}`} className="flex flex-col gap-6">
+          {/* Desktop 4 Columns */}
+          <div className="hidden lg:grid lg:grid-cols-4 gap-5 items-start">
+            {cols4.map((col, colIdx) => (
+              <div key={`col4-${colIdx}`} className="flex flex-col gap-5">
                 {col.map(({ item, originalIndex }) =>
                   renderMediaCard(item, originalIndex),
                 )}
@@ -420,9 +424,9 @@ export default function ModelGalleryViewer({
           </div>
 
           {/* Tablet 2 Columns */}
-          <div className="hidden sm:grid sm:grid-cols-2 lg:hidden gap-6 items-start">
+          <div className="hidden sm:grid sm:grid-cols-2 lg:hidden gap-5 items-start">
             {cols2.map((col, colIdx) => (
-              <div key={`col2-${colIdx}`} className="flex flex-col gap-6">
+              <div key={`col2-${colIdx}`} className="flex flex-col gap-5">
                 {col.map(({ item, originalIndex }) =>
                   renderMediaCard(item, originalIndex),
                 )}
@@ -431,7 +435,7 @@ export default function ModelGalleryViewer({
           </div>
 
           {/* Mobile 1 Column */}
-          <div className="flex flex-col sm:hidden gap-5">
+          <div className="flex flex-col sm:hidden gap-4">
             {paginatedMedia.map((item, index) => renderMediaCard(item, index))}
           </div>
 
@@ -541,7 +545,7 @@ export default function ModelGalleryViewer({
               <img
                 src={currentItem.url}
                 alt={currentItem.alt || modelName}
-                className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl"
+                className="max-h-[75vh] max-w-full object-contain rounded-md shadow-2xl"
               />
             ) : (
               <video
@@ -549,7 +553,7 @@ export default function ModelGalleryViewer({
                 poster={currentItem.thumbnail}
                 controls
                 autoPlay
-                className="max-h-[75vh] max-w-full rounded-2xl shadow-2xl"
+                className="max-h-[75vh] max-w-full rounded-md shadow-2xl"
               />
             )}
 

@@ -334,7 +334,7 @@ export default async function ModelPage({ params }: Props) {
             </nav>
 
             {/* Model Profile Hero Header - Elevated Borderless Luxury Card */}
-            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-5 sm:p-8 mb-8 border-none">
+            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md shadow-2xl p-5 sm:p-8 mb-8 border-none">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-4 sm:pb-5">
                   {/* Large Rounded Avatar with Glowing Ring */}
                   <div className="relative shrink-0">
@@ -342,11 +342,11 @@ export default async function ModelPage({ params }: Props) {
                       <img
                         src={model.profileImage}
                         alt={`${model.name} verified profile avatar`}
-                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl object-cover shadow-2xl ring-4 ring-white/[0.08]"
+                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-md object-cover shadow-2xl ring-4 ring-white/[0.08]"
                         loading="eager"
                       />
                     ) : (
-                      <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-br from-rose-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl ring-4 ring-white/[0.08]">
+                      <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-md bg-gradient-to-br from-rose-500 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl ring-4 ring-white/[0.08]">
                         {model.name.charAt(0)}
                       </div>
                     )}
@@ -435,7 +435,7 @@ export default async function ModelPage({ params }: Props) {
                   {photos.length > 0 && (
                     <Link
                       href={`/model/${model.slug}/photos`}
-                      className="px-4 py-2 rounded-2xl text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-indigo-500/20 transition-all flex items-center gap-1.5 shadow-md border-none"
+                      className="px-4 py-2 rounded-md text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-indigo-500/20 transition-all flex items-center gap-1.5 shadow-md border-none"
                     >
                       <PhotoCameraRoundedIcon sx={{ fontSize: 16, color: "#818cf8" }} />
                       <span>Photos ({photos.length})</span>
@@ -444,7 +444,7 @@ export default async function ModelPage({ params }: Props) {
                   {videos.length > 0 && (
                     <Link
                       href={`/model/${model.slug}/videos`}
-                      className="px-4 py-2 rounded-2xl text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-rose-500/20 hover:text-rose-300 transition-all flex items-center gap-1.5 shadow-md border-none"
+                      className="px-4 py-2 rounded-md text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-rose-500/20 hover:text-rose-300 transition-all flex items-center gap-1.5 shadow-md border-none"
                     >
                       <VideocamRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
                       <span>Videos ({videos.length})</span>
@@ -461,7 +461,7 @@ export default async function ModelPage({ params }: Props) {
               />
 
               {/* Direct Crawlable Media Directory for Googlebot Discovery - High Quality Cards */}
-              <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 space-y-5 shadow-xl border-none">
+              <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-md p-6 sm:p-8 space-y-5 shadow-xl border-none">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -477,7 +477,7 @@ export default async function ModelPage({ params }: Props) {
                     {photos.length > 0 && (
                       <Link
                         href={`/model/${model.slug}/photos`}
-                        className="text-xs font-bold text-indigo-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/30 px-4 py-2 rounded-2xl transition-colors flex items-center gap-1.5 border-none"
+                        className="text-xs font-bold text-indigo-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/30 px-4 py-2 rounded-md transition-colors flex items-center gap-1.5 border-none"
                       >
                         <PhotoCameraRoundedIcon sx={{ fontSize: 14 }} />
                         <span>View {photos.length} Photos →</span>
@@ -486,7 +486,7 @@ export default async function ModelPage({ params }: Props) {
                     {videos.length > 0 && (
                       <Link
                         href={`/model/${model.slug}/videos`}
-                        className="text-xs font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-4 py-2 rounded-2xl transition-colors flex items-center gap-1.5 border-none"
+                        className="text-xs font-bold text-rose-300 hover:text-white bg-rose-500/20 hover:bg-rose-500/30 px-4 py-2 rounded-md transition-colors flex items-center gap-1.5 border-none"
                       >
                         <VideocamRoundedIcon sx={{ fontSize: 14 }} />
                         <span>Watch {videos.length} Videos →</span>
@@ -503,9 +503,9 @@ export default async function ModelPage({ params }: Props) {
                       <Link
                         key={photo._id || idx}
                         href={`/model/${model.slug}/photo/${photoSlug}`}
-                        className="p-3.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
+                        className="p-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
                       >
-                        <div className="w-8 h-8 rounded-xl bg-indigo-500/15 flex items-center justify-center shrink-0 text-indigo-400 group-hover:scale-110 transition-transform">
+                        <div className="w-8 h-8 rounded-md bg-indigo-500/15 flex items-center justify-center shrink-0 text-indigo-400 group-hover:scale-110 transition-transform">
                           <PhotoCameraRoundedIcon sx={{ fontSize: 16 }} />
                         </div>
                         <span className="truncate text-slate-200 group-hover:text-white font-medium">
@@ -520,9 +520,9 @@ export default async function ModelPage({ params }: Props) {
                       <Link
                         key={video._id || idx}
                         href={`/model/${model.slug}/video/${videoSlug}`}
-                        className="p-3.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
+                        className="p-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] shadow-sm transition-all flex items-center gap-3 group border-none"
                       >
-                        <div className="w-8 h-8 rounded-xl bg-rose-500/15 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-110 transition-transform">
+                        <div className="w-8 h-8 rounded-md bg-rose-500/15 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-110 transition-transform">
                           <VideocamRoundedIcon sx={{ fontSize: 16 }} />
                         </div>
                         <span className="truncate text-slate-200 group-hover:text-white font-medium">
@@ -574,7 +574,7 @@ export default async function ModelPage({ params }: Props) {
                     return (
                       <div
                         key={rel._id.toString()}
-                        className="group bg-[#121826] rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col border-none"
+                        className="group bg-[#121826] rounded-md overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col border-none"
                       >
                         <Link
                           href={`/model/${rel.slug}`}
@@ -626,7 +626,7 @@ export default async function ModelPage({ params }: Props) {
             {/* Associated Tags & Keyword Topics */}
             {allModelTags.length > 0 && (
               <section className="pt-10 space-y-3">
-                <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-xl space-y-4 border-none">
+                <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-md p-6 sm:p-8 shadow-xl space-y-4 border-none">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                       <LocalOfferRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />

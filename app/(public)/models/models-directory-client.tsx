@@ -158,7 +158,7 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
 
       {/* Model Cards Grid */}
       {filteredModels.length === 0 ? (
-        <div className="text-center py-20 bg-[#121826]/60 rounded-3xl border-none space-y-3">
+        <div className="text-center py-20 bg-[#121826]/60 rounded-md border-none space-y-3">
           <PeopleAltRoundedIcon sx={{ fontSize: 44, color: "#64748b" }} className="mx-auto" />
           <h3 className="text-lg font-bold text-white">
             No models match your criteria
@@ -171,7 +171,7 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
               setSearchQuery("");
               setSelectedCategory("all");
             }}
-            className="mt-2 px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer border-none"
+            className="mt-2 px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer border-none"
           >
             Reset Filters
           </button>
@@ -185,7 +185,7 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
             >
               <Link href={`/model/${model.slug}`} className="block">
                 {/* Media Preview Thumbnail */}
-                <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300">
+                <div className="relative aspect-[3/4] w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300">
                   {model.profileImage || model.coverImage ? (
                     <img
                       src={model.profileImage || model.coverImage}
@@ -233,14 +233,14 @@ export default function ModelsDirectoryClient({ models, categories }: Props) {
               <div className="pt-2.5 pb-1 px-0.5 flex items-center justify-between gap-2 text-[11px] font-bold bg-transparent border-none">
                 <Link
                   href={`/model/${model.slug}/photos`}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                  className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                 >
                   <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
                   <span>{model.photoCount} Photos</span>
                 </Link>
                 <Link
                   href={`/model/${model.slug}/videos`}
-                  className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                  className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                 >
                   <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
                   <span>{model.videoCount} Videos</span>

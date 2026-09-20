@@ -301,7 +301,7 @@ export default async function TagPage({ params }: Props) {
               </div>
 
               {/* Rich Intent Editorial Article (150+ Words for Google Keyword Ranking & BERT Understanding) */}
-              <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-7 shadow-2xl text-sm text-slate-300 leading-relaxed space-y-3 border-none">
+              <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md p-6 sm:p-7 shadow-2xl text-sm text-slate-300 leading-relaxed space-y-3 border-none">
                 <p>
                   Browse <strong className="text-white font-bold">{tagLabel}</strong> video clips, photo galleries,
                   and exclusive media on {SITE_NAME}. This collection features
@@ -325,25 +325,25 @@ export default async function TagPage({ params }: Props) {
 
               {/* Metric Quick Stats Badges */}
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-300">
-                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-2xl shadow-md border-none transition-colors">
+                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-md shadow-md border-none transition-colors">
                   <PeopleAltRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
                   <span>
                     <strong className="text-white font-bold">{models.length}</strong> Model{models.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-2xl shadow-md border-none transition-colors">
+                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-md shadow-md border-none transition-colors">
                   <VideocamRoundedIcon sx={{ fontSize: 16, color: "#f43f5e" }} />
                   <span>
                     <strong className="text-white font-bold">{totalVideos}</strong> Video{totalVideos !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-2xl shadow-md border-none transition-colors">
+                <div className="flex items-center gap-2 font-semibold bg-white/[0.05] hover:bg-white/[0.08] px-4 py-2 rounded-md shadow-md border-none transition-colors">
                   <PhotoCameraRoundedIcon sx={{ fontSize: 16, color: "#818cf8" }} />
                   <span>
                     <strong className="text-white font-bold">{totalPhotos}</strong> Photo{totalPhotos !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-emerald-400 font-bold ml-auto bg-emerald-500/10 px-3.5 py-1.5 rounded-2xl border-none">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-bold ml-auto bg-emerald-500/10 px-3.5 py-1.5 rounded-md border-none">
                   <ShieldRoundedIcon sx={{ fontSize: 16 }} />
                   <span>100% Verified HD Content</span>
                 </div>
@@ -380,7 +380,7 @@ export default async function TagPage({ params }: Props) {
                       {/* Portrait Thumbnail */}
                       <Link
                         href={`/model/${model.slug}`}
-                        className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+                        className="relative aspect-[3/4] w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
                       >
                         <img
                           src={model.profileImage || model.coverImage || "/logo.jpg"}
@@ -418,14 +418,14 @@ export default async function TagPage({ params }: Props) {
                       <div className="pt-2.5 pb-1 px-0.5 flex items-center justify-between gap-2 text-[11px] font-bold bg-transparent border-none">
                         <Link
                           href={`/model/${model.slug}/photos`}
-                          className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                          className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                         >
                           <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
                           <span>{photoCount} Photos</span>
                         </Link>
                         <Link
                           href={`/model/${model.slug}/videos`}
-                          className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                          className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                         >
                           <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
                           <span>{videoCount} Videos</span>
@@ -451,7 +451,7 @@ export default async function TagPage({ params }: Props) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {models
                     .flatMap((model: any) =>
                       (model.media || [])
@@ -481,7 +481,7 @@ export default async function TagPage({ params }: Props) {
                           {/* Video Player Card */}
                           <Link
                             href={`/model/${v.modelSlug}/video/${mediaSlug}`}
-                            className="relative aspect-video w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
+                            className="relative aspect-video w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
                           >
                             <img
                               src={videoPoster}
@@ -541,7 +541,7 @@ export default async function TagPage({ params }: Props) {
             {allTags.length > 0 && (
               <section className="pt-12 space-y-4 border-none">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-xl bg-rose-500/15 text-rose-400">
+                  <div className="p-1.5 rounded-md bg-rose-500/15 text-rose-400">
                     <LocalOfferRoundedIcon sx={{ fontSize: 16 }} />
                   </div>
                   <h2 className="text-lg font-black text-white tracking-tight">
@@ -570,7 +570,7 @@ export default async function TagPage({ params }: Props) {
             <div className="pt-8 pb-4 flex justify-center border-none">
               <Link
                 href="/models"
-                className="px-5 py-2.5 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-2 shadow-md border-none"
+                className="px-5 py-2.5 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-2 shadow-md border-none"
               >
                 <span>Browse All Models on {SITE_NAME}</span>
                 <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />

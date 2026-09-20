@@ -30,6 +30,9 @@ import {
   Tooltip,
   CircularProgress,
   Divider,
+  LinearProgress,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -51,6 +54,11 @@ import {
   MovieOutlined as MovieIcon,
   TuneOutlined as TuneIcon,
   ShareOutlined as ShareIcon,
+  SmartToyOutlined as SmartToyIcon,
+  CheckBoxOutlined as CheckBoxIcon,
+  CheckBoxOutlineBlankOutlined as CheckBoxBlankIcon,
+  ContentPasteOutlined as ContentPasteIcon,
+  LinkOutlined as LinkIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 
@@ -202,6 +210,28 @@ export default function ModelManagementPage() {
   // Avatar & Cover Upload states
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  // AI Crawl Import States
+  const [crawlDialogOpen, setCrawlDialogOpen] = useState(false);
+  const [crawlMode, setCrawlMode] = useState<"url" | "paste">("url");
+  const [crawlUrl, setCrawlUrl] = useState("");
+  const [pastedHtml, setPastedHtml] = useState("");
+  const [crawling, setCrawling] = useState(false);
+  const [crawlError, setCrawlError] = useState("");
+  const [crawlPreviewOpen, setCrawlPreviewOpen] = useState(false);
+  const [crawledItems, setCrawledItems] = useState<
+    {
+      type: "photo" | "video";
+      url: string;
+      thumbnail?: string;
+      title?: string;
+      seoTitle?: string;
+      keywords?: string;
+      selected: boolean;
+    }[]
+  >([]);
+  const [importingCrawled, setImportingCrawled] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
 
   const fetchModel = useCallback(async () => {
     try {
@@ -766,6 +796,113 @@ export default function ModelManagementPage() {
     } catch {
       toast.error("Failed to remove media item");
     }
+  };
+
+  // ── AI Crawl Import Handlers ──
+  const handleCrawlExtract = async () => {
+    if (crawlMode === "url" && !crawlUrl.trim()) {
+      toast.error("Please enter a URL to crawl");
+      return;
+    }
+    if (crawlMode === "paste" && pastedHtml.trim().length < 100) {
+      toast.error("Please paste the full page source HTML (at least 100 characters)");
+      return;
+    }
+    setCrawling(true);
+    setCrawlError("");
+    try {
+      const payload =
+        crawlMode === "paste"
+          ? { html: pastedHtml, sourceUrl: crawlUrl.trim() || undefined }
+          : { url: crawlUrl.trim() };
+
+      const res = await fetch("/api/admin/crawl-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCrawlError(data.error || "Extraction failed");
+        return;
+      }
+      if (!data.items || data.items.length === 0) {
+        setCrawlError("No media items found in the content");
+        return;
+      }
+      setCrawledItems(
+        data.items.map((item: any) => ({ ...item, selected: true }))
+      );
+      setCrawlDialogOpen(false);
+      setCrawlPreviewOpen(true);
+    } catch {
+      setCrawlError("Network error — could not reach the server");
+    } finally {
+      setCrawling(false);
+    }
+  };
+
+  const handleToggleCrawledItem = (index: number) => {
+    setCrawledItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, selected: !item.selected } : item
+      )
+    );
+  };
+
+  const handleSelectAllCrawled = (selectAll: boolean) => {
+    setCrawledItems((prev) =>
+      prev.map((item) => ({ ...item, selected: selectAll }))
+    );
+  };
+
+  const handleImportCrawled = async () => {
+    const selected = crawledItems.filter((item) => item.selected);
+    if (selected.length === 0) {
+      toast.error("No items selected for import");
+      return;
+    }
+    setImportingCrawled(true);
+    setImportProgress(0);
+    let successCount = 0;
+    let lastModel = model;
+
+    for (let i = 0; i < selected.length; i++) {
+      const item = selected[i];
+      try {
+        const res = await fetch(`/api/models/${modelId}/media`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: item.type,
+            url: item.url,
+            thumbnail: item.thumbnail || "",
+            title: item.title || "",
+            alt: item.seoTitle || item.title || "",
+            keywords: item.keywords || "",
+            isExternal: true,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          lastModel = data.model;
+          successCount++;
+        }
+      } catch {
+        // skip failed items silently
+      }
+      setImportProgress(Math.round(((i + 1) / selected.length) * 100));
+    }
+
+    if (lastModel) setModel(lastModel);
+    setCrawlPreviewOpen(false);
+    setCrawledItems([]);
+    setCrawlUrl("");
+    toast.success(
+      `Imported ${successCount} of ${selected.length} media items`
+    );
+    setImportingCrawled(false);
+    setImportProgress(0);
   };
 
   if (loading) {
@@ -2699,6 +2836,36 @@ export default function ModelManagementPage() {
                 variant="outlined"
                 size="small"
                 onClick={() => {
+                  setCrawlUrl("");
+                  setPastedHtml("");
+                  setCrawlError("");
+                  setCrawlMode("url");
+                  setCrawlDialogOpen(true);
+                }}
+                startIcon={<SmartToyIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  borderColor: "#7c3aed",
+                  color: "#7c3aed",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  "&:hover": {
+                    borderColor: "#6d28d9",
+                    bgcolor: "#f5f3ff",
+                    color: "#6d28d9",
+                  },
+                }}
+              >
+                AI Import
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
                   setUploadType("photo");
                   setUploadDialogOpen(true);
                 }}
@@ -3562,6 +3729,818 @@ export default function ModelManagementPage() {
           >
             Delete Media
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 5. AI Crawl — URL Input / Paste Source Dialog */}
+      <Dialog
+        open={crawlDialogOpen}
+        onClose={() => !crawling && setCrawlDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{
+            pt: 2.5,
+            px: 3,
+            pb: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  fontSize: "1.125rem",
+                }}
+              >
+                AI Media Import
+              </Typography>
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}
+            >
+              Extract photos & videos from another page using AI
+            </Typography>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={() => setCrawlDialogOpen(false)}
+            disabled={crawling}
+            sx={{ color: "#94a3b8" }}
+          >
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Mode Tabs */}
+        <Box sx={{ px: 3, borderBottom: "1px solid #e2e8f0" }}>
+          <Tabs
+            value={crawlMode}
+            onChange={(_, v) => {
+              setCrawlMode(v);
+              setCrawlError("");
+            }}
+            sx={{
+              minHeight: 36,
+              "& .MuiTab-root": {
+                minHeight: 36,
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                color: "#64748b",
+                px: 2,
+                py: 0.5,
+                "&.Mui-selected": { color: "#7c3aed" },
+              },
+              "& .MuiTabs-indicator": {
+                bgcolor: "#7c3aed",
+                height: 2,
+              },
+            }}
+          >
+            <Tab
+              value="url"
+              label="Auto Crawl"
+              icon={<LinkIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              disabled={crawling}
+            />
+            <Tab
+              value="paste"
+              label="Paste Source"
+              icon={<ContentPasteIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              disabled={crawling}
+            />
+          </Tabs>
+        </Box>
+
+        <DialogContent
+          sx={{
+            px: 3,
+            py: 1.5,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+          }}
+        >
+          {/* URL Mode */}
+          {crawlMode === "url" && (
+            <Box>
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  color: "#334155",
+                  mb: 0.75,
+                }}
+              >
+                Source Page URL *
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="https://example.com/model-page"
+                value={crawlUrl}
+                onChange={(e) => {
+                  setCrawlUrl(e.target.value);
+                  setCrawlError("");
+                }}
+                disabled={crawling}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCrawlExtract();
+                }}
+                slotProps={{
+                  input: {
+                    sx: {
+                      borderRadius: 1,
+                      bgcolor: "#f8fafc",
+                      fontSize: "0.875rem",
+                      fontFamily: "monospace",
+                    },
+                  },
+                }}
+              />
+            </Box>
+          )}
+
+          {/* Paste Mode */}
+          {crawlMode === "paste" && (
+            <>
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: "#334155",
+                    mb: 0.75,
+                  }}
+                >
+                  Source URL (optional, helps resolve relative links)
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="https://example.com/model-page"
+                  value={crawlUrl}
+                  onChange={(e) => setCrawlUrl(e.target.value)}
+                  disabled={crawling}
+                  slotProps={{
+                    input: {
+                      sx: {
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        fontSize: "0.875rem",
+                        fontFamily: "monospace",
+                      },
+                    },
+                  }}
+                />
+              </Box>
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: "#334155",
+                    }}
+                  >
+                    Page Source HTML *
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.65rem",
+                      color: "#94a3b8",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    {pastedHtml.length.toLocaleString()} chars
+                  </Typography>
+                </Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={8}
+                  placeholder={"Right-click the page → View Page Source → Select All → Copy → Paste here"}
+                  value={pastedHtml}
+                  onChange={(e) => {
+                    setPastedHtml(e.target.value);
+                    setCrawlError("");
+                  }}
+                  disabled={crawling}
+                  slotProps={{
+                    input: {
+                      sx: {
+                        borderRadius: 1,
+                        bgcolor: "#f8fafc",
+                        fontSize: "0.75rem",
+                        fontFamily: "monospace",
+                        lineHeight: 1.5,
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </>
+          )}
+
+          {crawling && (
+            <Box sx={{ mt: 1 }}>
+              <LinearProgress
+                sx={{
+                  borderRadius: 1,
+                  bgcolor: "#f1f5f9",
+                  "& .MuiLinearProgress-bar": {
+                    bgcolor: "#7c3aed",
+                  },
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  color: "#7c3aed",
+                  mt: 0.75,
+                  fontWeight: 600,
+                }}
+              >
+                {crawlMode === "paste"
+                  ? "Extracting media from pasted HTML with AI…"
+                  : "Crawling page & extracting media with AI…"}
+              </Typography>
+            </Box>
+          )}
+
+          {crawlError && (
+            <Typography
+              sx={{
+                fontSize: "0.8125rem",
+                color: "#dc2626",
+                bgcolor: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: 1,
+                px: 1.5,
+                py: 1,
+              }}
+            >
+              {crawlError}
+            </Typography>
+          )}
+
+          <Box
+            sx={{
+              bgcolor: "#f8fafc",
+              borderRadius: 1,
+              px: 1.5,
+              py: 1,
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <Typography
+              sx={{ fontSize: "0.7rem", color: "#64748b", lineHeight: 1.5 }}
+            >
+              {crawlMode === "paste"
+                ? "If auto-crawl gets blocked (403), use this mode: open the page in your browser → right-click → View Page Source → copy everything → paste above. The AI will extract all media from it."
+                : "The AI will crawl the page, extract all photos and videos with their titles and thumbnail links, and present a preview for you to review before importing."}
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: "1px solid #e2e8f0",
+            gap: 1,
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={() => setCrawlDialogOpen(false)}
+            disabled={crawling}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCrawlExtract}
+            disabled={
+              crawling ||
+              (crawlMode === "url" && !crawlUrl.trim()) ||
+              (crawlMode === "paste" && pastedHtml.trim().length < 100)
+            }
+            startIcon={
+              crawling ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <SmartToyIcon sx={{ fontSize: 16 }} />
+              )
+            }
+            sx={{
+              borderRadius: 1,
+              bgcolor: "#7c3aed",
+              color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              boxShadow: "none",
+              "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
+              "&.Mui-disabled": {
+                bgcolor: "#c4b5fd",
+                color: "#ffffff",
+              },
+            }}
+          >
+            {crawling
+              ? "Extracting…"
+              : crawlMode === "paste"
+                ? "Extract from Source"
+                : "Crawl & Extract"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 6. AI Crawl — Preview & Import Dialog */}
+      <Dialog
+        open={crawlPreviewOpen}
+        onClose={() => !importingCrawled && setCrawlPreviewOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              border: "1px solid #e2e8f0",
+              maxHeight: "90vh",
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{
+            pt: 2.5,
+            px: 3,
+            pb: 1.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid #e2e8f0",
+          }}
+        >
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 800,
+                  color: "#0f172a",
+                  fontSize: "1.125rem",
+                }}
+              >
+                Extracted Media Preview
+              </Typography>
+              <Chip
+                label={`${crawledItems.filter((i) => i.selected).length} / ${crawledItems.length} selected`}
+                size="small"
+                sx={{
+                  height: 22,
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  borderRadius: 1,
+                  bgcolor: "#f5f3ff",
+                  color: "#7c3aed",
+                  border: "1px solid #ddd6fe",
+                }}
+              />
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#64748b",
+                fontSize: "0.75rem",
+                mt: 0.25,
+                fontFamily: "monospace",
+              }}
+            >
+              Source: {crawlUrl}
+            </Typography>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={() => setCrawlPreviewOpen(false)}
+            disabled={importingCrawled}
+            sx={{ color: "#94a3b8" }}
+          >
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </DialogTitle>
+
+        <Box
+          sx={{
+            px: 3,
+            py: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            borderBottom: "1px solid #f1f5f9",
+            bgcolor: "#fafafa",
+          }}
+        >
+          <Button
+            size="small"
+            onClick={() => handleSelectAllCrawled(true)}
+            sx={{
+              textTransform: "none",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "#334155",
+              minWidth: "auto",
+              px: 1,
+            }}
+          >
+            Select All
+          </Button>
+          <Divider orientation="vertical" flexItem />
+          <Button
+            size="small"
+            onClick={() => handleSelectAllCrawled(false)}
+            sx={{
+              textTransform: "none",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "#334155",
+              minWidth: "auto",
+              px: 1,
+            }}
+          >
+            Deselect All
+          </Button>
+          <Divider orientation="vertical" flexItem />
+          <Typography sx={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+            {crawledItems.filter((i) => i.type === "photo").length} photos ·{" "}
+            {crawledItems.filter((i) => i.type === "video").length} videos
+          </Typography>
+        </Box>
+
+        {importingCrawled && (
+          <Box sx={{ px: 3, pt: 1.5 }}>
+            <LinearProgress
+              variant="determinate"
+              value={importProgress}
+              sx={{
+                borderRadius: 1,
+                height: 6,
+                bgcolor: "#f1f5f9",
+                "& .MuiLinearProgress-bar": {
+                  bgcolor: "#7c3aed",
+                  borderRadius: 1,
+                },
+              }}
+            />
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                color: "#7c3aed",
+                mt: 0.5,
+                fontWeight: 600,
+              }}
+            >
+              Importing… {importProgress}%
+            </Typography>
+          </Box>
+        )}
+
+        <DialogContent
+          sx={{
+            px: 3,
+            py: 2,
+            overflowY: "auto",
+          }}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            {crawledItems.map((item, idx) => (
+              <Card
+                key={idx}
+                elevation={0}
+                sx={{
+                  border: item.selected
+                    ? "2px solid #7c3aed"
+                    : "1px solid #e2e8f0",
+                  borderRadius: 1.5,
+                  bgcolor: item.selected ? "#faf5ff" : "#ffffff",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    borderColor: item.selected ? "#6d28d9" : "#cbd5e1",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  },
+                  opacity: importingCrawled ? 0.7 : 1,
+                  pointerEvents: importingCrawled ? "none" : "auto",
+                }}
+                onClick={() => handleToggleCrawledItem(idx)}
+              >
+                {/* Thumbnail / Preview */}
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    pt: "56.25%",
+                    bgcolor: "#f1f5f9",
+                    borderBottom: "1px solid #e2e8f0",
+                    overflow: "hidden",
+                  }}
+                >
+                  {(item.type === "video" && item.thumbnail) ||
+                  item.type === "photo" ? (
+                    <Box
+                      component="img"
+                      src={
+                        item.type === "video" ? item.thumbnail : item.url
+                      }
+                      alt={item.title || ""}
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      onError={(e: any) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      <VideoLibraryIcon
+                        sx={{ fontSize: 28, color: "#94a3b8" }}
+                      />
+                      <Typography
+                        sx={{ fontSize: "0.65rem", color: "#94a3b8" }}
+                      >
+                        No thumbnail
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Type badge */}
+                  <Chip
+                    label={item.type === "video" ? "VIDEO" : "PHOTO"}
+                    size="small"
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      left: 8,
+                      height: 20,
+                      fontSize: "0.6rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                      borderRadius: 0.75,
+                      ...(item.type === "video"
+                        ? {
+                            bgcolor: "rgba(124, 58, 237, 0.9)",
+                            color: "#ffffff",
+                          }
+                        : {
+                            bgcolor: "rgba(5, 150, 105, 0.9)",
+                            color: "#ffffff",
+                          }),
+                    }}
+                  />
+
+                  {/* Selection checkbox */}
+                  <Checkbox
+                    checked={item.selected}
+                    size="small"
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => handleToggleCrawledItem(idx)}
+                    sx={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      bgcolor: "rgba(255,255,255,0.85)",
+                      borderRadius: 0.75,
+                      p: 0.25,
+                      color: "#7c3aed",
+                      "&.Mui-checked": { color: "#7c3aed" },
+                    }}
+                  />
+                </Box>
+
+                <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                  <Typography
+                    sx={{
+                      fontSize: "0.8125rem",
+                      fontWeight: 600,
+                      color: "#0f172a",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.title || "Untitled"}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "0.65rem",
+                      color: "#94a3b8",
+                      fontFamily: "monospace",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      mt: 0.25,
+                    }}
+                  >
+                    {item.url}
+                  </Typography>
+                  {item.type === "video" && item.thumbnail && (
+                    <Typography
+                      sx={{
+                        fontSize: "0.6rem",
+                        color: "#a78bfa",
+                        fontFamily: "monospace",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        mt: 0.25,
+                      }}
+                    >
+                      Thumb: {item.thumbnail}
+                    </Typography>
+                  )}
+                  {item.keywords && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.5,
+                        mt: 0.75,
+                      }}
+                    >
+                      {item.keywords
+                        .split(",")
+                        .slice(0, 3)
+                        .map((kw, kIdx) => (
+                          <Chip
+                            key={kIdx}
+                            label={kw.trim()}
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: "0.575rem",
+                              bgcolor: "#f1f5f9",
+                              color: "#475569",
+                              borderRadius: 0.5,
+                            }}
+                          />
+                        ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          {crawledItems.length === 0 && (
+            <Box sx={{ py: 6, textAlign: "center" }}>
+              <Typography
+                sx={{ fontSize: "0.875rem", color: "#64748b" }}
+              >
+                No items extracted
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: "1px solid #e2e8f0",
+            gap: 1,
+            justifyContent: "space-between",
+          }}
+        >
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setCrawlPreviewOpen(false);
+              setCrawlDialogOpen(true);
+            }}
+            disabled={importingCrawled}
+            startIcon={<SmartToyIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: 1,
+              borderColor: "#e2e8f0",
+              color: "#475569",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            }}
+          >
+            Crawl Different URL
+          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setCrawlPreviewOpen(false)}
+              disabled={importingCrawled}
+              sx={{
+                borderRadius: 1,
+                borderColor: "#e2e8f0",
+                color: "#475569",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleImportCrawled}
+              disabled={
+                importingCrawled ||
+                crawledItems.filter((i) => i.selected).length === 0
+              }
+              startIcon={
+                importingCrawled ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <PlaylistAddIcon sx={{ fontSize: 16 }} />
+                )
+              }
+              sx={{
+                borderRadius: 1,
+                bgcolor: "#7c3aed",
+                color: "#ffffff",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.8125rem",
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
+                "&.Mui-disabled": {
+                  bgcolor: "#c4b5fd",
+                  color: "#ffffff",
+                },
+              }}
+            >
+              {importingCrawled
+                ? `Importing (${importProgress}%)…`
+                : `Import ${crawledItems.filter((i) => i.selected).length} Items`}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </Box>

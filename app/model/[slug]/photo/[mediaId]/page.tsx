@@ -264,7 +264,7 @@ export default async function ModelPhotoPage({ params }: Props) {
 
               <Link
                 href={`/model/${model.slug}`}
-                className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
+                className="px-4 py-2 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
               >
                 <ArrowBackRoundedIcon sx={{ fontSize: 15 }} />
                 <span>Back to {model.name}</span>
@@ -275,7 +275,7 @@ export default async function ModelPhotoPage({ params }: Props) {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Main Photo Display */}
               <div className="lg:col-span-8 space-y-4">
-                <div className="relative rounded-3xl overflow-hidden bg-black/60 shadow-2xl flex items-center justify-center group border-none min-h-[420px] sm:min-h-[520px]">
+                <div className="relative rounded-md overflow-hidden bg-black/60 shadow-2xl flex items-center justify-center group border-none min-h-[420px] sm:min-h-[520px]">
                   <img
                     src={currentPhoto.url}
                     alt={currentPhoto.alt || photoTitle}
@@ -318,7 +318,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     {prevPhoto ? (
                       <Link
                         href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
-                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
                         <span>Prev Photo</span>
@@ -326,7 +326,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     ) : (
                       <button
                         disabled
-                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
                       >
                         <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
                         <span>Prev Photo</span>
@@ -336,7 +336,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     {nextPhoto ? (
                       <Link
                         href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
-                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <span>Next Photo</span>
                         <ChevronRightRoundedIcon sx={{ fontSize: 16 }} />
@@ -344,7 +344,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     ) : (
                       <button
                         disabled
-                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
+                        className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.03] text-slate-600 text-xs font-bold inline-flex items-center justify-center gap-1 cursor-not-allowed border-none opacity-40"
                       >
                         <span>Next Photo</span>
                         <ChevronRightRoundedIcon sx={{ fontSize: 16 }} />
@@ -358,7 +358,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                       target="_blank"
                       rel="noopener noreferrer"
                       download
-                      className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-all shadow-lg shadow-rose-900/40 inline-flex items-center gap-1.5 border-none"
+                      className="px-4 py-2.5 rounded-md text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-all shadow-lg shadow-rose-900/40 inline-flex items-center gap-1.5 border-none"
                     >
                       <FileDownloadRoundedIcon sx={{ fontSize: 16 }} />
                       <span>Download 4K Ultra HD</span>
@@ -367,7 +367,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                       href={currentPhoto.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] transition-all inline-flex items-center gap-1 border-none"
+                      className="px-4 py-2.5 rounded-md text-xs font-bold text-slate-200 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] transition-all inline-flex items-center gap-1 border-none"
                     >
                       <span>View Full Size</span>
                       <OpenInNewRoundedIcon sx={{ fontSize: 13 }} />
@@ -379,7 +379,7 @@ export default async function ModelPhotoPage({ params }: Props) {
               {/* Right Sidebar: Details & Model Profile */}
               <div className="lg:col-span-4 space-y-6">
                 {/* Photo Metadata Card */}
-                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 border-none">
+                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md p-6 sm:p-7 shadow-2xl space-y-4 border-none">
                   <div className="space-y-1.5">
                     <h1 className="text-xl font-black text-white leading-tight">
                       {photoTitle}
@@ -391,7 +391,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                     )}
                   </div>
 
-                  <div className="bg-white/[0.03] p-4 rounded-2xl space-y-2.5 text-xs text-slate-300 border-none">
+                  <div className="bg-white/[0.03] p-4 rounded-md space-y-2.5 text-xs text-slate-300 border-none">
                     <div className="flex items-center justify-between">
                       <span className="text-slate-400 font-medium">Model:</span>
                       <Link
@@ -456,12 +456,12 @@ export default async function ModelPhotoPage({ params }: Props) {
                 </div>
 
                 {/* Model Profile Teaser Card */}
-                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl p-6 shadow-2xl space-y-4 border-none">
+                <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md p-6 shadow-2xl space-y-4 border-none">
                   <div className="flex items-center gap-3.5">
                     <img
                       src={model.profileImage || model.coverImage || "/logo.jpg"}
                       alt={model.name}
-                      className="w-14 h-14 rounded-2xl object-cover ring-2 ring-white/[0.08] shrink-0"
+                      className="w-14 h-14 rounded-md object-cover ring-2 ring-white/[0.08] shrink-0"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
@@ -485,7 +485,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                   <div className="space-y-2.5 pt-1">
                     <Link
                       href={`/model/${model.slug}`}
-                      className="w-full py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-lg shadow-rose-900/40 text-center block transition-all border-none"
+                      className="w-full py-2.5 px-4 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-lg shadow-rose-900/40 text-center block transition-all border-none"
                     >
                       Explore {model.name}&apos;s Full Profile
                     </Link>
@@ -493,14 +493,14 @@ export default async function ModelPhotoPage({ params }: Props) {
                     <div className="grid grid-cols-2 gap-2 text-center">
                       <Link
                         href={`/model/${model.slug}/photos`}
-                        className="py-2 px-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
+                        className="py-2 px-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
                       >
                         <PhotoCameraRoundedIcon sx={{ fontSize: 14, color: "#818cf8" }} />
                         <span>Photos ({allPhotos.length})</span>
                       </Link>
                       <Link
                         href={`/model/${model.slug}/videos`}
-                        className="py-2 px-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
+                        className="py-2 px-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 font-bold text-xs flex items-center justify-center gap-1 transition-colors border-none"
                       >
                         <VideocamRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />
                         <span>Videos ({allVideos.length})</span>
@@ -509,7 +509,7 @@ export default async function ModelPhotoPage({ params }: Props) {
 
                     <Link
                       href={`/tag/${slugify(model.name)}`}
-                      className="w-full py-2 px-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 font-medium text-[11px] flex items-center justify-center gap-1.5 transition-colors block text-center border-none"
+                      className="w-full py-2 px-3 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 font-medium text-[11px] flex items-center justify-center gap-1.5 transition-colors block text-center border-none"
                     >
                       <LocalOfferRoundedIcon sx={{ fontSize: 12, color: "#f43f5e" }} />
                       <span>#{model.name} Tag Collection</span>
@@ -534,7 +534,7 @@ export default async function ModelPhotoPage({ params }: Props) {
 
                   <Link
                     href={`/model/${model.slug}/photos`}
-                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
+                    className="px-4 py-2 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
                   >
                     <span>View All Photos</span>
                     <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
@@ -553,7 +553,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                       >
                         <Link
                           href={`/model/${model.slug}/photo/${photoSlug}`}
-                          className="relative aspect-4/5 rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+                          className="relative aspect-4/5 rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
                         >
                           <img
                             src={photo.url}

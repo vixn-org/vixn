@@ -246,14 +246,14 @@ export default async function ModelVideosPage({ params }: Props) {
             </nav>
 
             {/* Model Videos Hero Header Card - Elevated Borderless Luxury Card */}
-            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 sm:p-8 border-none">
+            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md shadow-2xl p-6 sm:p-8 border-none">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <Link href={`/model/${model.slug}`} className="relative shrink-0 group">
                     <img
                       src={model.profileImage || "/logo.jpg"}
                       alt={model.name}
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover shadow-xl ring-4 ring-white/[0.08] group-hover:scale-105 transition-transform"
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover shadow-xl ring-4 ring-white/[0.08] group-hover:scale-105 transition-transform"
                     />
                     <div className="absolute -bottom-1 -right-1 bg-rose-600 text-white p-1.5 rounded-full shadow-lg flex items-center justify-center ring-4 ring-[#121826]">
                       <VideocamRoundedIcon sx={{ fontSize: 16 }} />
@@ -322,7 +322,7 @@ export default async function ModelVideosPage({ params }: Props) {
 
             {/* Video Showcase Grid */}
             {videos.length === 0 ? (
-              <div className="text-center py-20 bg-[#121826]/70 backdrop-blur-xl rounded-3xl space-y-4 border-none">
+              <div className="text-center py-20 bg-[#121826]/70 backdrop-blur-xl rounded-md space-y-4 border-none">
                 <MovieRoundedIcon sx={{ fontSize: 44, color: "#475569" }} className="mx-auto" />
                 <h3 className="text-base font-bold text-slate-200">
                   No videos published yet for this creator
@@ -342,7 +342,7 @@ export default async function ModelVideosPage({ params }: Props) {
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {videos.map((video: any, index: number) => {
                     const videoSlug = getMediaSlug(video, "video", index);
                     const videoTitle =
@@ -356,7 +356,7 @@ export default async function ModelVideosPage({ params }: Props) {
                         className="w-full transition-all duration-300 group flex flex-col border-none bg-transparent"
                       >
                         {/* Video Player Card */}
-                        <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300">
+                        <div className="relative aspect-video rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300">
                           {posterSrc ? (
                             <img
                               src={posterSrc}
@@ -431,7 +431,7 @@ export default async function ModelVideosPage({ params }: Props) {
 
             {/* Cross-Link Banner to Photos Hub */}
             {photos.length > 0 && (
-              <div className="bg-gradient-to-r from-indigo-950/60 via-[#161e36] to-purple-950/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border-none">
+              <div className="bg-gradient-to-r from-indigo-950/60 via-[#161e36] to-purple-950/60 backdrop-blur-xl rounded-md p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border-none">
                 <div className="space-y-1.5 text-center sm:text-left">
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center justify-center sm:justify-start gap-1.5">
                     <PhotoCameraRoundedIcon sx={{ fontSize: 16 }} />

@@ -279,7 +279,7 @@ export default async function HomePage() {
                   {/* Top Image Banner */}
                   <Link
                     href={`/model/${model.slug}`}
-                    className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
+                    className="relative aspect-4/3 w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
                   >
                     <img
                       src={
@@ -306,7 +306,7 @@ export default async function HomePage() {
                           <img
                             src={model.profileImage}
                             alt={model.name}
-                            className="w-12 h-12 rounded-2xl object-cover ring-2 ring-white/[0.1] shadow-lg shrink-0"
+                            className="w-12 h-12 rounded-md object-cover ring-2 ring-white/[0.1] shadow-lg shrink-0"
                           />
                         )}
                         <div>
@@ -415,7 +415,7 @@ export default async function HomePage() {
         </div>
 
         {models.length === 0 ? (
-          <div className="py-24 text-center rounded-3xl bg-[#121826]/60 border-none">
+          <div className="py-24 text-center rounded-md bg-[#121826]/60 border-none">
             <WhatshotRoundedIcon sx={{ fontSize: 48, color: "#64748b" }} className="mx-auto mb-3" />
             <h3 className="text-lg font-bold text-white">
               Fresh Creator Galleries Coming Soon
@@ -441,7 +441,7 @@ export default async function HomePage() {
                   {/* Media Preview Thumbnail */}
                   <Link
                     href={`/model/${model.slug}`}
-                    className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+                    className="relative aspect-[3/4] w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
                   >
                     {model.profileImage || model.coverImage ? (
                       <img
@@ -490,14 +490,14 @@ export default async function HomePage() {
                     <div className="flex items-center justify-between gap-2 text-[11px] font-bold">
                       <Link
                         href={`/model/${model.slug}/photos`}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                        className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                       >
                         <PhotoCameraRoundedIcon sx={{ fontSize: 13, color: "#818cf8" }} />
                         <span>{photoCount} Photos</span>
                       </Link>
                       <Link
                         href={`/model/${model.slug}/videos`}
-                        className="flex-1 py-1.5 px-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
+                        className="flex-1 py-1.5 px-2 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-1 border-none text-center"
                       >
                         <VideocamRoundedIcon sx={{ fontSize: 13, color: "#f43f5e" }} />
                         <span>{videoCount} Videos</span>

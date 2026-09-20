@@ -242,14 +242,14 @@ export default async function ModelPhotosPage({ params }: Props) {
             </nav>
 
             {/* Model Photos Hero Header Card - Elevated Borderless Luxury Card */}
-            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-6 sm:p-8 border-none">
+            <div className="bg-[#121826]/90 backdrop-blur-2xl rounded-md shadow-2xl p-6 sm:p-8 border-none">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <Link href={`/model/${model.slug}`} className="relative shrink-0 group">
                     <img
                       src={model.profileImage || "/logo.jpg"}
                       alt={model.name}
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover shadow-xl ring-4 ring-white/[0.08] group-hover:scale-105 transition-transform"
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-md object-cover shadow-xl ring-4 ring-white/[0.08] group-hover:scale-105 transition-transform"
                     />
                     <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1.5 rounded-full shadow-lg flex items-center justify-center ring-4 ring-[#121826]">
                       <PhotoCameraRoundedIcon sx={{ fontSize: 16 }} />
@@ -284,7 +284,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/model/${model.slug}`}
-                    className="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-2 shadow-md border-none"
+                    className="px-4 py-2.5 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-2 shadow-md border-none"
                   >
                     <ArrowBackRoundedIcon sx={{ fontSize: 16 }} />
                     <span>Full Profile</span>
@@ -296,18 +296,18 @@ export default async function ModelPhotosPage({ params }: Props) {
               <div className="flex items-center gap-2 mt-6 pt-5 border-t border-white/[0.04] overflow-x-auto no-scrollbar">
                 <Link
                   href={`/model/${model.slug}`}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all shrink-0 border-none"
+                  className="px-4 py-2 rounded-md text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all shrink-0 border-none"
                 >
                   Overview
                 </Link>
-                <span className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 flex items-center gap-1.5 shrink-0 border-none">
+                <span className="px-4 py-2 rounded-md text-xs font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-900/40 flex items-center gap-1.5 shrink-0 border-none">
                   <PhotoCameraRoundedIcon sx={{ fontSize: 15 }} />
                   <span>Photos ({photos.length})</span>
                 </span>
                 {videos.length > 0 && (
                   <Link
                     href={`/model/${model.slug}/videos`}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all flex items-center gap-1.5 shrink-0 border-none"
+                    className="px-4 py-2 rounded-md text-xs font-bold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all flex items-center gap-1.5 shrink-0 border-none"
                   >
                     <VideocamRoundedIcon sx={{ fontSize: 15, color: "#f43f5e" }} />
                     <span>Videos ({videos.length})</span>
@@ -318,7 +318,7 @@ export default async function ModelPhotosPage({ params }: Props) {
 
             {/* Photo Gallery Grid */}
             {photos.length === 0 ? (
-              <div className="text-center py-20 bg-[#121826]/70 backdrop-blur-xl rounded-3xl space-y-4 border-none">
+              <div className="text-center py-20 bg-[#121826]/70 backdrop-blur-xl rounded-md space-y-4 border-none">
                 <CollectionsRoundedIcon sx={{ fontSize: 44, color: "#475569" }} className="mx-auto" />
                 <h3 className="text-base font-bold text-slate-200">
                   No photos published yet for this creator
@@ -352,7 +352,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                         {/* Photo Image Card */}
                         <Link
                           href={`/model/${model.slug}/photo/${photoSlug}`}
-                          className="relative aspect-4/5 w-full bg-[#182238] rounded-2xl overflow-hidden shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
+                          className="relative aspect-4/5 w-full bg-[#182238] rounded-md overflow-hidden shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
                         >
                           <img
                             src={photo.url}
@@ -414,7 +414,7 @@ export default async function ModelPhotosPage({ params }: Props) {
 
             {/* Cross-Link Banner to Videos Hub */}
             {videos.length > 0 && (
-              <div className="bg-gradient-to-r from-rose-950/60 via-[#1e1326] to-pink-950/60 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border-none">
+              <div className="bg-gradient-to-r from-rose-950/60 via-[#1e1326] to-pink-950/60 backdrop-blur-xl rounded-md p-6 sm:p-8 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 border-none">
                 <div className="space-y-1.5 text-center sm:text-left">
                   <span className="text-xs font-bold uppercase tracking-wider text-rose-300 flex items-center justify-center sm:justify-start gap-1.5">
                     <VideocamRoundedIcon sx={{ fontSize: 16 }} />
@@ -429,7 +429,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                 </div>
                 <Link
                   href={`/model/${model.slug}/videos`}
-                  className="bg-white hover:bg-slate-100 text-slate-900 font-black px-5 py-2.5 rounded-2xl text-xs shadow-lg shrink-0 transition-colors border-none"
+                  className="bg-white hover:bg-slate-100 text-slate-900 font-black px-5 py-2.5 rounded-md text-xs shadow-lg shrink-0 transition-colors border-none"
                 >
                   Go to Videos Hub →
                 </Link>
@@ -438,7 +438,7 @@ export default async function ModelPhotosPage({ params }: Props) {
 
             {/* Optional SEO Content Accordion */}
             {model.photosSeo?.introText && (
-              <details className="group bg-[#121826]/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border-none transition-all [&::-webkit-details-marker]:hidden">
+              <details className="group bg-[#121826]/80 backdrop-blur-xl rounded-md p-6 shadow-xl border-none transition-all [&::-webkit-details-marker]:hidden">
                 <summary className="flex items-center justify-between cursor-pointer list-none select-none gap-4">
                   <span className="text-white font-bold text-sm">
                     About This Photo Collection
@@ -461,7 +461,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+                      <div className="w-8 h-8 rounded-md bg-indigo-500/15 flex items-center justify-center text-indigo-400">
                         <WhatshotRoundedIcon sx={{ fontSize: 20 }} />
                       </div>
                       <span>Explore More Creators</span>
@@ -472,7 +472,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                   </div>
                   <Link
                     href="/models"
-                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
+                    className="px-4 py-2 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
                   >
                     <span>View All Models</span>
                     <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
@@ -490,7 +490,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                         className="group bg-transparent flex flex-col border-none"
                       >
                         {/* Creator Image Card */}
-                        <div className="relative aspect-3/4 w-full bg-[#182238] rounded-3xl overflow-hidden shadow-xl group-hover:shadow-2xl group-hover:-translate-y-1.5 transition-all duration-500 block">
+                        <div className="relative aspect-3/4 w-full bg-[#182238] rounded-md overflow-hidden shadow-xl group-hover:shadow-2xl group-hover:-translate-y-1.5 transition-all duration-500 block">
                           <Link href={`/model/${m.slug}/photos`} className="block w-full h-full">
                             <img
                               src={imageSrc}
@@ -535,7 +535,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                         <div className="pt-2.5 flex items-center gap-2">
                           <Link
                             href={`/model/${m.slug}/photos`}
-                            className="flex-1 py-2 px-3 rounded-2xl bg-white/[0.05] hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-sm border-none"
+                            className="flex-1 py-2 px-3 rounded-md bg-white/[0.05] hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-sm border-none"
                           >
                             <PhotoCameraRoundedIcon sx={{ fontSize: 14 }} />
                             <span>Photos</span>
@@ -543,7 +543,7 @@ export default async function ModelPhotosPage({ params }: Props) {
                           {mVideoCount > 0 && (
                             <Link
                               href={`/model/${m.slug}/videos`}
-                              className="py-2 px-3 rounded-2xl bg-white/[0.05] hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-sm border-none"
+                              className="py-2 px-3 rounded-md bg-white/[0.05] hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-sm border-none"
                               title={`${mVideoCount} Videos`}
                             >
                               <VideocamRoundedIcon sx={{ fontSize: 14 }} />
@@ -559,7 +559,7 @@ export default async function ModelPhotosPage({ params }: Props) {
 
             {/* Tags & Keyword Hubs */}
             {allPhotoTags.length > 0 && (
-              <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl border-none">
+              <div className="bg-[#121826]/80 backdrop-blur-2xl rounded-md p-6 sm:p-8 space-y-4 shadow-xl border-none">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <LocalOfferRoundedIcon sx={{ fontSize: 14, color: "#f43f5e" }} />

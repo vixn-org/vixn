@@ -49,7 +49,7 @@ export default function ExploreOtherModelsPhotos({
 
         <Link
           href="/models"
-          className="px-4 py-2 rounded-2xl text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
+          className="px-4 py-2 rounded-md text-xs font-bold bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all inline-flex items-center gap-1.5 shadow-md border-none self-start sm:self-auto"
         >
           <span>View All Models</span>
           <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
@@ -69,7 +69,7 @@ export default function ExploreOtherModelsPhotos({
               {/* Photo Thumbnail Container */}
               <Link
                 href={item.url}
-                className="relative aspect-4/5 w-full rounded-2xl overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
+                className="relative aspect-4/5 w-full rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
               >
                 <img
                   src={photoUrl}
