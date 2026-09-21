@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 
 export default function HeaderSearch() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
 
-  // Sync with URL query parameter when present
+  // Sync with URL query parameter on client mount
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (typeof q === "string") {
-      setQuery(q);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get("q");
+      if (typeof q === "string") {
+        setQuery(q);
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
