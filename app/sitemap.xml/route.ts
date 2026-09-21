@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
+import SearchTag from "@/lib/models/search-tag";
 import { getUniqueSitemapTags } from "@/lib/sitemap-tags";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
@@ -13,10 +14,11 @@ export async function GET() {
   try {
     await connectDB();
 
-    const [modelCount, blogCount, uniqueTags] = await Promise.all([
+    const [modelCount, blogCount, uniqueTags, searchTagCount] = await Promise.all([
       Model.countDocuments({ status: "published" }),
       BlogPost.countDocuments({ status: "published" }),
       getUniqueSitemapTags(),
+      SearchTag.countDocuments({ active: true }),
     ]);
 
     // Count total individual media items for video/photo sub-sitemaps
@@ -41,6 +43,7 @@ export async function GET() {
     const photoChunks = Math.max(1, Math.ceil(photosCount / CHUNK_SIZE));
     const blogChunks = Math.max(1, Math.ceil(blogCount / CHUNK_SIZE));
     const tagChunks = Math.max(1, Math.ceil(uniqueTags.length / CHUNK_SIZE));
+    const searchChunks = Math.max(1, Math.ceil(searchTagCount / CHUNK_SIZE));
 
     const now = new Date().toISOString();
 
@@ -106,6 +109,16 @@ export async function GET() {
         `  <sitemap>
     <loc>${SITE_URL}/sitemaps/tags-${i}.xml</loc>
     <lastmod>${tagLastmod}</lastmod>
+  </sitemap>`,
+      );
+    }
+
+    // Search SEO Keywords sitemaps (chunked when limit crosses, matching video1 photo1)
+    for (let i = 1; i <= searchChunks; i++) {
+      sitemaps.push(
+        `  <sitemap>
+    <loc>${SITE_URL}/sitemaps/search-${i}.xml</loc>
+    <lastmod>${now}</lastmod>
   </sitemap>`,
       );
     }

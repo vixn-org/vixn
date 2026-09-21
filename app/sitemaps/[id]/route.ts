@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import BlogPost from "@/lib/models/blog";
+import SearchTag from "@/lib/models/search-tag";
 import { getMediaSlug } from "@/lib/seo";
 import { getUniqueSitemapTags } from "@/lib/sitemap-tags";
 
@@ -212,6 +213,27 @@ async function buildTagsSitemap(chunkIndex: number = 1): Promise<string[]> {
   );
 }
 
+// ─── Search SEO Keywords (Chunked when limit crosses) ───
+async function buildSearchSitemap(chunkIndex: number = 1): Promise<string[]> {
+  const skip = (chunkIndex - 1) * CHUNK_SIZE;
+  const tags = await SearchTag.find({ active: true })
+    .select("tag slug updatedAt createdAt")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(CHUNK_SIZE)
+    .lean();
+
+  return tags.map((t: any) => {
+    const lastmod = toIso(t.updatedAt || t.createdAt);
+    return urlEntry(
+      `${SITE_URL}/search?q=${encodeURIComponent(t.tag)}`,
+      lastmod,
+      "daily",
+      0.85,
+    );
+  });
+}
+
 // ─── Main Route Handler ───
 export async function GET(
   request: Request,
@@ -232,6 +254,11 @@ export async function GET(
     } else if (cleanId.startsWith("tags-")) {
       const chunk = parseInt(cleanId.replace("tags-", ""), 10) || 1;
       entries = await buildTagsSitemap(chunk);
+    } else if (cleanId === "search") {
+      entries = await buildSearchSitemap(1);
+    } else if (cleanId.startsWith("search-")) {
+      const chunk = parseInt(cleanId.replace("search-", ""), 10) || 1;
+      entries = await buildSearchSitemap(chunk);
     } else if (cleanId.startsWith("models-")) {
       const chunk = parseInt(cleanId.replace("models-", ""), 10) || 1;
       entries = await buildModelsSitemap(chunk);

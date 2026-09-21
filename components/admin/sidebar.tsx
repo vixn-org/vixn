@@ -24,6 +24,7 @@ import {
   BookOpen,
   ShieldCheck,
   UserCheck,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -39,6 +40,12 @@ const allNavItems = [
     href: "/admin/models",
     icon: Users,
     adminOnly: false,
+  },
+  {
+    title: "Search SEO & Tags",
+    href: "/admin/search-seo",
+    icon: Search,
+    adminOnly: true,
   },
   {
     title: "Blog & SEO Articles",
