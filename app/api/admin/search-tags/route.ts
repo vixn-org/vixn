@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import SearchTag from "@/lib/models/search-tag";
@@ -142,6 +143,10 @@ export async function POST(request: Request) {
     }
 
     const skippedCount = candidateSlugs.length - insertedCount;
+
+    // Purge edge cache so new tags immediately reflect in sitemaps
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/sitemaps/search-1.xml");
 
     return NextResponse.json({
       success: true,

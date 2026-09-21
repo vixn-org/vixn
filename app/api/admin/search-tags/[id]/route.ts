@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import SearchTag from "@/lib/models/search-tag";
@@ -28,6 +29,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Search tag not found" }, { status: 404 });
     }
 
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/sitemaps/search-1.xml");
+
     return NextResponse.json({ success: true, tag: updated });
   } catch (error) {
     console.error("PATCH /api/admin/search-tags/[id] error:", error);
@@ -55,6 +59,9 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json({ error: "Search tag not found" }, { status: 404 });
     }
+
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/sitemaps/search-1.xml");
 
     return NextResponse.json({ success: true, message: "Search tag deleted" });
   } catch (error) {

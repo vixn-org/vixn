@@ -1,7 +1,7 @@
 import connectDB from "@/lib/db";
 import Model from "@/lib/models/model";
 import SearchTag from "@/lib/models/search-tag";
-import { getMediaSlug } from "@/lib/seo";
+import { getMediaSlug, slugify } from "@/lib/seo";
 
 export interface SearchVideoItem {
   id: string;
@@ -195,14 +195,6 @@ export async function searchVideos(
     }
   }
 
-  // If search tag exists in SearchTag collection, increment clicks asynchronously
-  if (query.length > 0) {
-    SearchTag.updateOne(
-      { $or: [{ tag: new RegExp(`^${fullEscaped}$`, "i") }, { slug: query.toLowerCase().replace(/[\s_]+/g, "-") }] },
-      { $inc: { clicks: 1 } }
-    ).exec().catch(() => {});
-  }
-
   // Fetch active search tags for suggestions / quick chips
   let relatedTags: Array<{ tag: string; slug: string }> = [];
   try {
@@ -250,6 +242,52 @@ export async function searchVideos(
 
   const hasMatches = matches.length > 0;
   const totalMatches = matches.length;
+
+  // ─── Smart Guardrails: Auto-Capture Valid Search Tags for Organic SEO ───
+  if (query.length >= 3 && query.length <= 60) {
+    const isUrlOrSpam =
+      /https?:\/\/|\.com|\.net|\.org|\.xyz|\.ru|\.cn|\.top|<|>|script|href|select\s+|union\s+|drop\s+|www\./i.test(
+        query
+      );
+    const hasEnoughLetters = /[a-zA-Z]{2,}/.test(query);
+
+    if (!isUrlOrSpam && hasEnoughLetters) {
+      const cleanTag = query.replace(/\s+/g, " ").trim();
+      const slugKey = slugify(cleanTag);
+
+      if (slugKey && slugKey.length >= 3) {
+        if (hasMatches && totalMatches > 0) {
+          // Has real videos on site: auto-save to DB and include in sitemap
+          SearchTag.updateOne(
+            { slug: slugKey },
+            {
+              $setOnInsert: {
+                tag: cleanTag,
+                slug: slugKey,
+                customTitle: "",
+                customDescription: "",
+                active: true,
+                createdAt: new Date(),
+              },
+              $inc: { clicks: 1 },
+              $set: { updatedAt: new Date() },
+            },
+            { upsert: true }
+          )
+            .exec()
+            .catch(() => {});
+        } else {
+          // Zero matches: only track click if admin previously created the tag
+          SearchTag.updateOne(
+            { slug: slugKey },
+            { $inc: { clicks: 1 }, $set: { updatedAt: new Date() } }
+          )
+            .exec()
+            .catch(() => {});
+        }
+      }
+    }
+  }
 
   if (hasMatches) {
     // We have actual matches
