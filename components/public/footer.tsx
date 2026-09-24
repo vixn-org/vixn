@@ -63,7 +63,7 @@ export default async function PublicFooter() {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
-              Quick Navigation
+              Explore &amp; Media
             </h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
               <li>
@@ -72,6 +72,14 @@ export default async function PublicFooter() {
                   className="hover:text-rose-400 transition-colors"
                 >
                   All Models Directory
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/search"
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  4K Video Search
                 </Link>
               </li>
               <li>
@@ -103,31 +111,63 @@ export default async function PublicFooter() {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
-              Discovery &amp; SEO
+              Legal &amp; 18+ Compliance
             </h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
               <li>
                 <Link
-                  href="/sitemap.xml"
+                  href="/about"
                   className="hover:text-rose-400 transition-colors"
                 >
-                  XML Sitemap Index
+                  About VIXN
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/sitemaps/tags"
+                  href="/privacy"
                   className="hover:text-rose-400 transition-colors"
                 >
-                  Keyword Tags Index
+                  Privacy Policy
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/robots.txt"
+                  href="/terms"
                   className="hover:text-rose-400 transition-colors"
                 >
-                  Robots.txt Directives
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dmca"
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  DMCA Copyright
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/2257"
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  18 U.S.C. 2257
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/impressum"
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  Impressum
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/cookies"
+                  className="hover:text-rose-400 transition-colors"
+                >
+                  Cookie Policy
                 </Link>
               </li>
             </ul>
@@ -158,12 +198,22 @@ export default async function PublicFooter() {
           </div>
         )}
 
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} VIXN.fun. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <span>Privacy Protected</span>
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 border-t border-white/[0.04]">
+          <p>© {new Date().getFullYear()} VIXN.fun. All rights reserved. Strictly 18+ Adult Entertainment.</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/sitemap.xml" className="hover:text-rose-400 transition-colors">
+              XML Sitemap
+            </Link>
             <span>•</span>
-            <span>High Speed Global Delivery</span>
+            <Link href="/2257" className="hover:text-rose-400 transition-colors">
+              18 U.S.C. 2257
+            </Link>
+            <span>•</span>
+            <Link href="/dmca" className="hover:text-rose-400 transition-colors">
+              DMCA
+            </Link>
+            <span>•</span>
+            <span>Anonymous CDN Streaming</span>
           </div>
         </div>
       </div>

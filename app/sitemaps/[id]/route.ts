@@ -61,6 +61,13 @@ async function buildStaticSitemap(): Promise<string[]> {
     urlEntry(`${SITE_URL}/models`, now, "daily", 0.9),
     urlEntry(`${SITE_URL}/blog`, now, "daily", 0.8),
     urlEntry(`${SITE_URL}/faq`, now, "weekly", 0.7),
+    urlEntry(`${SITE_URL}/about`, now, "weekly", 0.7),
+    urlEntry(`${SITE_URL}/privacy`, now, "monthly", 0.6),
+    urlEntry(`${SITE_URL}/terms`, now, "monthly", 0.6),
+    urlEntry(`${SITE_URL}/dmca`, now, "monthly", 0.6),
+    urlEntry(`${SITE_URL}/impressum`, now, "monthly", 0.6),
+    urlEntry(`${SITE_URL}/2257`, now, "monthly", 0.6),
+    urlEntry(`${SITE_URL}/cookies`, now, "monthly", 0.6),
   ];
 }
 
