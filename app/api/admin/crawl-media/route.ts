@@ -22,7 +22,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { url, html: pastedHtml, sourceUrl } = body;
+    const { url, html: pastedHtml, sourceUrl, mediaType } = body;
+    const isPhotoTarget = mediaType === "photo";
 
     if (
       (!url || typeof url !== "string") &&
@@ -129,7 +130,9 @@ export async function POST(request: Request) {
     }
 
     // ── Step 2: Universal Heuristic Pre-Extraction across entire document ──
-    const preExtracted = extractUniversalMedia(rawHtml, resolvedSourceUrl);
+    const preExtracted = isPhotoTarget
+      ? extractUniversalPhotos(rawHtml, resolvedSourceUrl)
+      : extractUniversalMedia(rawHtml, resolvedSourceUrl);
 
     let finalItems: ExtractedMediaItem[] = [];
 
@@ -147,7 +150,8 @@ export async function POST(request: Request) {
           const enrichedBatch = await enrichBatchWithGroq(
             batch,
             resolvedSourceUrl,
-            apiKey
+            apiKey,
+            isPhotoTarget ? "photo" : "all"
           );
           finalItems.push(...enrichedBatch);
         } catch (enrichErr) {
@@ -158,7 +162,9 @@ export async function POST(request: Request) {
       }
     } else {
       // Fallback: if heuristic found 0 items, use LLM extraction on media-relevant HTML context
-      finalItems = await fallbackLlmExtraction(rawHtml, resolvedSourceUrl, apiKey);
+      finalItems = isPhotoTarget
+        ? await fallbackLlmExtractionForPhotos(rawHtml, resolvedSourceUrl, apiKey)
+        : await fallbackLlmExtraction(rawHtml, resolvedSourceUrl, apiKey);
     }
 
     // Clean & deduplicate final output
@@ -172,10 +178,15 @@ export async function POST(request: Request) {
         return true;
       })
       .map((item) => ({
-        type: item.type === "photo" ? ("photo" as const) : ("video" as const),
+        type: isPhotoTarget
+          ? ("photo" as const)
+          : item.type === "photo"
+          ? ("photo" as const)
+          : ("video" as const),
         url: item.url.trim(),
-        thumbnail: item.thumbnail?.trim() || "",
-        title: item.title?.trim() || "Untitled Media",
+        thumbnail:
+          item.thumbnail?.trim() || (isPhotoTarget ? item.url.trim() : ""),
+        title: item.title?.trim() || (isPhotoTarget ? "Photo" : "Untitled Media"),
         seoTitle: item.seoTitle?.trim() || item.title?.trim() || "",
         keywords: item.keywords?.trim() || "",
       }));
@@ -446,8 +457,10 @@ export function extractUniversalMedia(
 async function enrichBatchWithGroq(
   batch: ExtractedMediaItem[],
   sourceUrl: string,
-  apiKey: string
+  apiKey: string,
+  mediaType: "photo" | "all" = "all"
 ): Promise<ExtractedMediaItem[]> {
+  const isPhotoMode = mediaType === "photo";
   const candidateModels = [
     process.env.GROQ_MODEL,
     "openai/gpt-oss-120b",
@@ -456,13 +469,30 @@ async function enrichBatchWithGroq(
 
   const minimalCandidates = batch.map((item, idx) => ({
     id: idx,
-    type: item.type,
+    type: isPhotoMode ? "photo" : item.type,
     url: item.url,
     thumbnail: item.thumbnail || "",
     rawTitle: item.title || "",
   }));
 
-  const prompt = `You are an expert adult media curator and SEO specialist.
+  const prompt = isPhotoMode
+    ? `You are an expert adult media curator and SEO specialist.
+Given this list of extracted PHOTOS/IMAGES from: ${sourceUrl || "webpage"}
+
+Candidates:
+${JSON.stringify(minimalCandidates)}
+
+For each candidate:
+1. "title": Clean up the title (Title Case, remove durations, resolutions like "1080p", "4K", site watermarks, random hash codes, camera file numbers like DSC001). Preserve performer/model names, photo shoot context, and descriptive scenes.
+2. "seoTitle": Create an engaging, search-optimized title tailored for photo sets (e.g. "Model Name - Stunning Photo Shoot").
+3. "keywords": Generate 3 to 6 comma-separated relevant tags/keywords (e.g. "model name, photo gallery, photoshoot, glamour, portrait, high res").
+4. "type": Must be "photo".
+5. Keep the same "url" and "thumbnail".
+Filter out any items that are clearly advertisements or UI graphics rather than actual photos.
+
+Return ONLY a JSON object:
+{ "items": [ { "type": "photo", "url": "...", "thumbnail": "...", "title": "...", "seoTitle": "...", "keywords": "..." } ] }`
+    : `You are an expert adult media curator and SEO specialist.
 Given this list of extracted media items from: ${sourceUrl || "webpage"}
 
 Candidates:
@@ -537,10 +567,14 @@ Return ONLY a JSON object:
 
       if (items.length > 0) {
         return items.map((item) => ({
-          type: item.type === "photo" ? "photo" : "video",
+          type: isPhotoMode ? "photo" : item.type === "photo" ? "photo" : "video",
           url: String(item.url || "").trim(),
-          thumbnail: item.thumbnail ? String(item.thumbnail).trim() : "",
-          title: item.title ? String(item.title).trim() : "Media Item",
+          thumbnail: item.thumbnail
+            ? String(item.thumbnail).trim()
+            : isPhotoMode
+            ? String(item.url || "").trim()
+            : "",
+          title: item.title ? String(item.title).trim() : isPhotoMode ? "Photo Item" : "Media Item",
           seoTitle: item.seoTitle ? String(item.seoTitle).trim() : item.title,
           keywords: item.keywords ? String(item.keywords).trim() : "",
         }));
@@ -645,6 +679,462 @@ Return ONLY a JSON object: { "items": [ ... ] }`;
         url: String(i.url || "").trim(),
         thumbnail: i.thumbnail ? String(i.thumbnail).trim() : "",
         title: i.title ? String(i.title).trim() : "Media Item",
+        seoTitle: i.seoTitle ? String(i.seoTitle).trim() : i.title,
+        keywords: i.keywords ? String(i.keywords).trim() : "",
+      }));
+    } catch {
+      // try next model
+    }
+  }
+
+  return [];
+}
+
+// ── Helper: Universal Heuristic Photo/Image Extractor (Dedicated for Image Galleries) ──
+
+export function extractUniversalPhotos(
+  html: string,
+  baseUrl: string
+): ExtractedMediaItem[] {
+  const items: ExtractedMediaItem[] = [];
+  const seenUrls = new Set<string>();
+
+  function resolveUrl(urlStr: string): string {
+    if (!urlStr || typeof urlStr !== "string") return "";
+    let u = urlStr.trim();
+    const md = u.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    if (md) u = md[2] || md[1];
+    if (
+      !u ||
+      u.startsWith("javascript:") ||
+      u.startsWith("#") ||
+      u.startsWith("data:image/svg") ||
+      u.startsWith("data:application")
+    ) {
+      return "";
+    }
+    try {
+      return new URL(u, baseUrl || "https://example.com").href;
+    } catch {
+      return u.startsWith("http") ? u : "";
+    }
+  }
+
+  function cleanString(str: string): string {
+    if (!str) return "";
+    return str
+      .replace(/&amp;/g, "&")
+      .replace(/&#039;/g, "'")
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseSrcsetBestUrl(srcset: string): string {
+    if (!srcset) return "";
+    const parts = srcset.split(",").map((s) => s.trim()).filter(Boolean);
+    let bestUrl = "";
+    let maxWeight = 0;
+    for (const part of parts) {
+      const tokens = part.split(/\s+/);
+      if (!tokens[0]) continue;
+      const candUrl = tokens[0];
+      let weight = 1;
+      if (tokens[1]) {
+        const matchW = tokens[1].match(/^(\d+)w$/i);
+        const matchX = tokens[1].match(/^([\d.]+)x$/i);
+        if (matchW) weight = parseInt(matchW[1], 10);
+        else if (matchX) weight = parseFloat(matchX[1]) * 1000;
+      }
+      if (weight > maxWeight) {
+        maxWeight = weight;
+        bestUrl = candUrl;
+      }
+    }
+    return bestUrl ? resolveUrl(bestUrl) : "";
+  }
+
+  function isJunkImage(
+    url: string,
+    title?: string,
+    alt?: string,
+    width?: number,
+    height?: number
+  ): boolean {
+    if (!url) return true;
+    if (url.startsWith("data:image/svg") || url.startsWith("data:application")) return true;
+    if (/\.svg($|\?)/i.test(url)) return true;
+
+    if (width !== undefined && height !== undefined && width > 0 && height > 0) {
+      if (width < 100 && height < 100) return true;
+    }
+
+    const text = `${url} ${title || ""} ${alt || ""}`.toLowerCase();
+    if (
+      /(?:avatar|site-logo|footer-logo|header-logo|favicon|pixel|spacer|tracker|tracking|badge|arrow|spinner|loader|placeholder|transparent|adsystem|ads-|\/ads\/|1x1|btn-|button-|comment-avatar|user-icon)/i.test(
+        text
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      /\/(login|signup|register|signin|logout|terms|privacy|dmca|contact|support|help|faq|search)\b/i.test(
+        url
+      )
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function deriveTitleFromUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      const filename = parsed.pathname.split("/").pop() || "";
+      const nameWithoutExt = filename.replace(/\.[a-z0-9]+$/i, "");
+      if (
+        nameWithoutExt.length >= 3 &&
+        !/^[0-9a-f]{20,}$/i.test(nameWithoutExt) &&
+        !/^\d+$/.test(nameWithoutExt)
+      ) {
+        return nameWithoutExt
+          .replace(/[-_]+/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+          .trim();
+      }
+    } catch {
+      // ignore
+    }
+    return "Photo";
+  }
+
+  function addPhoto(
+    photoUrl: string,
+    thumbUrl: string,
+    title: string,
+    alt: string,
+    width?: number,
+    height?: number
+  ) {
+    const resolvedPhoto = resolveUrl(photoUrl);
+    if (!resolvedPhoto) return;
+    if (isJunkImage(resolvedPhoto, title, alt, width, height)) return;
+
+    const hasImageExt = /\.(jpe?g|png|webp|avif)($|\?)/i.test(resolvedPhoto);
+    const hasImageKeywords = /\/(photos?|images?|galleries?|gallery|uploads?|media|pictures?|pics?)\//i.test(
+      resolvedPhoto
+    );
+    if (!hasImageExt && !hasImageKeywords && !resolvedPhoto.startsWith("data:image/")) {
+      return;
+    }
+
+    const normKey = resolvedPhoto.toLowerCase().split("#")[0];
+    if (seenUrls.has(normKey)) return;
+    seenUrls.add(normKey);
+
+    const resolvedThumb = resolveUrl(thumbUrl) || resolvedPhoto;
+    const finalTitle = cleanString(title || alt || deriveTitleFromUrl(resolvedPhoto));
+
+    items.push({
+      type: "photo",
+      url: resolvedPhoto,
+      thumbnail: resolvedThumb,
+      title: finalTitle || "Photo",
+    });
+  }
+
+  // 1. JSON-LD Structured Data
+  const jsonLdRegex =
+    /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let jsonLdMatch;
+  while ((jsonLdMatch = jsonLdRegex.exec(html)) !== null) {
+    try {
+      const data = JSON.parse(jsonLdMatch[1]);
+      const traverse = (obj: any) => {
+        if (!obj || typeof obj !== "object") return;
+        const type = obj["@type"] || obj.type;
+        if (
+          type === "ImageObject" ||
+          type === "Photograph" ||
+          type === "MediaObject"
+        ) {
+          const mediaUrl =
+            obj.contentUrl || obj.embedUrl || obj.url || "";
+          const thumb =
+            Array.isArray(obj.thumbnailUrl)
+              ? obj.thumbnailUrl[0]
+              : obj.thumbnailUrl || "";
+          const title = cleanString(obj.name || obj.caption || obj.description || "");
+          if (mediaUrl) addPhoto(mediaUrl, thumb, title, "");
+        } else if (obj.image) {
+          const imgs = Array.isArray(obj.image) ? obj.image : [obj.image];
+          for (const img of imgs) {
+            if (typeof img === "string") addPhoto(img, "", "", "");
+            else if (img && typeof img === "object" && (img.url || img.contentUrl)) {
+              addPhoto(img.url || img.contentUrl, img.thumbnailUrl || "", img.name || img.caption || "", "");
+            }
+          }
+        }
+        for (const k of Object.keys(obj)) {
+          if (typeof obj[k] === "object") traverse(obj[k]);
+        }
+      };
+      traverse(data);
+    } catch {
+      // ignore JSON parse errors
+    }
+  }
+
+  // 2. OpenGraph & Twitter Meta tags
+  const ogImgRegex =
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)["']/gi;
+  let ogMatch;
+  while ((ogMatch = ogImgRegex.exec(html)) !== null) {
+    addPhoto(ogMatch[1], "", "", "");
+  }
+
+  // 3. Anchors with Images or Direct Image Links
+  const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+  let anchorMatch;
+  while ((anchorMatch = anchorRegex.exec(html)) !== null) {
+    const attrs = anchorMatch[1];
+    const inner = anchorMatch[2];
+
+    const hrefMatch = attrs.match(/href=["']([^"']+)["']/i);
+    const fullHref = hrefMatch ? resolveUrl(hrefMatch[1]) : "";
+
+    const aTitleMatch = attrs.match(/title=["']([^"']+)["']/i);
+    const aTitle = aTitleMatch ? cleanString(aTitleMatch[1]) : "";
+
+    const aHighResMatch =
+      attrs.match(/data-(?:original|highres|full|large|zoom-image|src)=["']([^"']+)["']/i);
+    const aHighRes = aHighResMatch ? resolveUrl(aHighResMatch[1]) : "";
+
+    const imgMatch = inner.match(/<img\b([^>]*)>/i);
+    let imgAttrs = imgMatch ? imgMatch[1] : "";
+    let imgThumb = "";
+    let imgAlt = "";
+    let imgHighRes = "";
+
+    if (imgAttrs) {
+      const altMatch = imgAttrs.match(/alt=["']([^"']+)["']/i);
+      if (altMatch) imgAlt = cleanString(altMatch[1]);
+
+      const srcsetMatch = imgAttrs.match(/srcset=["']([^"']+)["']/i);
+      const srcsetUrl = srcsetMatch ? parseSrcsetBestUrl(srcsetMatch[1]) : "";
+
+      const highResMatch = imgAttrs.match(
+        /data-(?:original|highres|full|large|zoom-image|src|image)=["']([^"']+)["']/i
+      );
+      if (highResMatch) imgHighRes = resolveUrl(highResMatch[1]);
+      else if (srcsetUrl) imgHighRes = srcsetUrl;
+
+      const srcMatch = imgAttrs.match(/src=["']([^"']+)["']/i);
+      if (srcMatch && !srcMatch[1].startsWith("data:")) {
+        imgThumb = resolveUrl(srcMatch[1]);
+      }
+    }
+
+    const title = aTitle || imgAlt;
+
+    if (fullHref && /\.(jpe?g|png|webp|avif)($|\?)/i.test(fullHref)) {
+      addPhoto(fullHref, imgThumb || fullHref, title, imgAlt);
+      continue;
+    }
+
+    if (aHighRes && /\.(jpe?g|png|webp|avif)($|\?)/i.test(aHighRes)) {
+      addPhoto(aHighRes, imgThumb || aHighRes, title, imgAlt);
+      continue;
+    }
+
+    if (imgHighRes) {
+      addPhoto(imgHighRes, imgThumb || imgHighRes, title, imgAlt);
+      continue;
+    } else if (imgThumb) {
+      addPhoto(imgThumb, imgThumb, title, imgAlt);
+      continue;
+    }
+  }
+
+  // 4. Standalone and All <img> tags in the document
+  const imgRegex = /<img\b([^>]*)\/?>/gi;
+  let singleImgMatch;
+  while ((singleImgMatch = imgRegex.exec(html)) !== null) {
+    const attrs = singleImgMatch[1];
+
+    const altMatch = attrs.match(/alt=["']([^"']+)["']/i);
+    const alt = altMatch ? cleanString(altMatch[1]) : "";
+
+    const titleMatch = attrs.match(/title=["']([^"']+)["']/i);
+    const title = titleMatch ? cleanString(titleMatch[1]) : "";
+
+    const wMatch = attrs.match(/width=["']?(\d+)["']?/i);
+    const hMatch = attrs.match(/height=["']?(\d+)["']?/i);
+    const width = wMatch ? parseInt(wMatch[1], 10) : undefined;
+    const height = hMatch ? parseInt(hMatch[1], 10) : undefined;
+
+    const srcsetMatch = attrs.match(/srcset=["']([^"']+)["']/i);
+    const srcsetUrl = srcsetMatch ? parseSrcsetBestUrl(srcsetMatch[1]) : "";
+
+    const highResCandidates = [
+      attrs.match(/data-original=["']([^"']+)["']/i),
+      attrs.match(/data-highres=["']([^"']+)["']/i),
+      attrs.match(/data-full=["']([^"']+)["']/i),
+      attrs.match(/data-large=["']([^"']+)["']/i),
+      attrs.match(/data-zoom-image=["']([^"']+)["']/i),
+      attrs.match(/data-src=["']([^"']+)["']/i),
+      attrs.match(/data-lazy-src=["']([^"']+)["']/i),
+      attrs.match(/data-lazy=["']([^"']+)["']/i),
+    ];
+
+    let bestPhoto = "";
+    for (const cand of highResCandidates) {
+      if (cand && cand[1] && !cand[1].startsWith("data:")) {
+        bestPhoto = resolveUrl(cand[1]);
+        break;
+      }
+    }
+
+    if (!bestPhoto && srcsetUrl) bestPhoto = srcsetUrl;
+
+    const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
+    const srcUrl = srcMatch && !srcMatch[1].startsWith("data:") ? resolveUrl(srcMatch[1]) : "";
+
+    if (!bestPhoto) bestPhoto = srcUrl;
+    if (bestPhoto) {
+      addPhoto(bestPhoto, srcUrl || bestPhoto, title, alt, width, height);
+    }
+  }
+
+  // 5. <source srcset="..."> inside <picture>
+  const sourceRegex = /<source\b([^>]*)>/gi;
+  let sourceMatch;
+  while ((sourceMatch = sourceRegex.exec(html)) !== null) {
+    const attrs = sourceMatch[1];
+    const srcsetMatch = attrs.match(/srcset=["']([^"']+)["']/i);
+    if (srcsetMatch) {
+      const best = parseSrcsetBestUrl(srcsetMatch[1]);
+      if (best) addPhoto(best, best, "", "");
+    }
+  }
+
+  // 6. CSS Background images & data-bg
+  const bgRegex =
+    /(?:background(?:-image)?:\s*url\(['"]?([^'"\)]+)['"]?\)|data-bg(?:ground)?=["']([^"']+)["'])/gi;
+  let bgMatch;
+  while ((bgMatch = bgRegex.exec(html)) !== null) {
+    const bgUrl = bgMatch[1] || bgMatch[2];
+    if (bgUrl && !bgUrl.startsWith("data:")) {
+      addPhoto(bgUrl, bgUrl, "", "");
+    }
+  }
+
+  return items;
+}
+
+// ── Helper: Fallback LLM Extraction for Photos ──
+
+async function fallbackLlmExtractionForPhotos(
+  html: string,
+  sourceUrl: string,
+  apiKey: string
+): Promise<ExtractedMediaItem[]> {
+  const cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
+
+  // Pre-parse and extract ONLY clean, minimal image tags (strip all noise: classes, styles, scripts, wrappers)
+  const imageSnippets: string[] = [];
+  const imgMatches = cleaned.matchAll(/<img\b([^>]*)>/gi);
+  for (const m of imgMatches) {
+    const rawAttrs = m[1];
+    const src = rawAttrs.match(/(?:data-original|data-highres|data-full|data-src|src)=["']([^"']+)["']/i);
+    const alt = rawAttrs.match(/alt=["']([^"']+)["']/i);
+    const title = rawAttrs.match(/title=["']([^"']+)["']/i);
+    if (src && !src[1].startsWith("data:image/svg") && !src[1].includes("pixel") && !src[1].includes("tracker")) {
+      imageSnippets.push(`<img src="${src[1]}"${alt ? ` alt="${alt[1]}"` : ""}${title ? ` title="${title[1]}"` : ""}>`);
+    }
+    if (imageSnippets.length >= 60) break;
+  }
+
+  const mediaSnippet = imageSnippets.join("\n");
+  if (mediaSnippet.length < 15) return [];
+
+  const prompt = `Extract all photos and gallery images from these pre-parsed image tags.
+Source URL: ${sourceUrl}
+
+For each photo item return:
+{ "type": "photo", "url": "<direct image URL>", "thumbnail": "<thumbnail or direct image URL>", "title": "<clean photo title>", "seoTitle": "<seo title>", "keywords": "<comma separated keywords>" }
+
+Images:
+${mediaSnippet}
+
+Return ONLY a JSON object: { "items": [ ... ] }`;
+
+  const candidateModels = [
+    process.env.GROQ_MODEL,
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+  ].filter(Boolean) as string[];
+
+  for (const model of candidateModels) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an expert media extractor. You ONLY output valid JSON. No explanations, no markdown fences.",
+            },
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.1,
+          max_tokens: 8192,
+          response_format: { type: "json_object" },
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!res.ok) continue;
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) continue;
+
+      let cleanJson = content.trim();
+      if (cleanJson.startsWith("```")) {
+        cleanJson = cleanJson
+          .replace(/^```(?:json)?\s*/i, "")
+          .replace(/\s*```$/, "");
+      }
+      const parsed = JSON.parse(cleanJson);
+      const items: any[] = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.items)
+          ? parsed.items
+          : [];
+
+      return items.map((i) => ({
+        type: "photo" as const,
+        url: String(i.url || "").trim(),
+        thumbnail: i.thumbnail ? String(i.thumbnail).trim() : String(i.url || "").trim(),
+        title: i.title ? String(i.title).trim() : "Photo Item",
         seoTitle: i.seoTitle ? String(i.seoTitle).trim() : i.title,
         keywords: i.keywords ? String(i.keywords).trim() : "",
       }));

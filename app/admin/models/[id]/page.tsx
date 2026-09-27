@@ -221,6 +221,7 @@ export default function ModelManagementPage() {
   const [bulkLinksError, setBulkLinksError] = useState("");
 
   // AI Crawl Import States
+  const [crawlTargetType, setCrawlTargetType] = useState<"all" | "photo">("all");
   const [crawlDialogOpen, setCrawlDialogOpen] = useState(false);
   const [crawlMode, setCrawlMode] = useState<"url" | "paste">("url");
   const [crawlUrl, setCrawlUrl] = useState("");
@@ -890,10 +891,12 @@ export default function ModelManagementPage() {
     setCrawling(true);
     setCrawlError("");
     try {
-      const payload =
-        crawlMode === "paste"
+      const payload = {
+        ...(crawlMode === "paste"
           ? { html: pastedHtml, sourceUrl: crawlUrl.trim() || undefined }
-          : { url: crawlUrl.trim() };
+          : { url: crawlUrl.trim() }),
+        mediaType: crawlTargetType,
+      };
 
       const res = await fetch("/api/admin/crawl-media", {
         method: "POST",
@@ -906,7 +909,11 @@ export default function ModelManagementPage() {
         return;
       }
       if (!data.items || data.items.length === 0) {
-        setCrawlError("No media items found in the content");
+        setCrawlError(
+          crawlTargetType === "photo"
+            ? "No images found in the content"
+            : "No media items found in the content"
+        );
         return;
       }
       setCrawledItems(
@@ -926,6 +933,23 @@ export default function ModelManagementPage() {
       prev.map((item, i) =>
         i === index ? { ...item, selected: !item.selected } : item
       )
+    );
+  };
+
+  const handleToggleItemType = (index: number) => {
+    setCrawledItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const nextType = item.type === "photo" ? "video" : "photo";
+        return {
+          ...item,
+          type: nextType,
+          url:
+            nextType === "photo" && item.thumbnail ? item.thumbnail : item.url,
+          thumbnail:
+            nextType === "video" && !item.thumbnail ? item.url : item.thumbnail,
+        };
+      })
     );
   };
 
@@ -3032,9 +3056,6 @@ export default function ModelManagementPage() {
               <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
                 Media Sets Gallery
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
-                Upload photos directly to storage or attach external streaming video links with SEO tags
-              </Typography>
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -3071,6 +3092,7 @@ export default function ModelManagementPage() {
                 variant="outlined"
                 size="small"
                 onClick={() => {
+                  setCrawlTargetType("all");
                   setCrawlUrl("");
                   setPastedHtml("");
                   setCrawlError("");
@@ -3095,6 +3117,38 @@ export default function ModelManagementPage() {
                 }}
               >
                 AI Import
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setCrawlTargetType("photo");
+                  setCrawlUrl("");
+                  setPastedHtml("");
+                  setCrawlError("");
+                  setCrawlMode("url");
+                  setCrawlDialogOpen(true);
+                }}
+                startIcon={<CameraIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  borderColor: "#059669",
+                  color: "#059669",
+                  bgcolor: "#f0fdf4",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  "&:hover": {
+                    borderColor: "#047857",
+                    bgcolor: "#dcfce7",
+                    color: "#047857",
+                  },
+                }}
+              >
+                AI Import Image
               </Button>
 
               <Button
@@ -4201,7 +4255,11 @@ export default function ModelManagementPage() {
         >
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              {crawlTargetType === "photo" ? (
+                <CameraIcon sx={{ fontSize: 20, color: "#059669" }} />
+              ) : (
+                <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              )}
               <Typography
                 variant="h6"
                 sx={{
@@ -4210,14 +4268,18 @@ export default function ModelManagementPage() {
                   fontSize: "1.125rem",
                 }}
               >
-                AI Media Import
+                {crawlTargetType === "photo"
+                  ? "AI Image Import"
+                  : "AI Media Import"}
               </Typography>
             </Box>
             <Typography
               variant="body2"
               sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}
             >
-              Extract photos & videos from another page using AI
+              {crawlTargetType === "photo"
+                ? "Extract high-resolution photos & image galleries using AI"
+                : "Extract photos & videos from another page using AI"}
             </Typography>
           </Box>
           <IconButton
@@ -4248,10 +4310,12 @@ export default function ModelManagementPage() {
                 color: "#64748b",
                 px: 2,
                 py: 0.5,
-                "&.Mui-selected": { color: "#7c3aed" },
+                "&.Mui-selected": {
+                  color: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+                },
               },
               "& .MuiTabs-indicator": {
-                bgcolor: "#7c3aed",
+                bgcolor: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                 height: 2,
               },
             }}
@@ -4410,21 +4474,26 @@ export default function ModelManagementPage() {
                   borderRadius: 1,
                   bgcolor: "#f1f5f9",
                   "& .MuiLinearProgress-bar": {
-                    bgcolor: "#7c3aed",
+                    bgcolor:
+                      crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                   },
                 }}
               />
               <Typography
                 sx={{
                   fontSize: "0.75rem",
-                  color: "#7c3aed",
+                  color: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                   mt: 0.75,
                   fontWeight: 600,
                 }}
               >
-                {crawlMode === "paste"
-                  ? "Extracting media from pasted HTML with AI…"
-                  : "Crawling page & extracting media with AI…"}
+                {crawlTargetType === "photo"
+                  ? crawlMode === "paste"
+                    ? "Extracting high-resolution photos from pasted HTML with AI…"
+                    : "Crawling page & extracting photos with AI…"
+                  : crawlMode === "paste"
+                    ? "Extracting media from pasted HTML with AI…"
+                    : "Crawling page & extracting media with AI…"}
               </Typography>
             </Box>
           )}
@@ -4457,9 +4526,13 @@ export default function ModelManagementPage() {
             <Typography
               sx={{ fontSize: "0.7rem", color: "#64748b", lineHeight: 1.5 }}
             >
-              {crawlMode === "paste"
-                ? "If auto-crawl gets blocked (403), use this mode: open the page in your browser → right-click → View Page Source → copy everything → paste above. The AI will extract all media from it."
-                : "The AI will crawl the page, extract all photos and videos with their titles and thumbnail links, and present a preview for you to review before importing."}
+              {crawlTargetType === "photo"
+                ? crawlMode === "paste"
+                  ? "Paste the full page source HTML of any image gallery, album, or webpage. The AI will extract all high-resolution photos and clean titles for your media sets."
+                  : "Enter any page URL containing photos, albums, or galleries. The AI will crawl the page and extract all high-res photos and image links with clean titles."
+                : crawlMode === "paste"
+                  ? "If auto-crawl gets blocked (403), use this mode: open the page in your browser → right-click → View Page Source → copy everything → paste above. The AI will extract all media from it."
+                  : "The AI will crawl the page, extract all photos and videos with their titles and thumbnail links, and present a preview for you to review before importing."}
             </Typography>
           </Box>
         </DialogContent>
@@ -4499,30 +4572,41 @@ export default function ModelManagementPage() {
             startIcon={
               crawling ? (
                 <CircularProgress size={16} color="inherit" />
+              ) : crawlTargetType === "photo" ? (
+                <CameraIcon sx={{ fontSize: 16 }} />
               ) : (
                 <SmartToyIcon sx={{ fontSize: 16 }} />
               )
             }
             sx={{
               borderRadius: 1,
-              bgcolor: "#7c3aed",
+              bgcolor: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
-              "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
+              "&:hover": {
+                bgcolor: crawlTargetType === "photo" ? "#047857" : "#6d28d9",
+                boxShadow: "none",
+              },
               "&.Mui-disabled": {
-                bgcolor: "#c4b5fd",
+                bgcolor: crawlTargetType === "photo" ? "#a7f3d0" : "#c4b5fd",
                 color: "#ffffff",
               },
             }}
           >
             {crawling
-              ? "Extracting…"
-              : crawlMode === "paste"
-                ? "Extract from Source"
-                : "Crawl & Extract"}
+              ? crawlTargetType === "photo"
+                ? "Extracting Images…"
+                : "Extracting…"
+              : crawlTargetType === "photo"
+                ? crawlMode === "paste"
+                  ? "Extract Images from Source"
+                  : "Crawl & Extract Images"
+                : crawlMode === "paste"
+                  ? "Extract from Source"
+                  : "Crawl & Extract"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -4558,7 +4642,11 @@ export default function ModelManagementPage() {
         >
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              {crawlTargetType === "photo" ? (
+                <CameraIcon sx={{ fontSize: 20, color: "#059669" }} />
+              ) : (
+                <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
+              )}
               <Typography
                 variant="h6"
                 sx={{
@@ -4567,7 +4655,9 @@ export default function ModelManagementPage() {
                   fontSize: "1.125rem",
                 }}
               >
-                Extracted Media Preview
+                {crawlTargetType === "photo"
+                  ? "Extracted Images Preview"
+                  : "Extracted Media Preview"}
               </Typography>
               <Chip
                 label={`${crawledItems.filter((i) => i.selected).length} / ${crawledItems.length} selected`}
@@ -4847,30 +4937,39 @@ export default function ModelManagementPage() {
                     </Box>
                   )}
 
-                  {/* Type badge */}
-                  <Chip
-                    label={item.type === "video" ? "VIDEO" : "PHOTO"}
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 8,
-                      left: 8,
-                      height: 20,
-                      fontSize: "0.6rem",
-                      fontWeight: 800,
-                      letterSpacing: "0.05em",
-                      borderRadius: 0.75,
-                      ...(item.type === "video"
-                        ? {
-                            bgcolor: "rgba(124, 58, 237, 0.9)",
-                            color: "#ffffff",
-                          }
-                        : {
-                            bgcolor: "rgba(5, 150, 105, 0.9)",
-                            color: "#ffffff",
-                          }),
-                    }}
-                  />
+                  {/* Type badge - clickable with tooltip to toggle type */}
+                  <Tooltip title="Click to toggle between PHOTO and VIDEO" arrow>
+                    <Chip
+                      label={item.type === "video" ? "VIDEO" : "PHOTO"}
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleItemType(idx);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        height: 20,
+                        fontSize: "0.6rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.05em",
+                        borderRadius: 0.75,
+                        cursor: "pointer",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                        bgcolor:
+                          item.type === "video"
+                            ? "rgba(124, 58, 237, 0.95)"
+                            : "rgba(5, 150, 105, 0.95)",
+                        color: "#ffffff",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                          bgcolor:
+                            item.type === "video" ? "#6d28d9" : "#047857",
+                        },
+                      }}
+                    />
+                  </Tooltip>
 
                   {/* Selection checkbox */}
                   <Checkbox
@@ -5068,7 +5167,13 @@ export default function ModelManagementPage() {
               setCrawlDialogOpen(true);
             }}
             disabled={importingCrawled}
-            startIcon={<SmartToyIcon sx={{ fontSize: 16 }} />}
+            startIcon={
+              crawlTargetType === "photo" ? (
+                <CameraIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <SmartToyIcon sx={{ fontSize: 16 }} />
+              )
+            }
             sx={{
               borderRadius: 1,
               borderColor: "#e2e8f0",
@@ -5079,7 +5184,9 @@ export default function ModelManagementPage() {
               "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
             }}
           >
-            Crawl Different URL
+            {crawlTargetType === "photo"
+              ? "Import Different Image URL"
+              : "Crawl Different URL"}
           </Button>
           <Box sx={{ display: "flex", gap: 1 }}>
             <Button
@@ -5114,22 +5221,27 @@ export default function ModelManagementPage() {
               }
               sx={{
                 borderRadius: 1,
-                bgcolor: "#7c3aed",
+                bgcolor: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                 color: "#ffffff",
                 textTransform: "none",
                 fontWeight: 600,
                 fontSize: "0.8125rem",
                 boxShadow: "none",
-                "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
+                "&:hover": {
+                  bgcolor: crawlTargetType === "photo" ? "#047857" : "#6d28d9",
+                  boxShadow: "none",
+                },
                 "&.Mui-disabled": {
-                  bgcolor: "#c4b5fd",
+                  bgcolor: crawlTargetType === "photo" ? "#a7f3d0" : "#c4b5fd",
                   color: "#ffffff",
                 },
               }}
             >
               {importingCrawled
                 ? `Importing (${importProgress}%)…`
-                : `Import ${crawledItems.filter((i) => i.selected).length} Items`}
+                : crawlTargetType === "photo"
+                  ? `Import ${crawledItems.filter((i) => i.selected).length} Photos`
+                  : `Import ${crawledItems.filter((i) => i.selected).length} Items`}
             </Button>
           </Box>
         </DialogActions>
