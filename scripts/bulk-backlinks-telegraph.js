@@ -254,11 +254,11 @@ async function run() {
     await new Promise((r) => setTimeout(r, 1200));
   }
 
-  const outputPath = path.resolve(__dirname, "../vixn_telegraph_backlinks.json");
-  fs.writeFileSync(outputPath, JSON.stringify(createdBacklinks, null, 2));
+  const allBacklinks = [...existingBacklinks, ...createdBacklinks];
+  fs.writeFileSync(outputPath, JSON.stringify(allBacklinks, null, 2));
 
   console.log("\n====================================================");
-  console.log(`SUCCESS! Generated ${createdBacklinks.length} live DR 91 backlinks.`);
+  console.log(`SUCCESS! Generated ${createdBacklinks.length} new live DR 91 backlinks (${allBacklinks.length} total).`);
   console.log(`Saved live URLs to: ${outputPath}`);
   console.log("====================================================");
 
