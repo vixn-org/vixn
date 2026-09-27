@@ -187,14 +187,67 @@ export async function POST(request: Request) {
         : await fallbackLlmExtraction(rawHtml, resolvedSourceUrl, apiKey);
     }
 
-    // Clean & deduplicate final output
-    const seen = new Set<string>();
+    // Clean & deduplicate final output (strictly eliminate duplicates, ads, and junk)
+    const seenUrls = new Set<string>();
+    const seenTbnIds = new Set<string>();
+    const seenBaseFiles = new Set<string>();
+
+    const isAdOrJunk = (url: string, title?: string): boolean => {
+      const lowerUrl = (url || "").toLowerCase();
+      const lowerTitle = (title || "").toLowerCase();
+      // Ad networks, shopping, Google internal UI, trackers
+      if (
+        /(?:googleads|doubleclick|googlesyndication|adservices|\/aclk\?|adsystem|shopping\?|lens\.google|searchbyimage|favicon|lh3\.googleusercontent\.com\/ogw|t0\.gstatic\.com\/faviconV2|googlelogo|nav_logo|cleardot\.gif|1x1|spacer\.gif|avatar_default|tia\.png|\/ads-|\/adsystem\/|promoted|advertisement)/i.test(
+          lowerUrl
+        ) ||
+        /(?:advertisement|sponsored|google shopping|buy now|shop on)/i.test(
+          lowerTitle
+        )
+      ) {
+        return true;
+      }
+      return false;
+    };
+
     const cleanedItems = finalItems
       .filter((item) => {
         if (!item || !item.url || typeof item.url !== "string") return false;
-        const normalized = item.url.trim().toLowerCase();
-        if (seen.has(normalized)) return false;
-        seen.add(normalized);
+        const rawUrl = item.url.trim();
+        if (isAdOrJunk(rawUrl, item.title)) return false;
+
+        // 1. Check normalized full URL
+        const normUrl = rawUrl.toLowerCase().split("#")[0].split("&token=")[0];
+        if (seenUrls.has(normUrl)) return false;
+
+        // 2. Check Google Thumbnail ID (q=tbn:...) in URL or thumbnail
+        const tbnMatch = (rawUrl + " " + (item.thumbnail || "")).match(
+          /q=tbn:([A-Za-z0-9_\-]+)/i
+        );
+        if (tbnMatch) {
+          const tbnId = tbnMatch[1];
+          if (seenTbnIds.has(tbnId)) return false;
+          seenTbnIds.add(tbnId);
+        }
+
+        // 3. Check base filename deduplication (ignore query params for same image host)
+        try {
+          const parsed = new URL(rawUrl);
+          const baseKey = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+          // Only dedupe by base file if not a generic CDN handler like /images or /media
+          if (
+            !parsed.hostname.includes("gstatic.com") &&
+            !parsed.pathname.endsWith("/") &&
+            parsed.pathname.length > 5 &&
+            seenBaseFiles.has(baseKey)
+          ) {
+            return false;
+          }
+          seenBaseFiles.add(baseKey);
+        } catch {
+          // ignore url parse
+        }
+
+        seenUrls.add(normUrl);
         return true;
       })
       .map((item) => ({
@@ -505,13 +558,13 @@ ${modelContext}Given this list of extracted PHOTOS/IMAGES from: ${sourceUrl || "
 Candidates:
 ${JSON.stringify(minimalCandidates)}
 
-For each candidate:
+CRITICAL QUALITY & FILTERING RULES:
 1. "title": Clean up or generate an appealing, high-quality title (Title Case, remove durations, resolutions like "1080p", "4K", site watermarks, random hash codes, camera file numbers like DSC001). Naturally incorporate performer name "${modelName || 'Model'}" when relevant (e.g. "${modelName || 'Model'} - Glamour Photo Shoot", "${modelName || 'Model'} - Red Lingerie Portrait").
 2. "seoTitle": Create an engaging, search-optimized title tailored for photo sets (e.g. "${modelName || 'Model Name'} - Stunning High Res Photo Shoot").
 3. "keywords": Generate 3 to 6 comma-separated relevant tags/keywords (e.g. "${modelName || 'model name'}, photo gallery, photoshoot, glamour, portrait, high res, hd photos").
 4. "type": Must be "photo".
-5. Keep the same "url" and "thumbnail".
-Filter out any items that are clearly advertisements or UI graphics rather than actual photos.
+5. Keep the exact same "url" and "thumbnail".
+6. STRICTLY DROP: Remove any items that are advertisements (Google Ads, DoubleClick, Shopping cards), search chips/categories, website logos, navigation icons, or duplicate pictures of the same photo. ONLY keep real photos featuring the model/content.
 
 Return ONLY a JSON object:
 { "items": [ { "type": "photo", "url": "...", "thumbnail": "...", "title": "...", "seoTitle": "...", "keywords": "..." } ] }`
@@ -1187,6 +1240,8 @@ export function extractGoogleAndSocialPhotos(
 ): ExtractedMediaItem[] {
   const items: ExtractedMediaItem[] = [];
   const seenUrls = new Set<string>();
+  const seenTbnIds = new Set<string>();
+  const seenBaseKeys = new Set<string>();
 
   if (!rawContent || typeof rawContent !== "string") return items;
 
@@ -1199,22 +1254,47 @@ export function extractGoogleAndSocialPhotos(
     .replace(/\\u003d/g, "=")
     .replace(/&amp;/g, "&");
 
-  function addCandidate(url: string, thumbUrl?: string, rawTitle?: string) {
-    if (!url || typeof url !== "string") return;
-    const cleanUrl = url.trim();
+  // Strict Ad, Icon, and Junk Filter
+  function isJunkOrAd(url: string, width?: number, height?: number): boolean {
+    if (!url || typeof url !== "string") return true;
+    const clean = url.trim();
 
-    // Ignore tiny base64 1x1 gifs or SVGs
+    // Reject non-image or tiny base64 data URLs
     if (
-      cleanUrl.startsWith("data:image/gif") ||
-      cleanUrl.startsWith("data:image/svg") ||
-      cleanUrl.startsWith("data:application")
+      clean.startsWith("data:image/gif") ||
+      clean.startsWith("data:image/svg") ||
+      clean.startsWith("data:application") ||
+      clean.startsWith("javascript:")
     ) {
-      return;
+      return true;
     }
 
-    // Filter out common UI icons, search engine graphics, logos, trackers
-    const lower = cleanUrl.toLowerCase();
+    // Must be valid HTTP(S) or data:image/jpeg
     if (
+      !clean.startsWith("http://") &&
+      !clean.startsWith("https://") &&
+      !clean.startsWith("data:image/jpeg")
+    ) {
+      return true;
+    }
+
+    // Dimension filter: Search filter chips, category pills, buttons, and icons are small
+    if (width !== undefined && height !== undefined) {
+      if ((width > 0 && width < 150) || (height > 0 && height < 150)) {
+        return true;
+      }
+    }
+
+    const lower = clean.toLowerCase();
+    // Ad networks, shopping carousels, Google UI graphics, search pills, avatars
+    if (
+      lower.includes("googleads") ||
+      lower.includes("doubleclick") ||
+      lower.includes("googlesyndication") ||
+      lower.includes("adservices") ||
+      lower.includes("/aclk?") ||
+      lower.includes("adsystem") ||
+      lower.includes("shopping?") ||
       lower.includes("googlelogo") ||
       lower.includes("nav_logo") ||
       lower.includes("favicon") ||
@@ -1222,29 +1302,67 @@ export function extractGoogleAndSocialPhotos(
       lower.includes("1x1") ||
       lower.includes("spacer.gif") ||
       lower.includes("avatar_default") ||
+      lower.includes("lh3.googleusercontent.com/ogw/") ||
+      lower.includes("t0.gstatic.com") ||
+      lower.includes("lens.google") ||
+      lower.includes("searchbyimage") ||
       lower.includes("tia.png") ||
-      lower.includes("/adsystem/") ||
-      lower.includes("/ads-")
+      lower.includes("/ads-") ||
+      lower.includes("/adsystem/")
     ) {
-      return;
+      return true;
     }
 
-    // Must be valid HTTP(S) or data:image/jpeg
-    if (
-      !cleanUrl.startsWith("http://") &&
-      !cleanUrl.startsWith("https://") &&
-      !cleanUrl.startsWith("data:image/jpeg")
-    ) {
-      return;
+    return false;
+  }
+
+  function registerItem(
+    url: string,
+    thumbnailUrl?: string,
+    rawTitle?: string,
+    tbnId?: string
+  ) {
+    if (!url) return;
+    const cleanUrl = url.trim();
+    if (isJunkOrAd(cleanUrl)) return;
+
+    // Check if thumbnail itself is junk
+    const finalThumb =
+      thumbnailUrl && thumbnailUrl.startsWith("http")
+        ? thumbnailUrl.trim()
+        : cleanUrl;
+    if (isJunkOrAd(finalThumb)) return;
+
+    // Extract tbn ID if present
+    const extractedTbnId =
+      tbnId ||
+      (cleanUrl + " " + finalThumb).match(/q=tbn:([A-Za-z0-9_\-]+)/i)?.[1];
+
+    if (extractedTbnId) {
+      if (seenTbnIds.has(extractedTbnId)) return;
+      seenTbnIds.add(extractedTbnId);
     }
 
-    // Normalize URL key for deduplication
+    // Normalized URL deduplication
     const normKey = cleanUrl.split("#")[0].split("&token=")[0].toLowerCase();
     if (seenUrls.has(normKey)) return;
     seenUrls.add(normKey);
 
-    const finalThumb =
-      thumbUrl && thumbUrl.startsWith("http") ? thumbUrl.trim() : cleanUrl;
+    // Host + pathname deduplication (avoids duplicate query params for same image)
+    try {
+      const parsed = new URL(cleanUrl);
+      if (
+        !parsed.hostname.includes("gstatic.com") &&
+        parsed.pathname.length > 5 &&
+        !parsed.pathname.endsWith("/")
+      ) {
+        const baseKey = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
+        if (seenBaseKeys.has(baseKey)) return;
+        seenBaseKeys.add(baseKey);
+      }
+    } catch {
+      // ignore url parse
+    }
 
     items.push({
       type: "photo",
@@ -1254,69 +1372,117 @@ export function extractGoogleAndSocialPhotos(
     });
   }
 
-  // ── 1. Google Images AF_initDataCallback High-Res Source Pairs ──
-  // Matches: ["https://example.com/original.jpg", 1080, 1920]
+  // ── 1. Google Images Proximity Pairing (Merges Original High-Res + Google Thumbnail into 1 Item) ──
+  // In Google Images HTML, each search result contains both the thumbnail (encrypted-tbn0)
+  // and the original source image URL in the same JSON block.
+  const tbnBlockRegex =
+    /(https:\/\/encrypted-tbn0\.gstatic\.com\/images\?q=tbn:([A-Za-z0-9_\-]+)[^\s"'<>\\]*)/gi;
+  let tbnMatch;
+  while ((tbnMatch = tbnBlockRegex.exec(cleanContent)) !== null) {
+    const tbnUrl = tbnMatch[1];
+    const tbnId = tbnMatch[2];
+    const matchIdx = tbnMatch.index;
+
+    if (seenTbnIds.has(tbnId)) continue;
+
+    // Look around in a window of 1800 characters for the original high-res image URL
+    const windowStart = Math.max(0, matchIdx - 900);
+    const windowEnd = Math.min(cleanContent.length, matchIdx + 1200);
+    const windowText = cleanContent.substring(windowStart, windowEnd);
+
+    // Find original high-res image pair: ["https://...", width, height]
+    const origPairMatch = windowText.match(
+      /\["(https?:\/\/(?!encrypted-tbn0)[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)",\s*(\d+),\s*(\d+)\]/i
+    );
+
+    let foundHighResUrl = "";
+    if (origPairMatch) {
+      const candidateUrl = origPairMatch[1];
+      const w = parseInt(origPairMatch[2], 10);
+      const h = parseInt(origPairMatch[3], 10);
+      if (!isJunkOrAd(candidateUrl, w, h)) {
+        foundHighResUrl = candidateUrl;
+      }
+    }
+
+    // Try finding [null, "https://..."] if no pair match
+    if (!foundHighResUrl) {
+      const origNullMatch = windowText.match(
+        /\[null,\s*"(https?:\/\/(?!encrypted-tbn0)[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)"/i
+      );
+      if (origNullMatch && !isJunkOrAd(origNullMatch[1])) {
+        foundHighResUrl = origNullMatch[1];
+      }
+    }
+
+    if (foundHighResUrl) {
+      // Pair them: Original high-res as URL, Google CDN thumbnail as thumbnail!
+      // This guarantees no duplicates between high-res and Google thumbnail
+      registerItem(foundHighResUrl, tbnUrl, "Google High-Res Photo", tbnId);
+    } else {
+      // No high-res original found in proximity; use Google CDN thumbnail itself
+      registerItem(tbnUrl, tbnUrl, "Google Photo", tbnId);
+    }
+  }
+
+  // ── 2. Google Images AF_initDataCallback High-Res Source Pairs (Unpaired ones) ──
   const googlePairRegex =
-    /\["(https?:\/\/[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)",\s*(\d+),\s*(\d+)\]/gi;
+    /\["(https?:\/\/(?!encrypted-tbn0)[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)",\s*(\d+),\s*(\d+)\]/gi;
   let gPairMatch;
   while ((gPairMatch = googlePairRegex.exec(cleanContent)) !== null) {
     const fullUrl = gPairMatch[1];
     const width = parseInt(gPairMatch[2], 10);
     const height = parseInt(gPairMatch[3], 10);
 
-    // Skip tiny icons
-    if (width > 0 && height > 0 && (width < 120 || height < 120)) {
-      continue;
-    }
-
-    addCandidate(fullUrl, fullUrl, "Google High-Res Photo");
-  }
-
-  // Matches: [null, "https://...", ...]
-  const googleJsonMatchRegex =
-    /\[null,\s*"(https?:\/\/[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)"/gi;
-  let gJsonMatch;
-  while ((gJsonMatch = googleJsonMatchRegex.exec(cleanContent)) !== null) {
-    addCandidate(gJsonMatch[1], gJsonMatch[1], "Google Images Photo");
+    if (isJunkOrAd(fullUrl, width, height)) continue;
+    registerItem(fullUrl, fullUrl, "Google High-Res Photo");
   }
 
   // Matches Google data attributes (data-ou = original url, data-tu = thumbnail)
-  const googleDataOuRegex = /data-ou=["'](https?:\/\/[^"']+)["']/gi;
+  const googleDataOuRegex =
+    /data-ou=["'](https?:\/\/[^"']+)["'](?:[\s\S]{0,300}?data-tu=["'](https?:\/\/[^"']+)["'])?/gi;
   let gOuMatch;
   while ((gOuMatch = googleDataOuRegex.exec(cleanContent)) !== null) {
-    addCandidate(gOuMatch[1], gOuMatch[1], "Google Photo");
-  }
-
-  // ── 2. Google encrypted-tbn0.gstatic.com CDN Cached Images ──
-  // These are Google's cached images: 100% reliable, zero CORS/hotlink block
-  const googleTbnRegex =
-    /(https:\/\/encrypted-tbn0\.gstatic\.com\/images\?q=tbn:[A-Za-z0-9_\-:]+)/gi;
-  let gTbnMatch;
-  while ((gTbnMatch = googleTbnRegex.exec(cleanContent)) !== null) {
-    addCandidate(gTbnMatch[1], gTbnMatch[1], "Google Cached Image");
+    const origUrl = gOuMatch[1];
+    const thumbUrl = gOuMatch[2] || origUrl;
+    registerItem(origUrl, thumbUrl, "Google Photo");
   }
 
   // ── 3. X.com / Twitter pbs.twimg.com/media Extraction ──
-  // Auto-upgrades to name=orig for camera-master resolution
+  // Auto-upgrades to name=orig for camera-master resolution and deduplicates by media ID
+  const seenTwMediaIds = new Set<string>();
   const twitterMediaRegex =
     /https?:\/\/pbs\.twimg\.com\/media\/([A-Za-z0-9_-]+)(?:\?format=([a-z]+)&name=([a-z0-9_]+)|\.([a-z]+))?/gi;
   let twMatch;
   while ((twMatch = twitterMediaRegex.exec(cleanContent)) !== null) {
     const mediaId = twMatch[1];
+    if (seenTwMediaIds.has(mediaId)) continue;
+    seenTwMediaIds.add(mediaId);
+
     const format = twMatch[2] || twMatch[4] || "jpg";
     const fullResUrl = `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=orig`;
     const thumbUrl = `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=small`;
-    addCandidate(fullResUrl, thumbUrl, "X (Twitter) Photo");
+    registerItem(fullResUrl, thumbUrl, "X (Twitter) Photo");
   }
 
   // ── 4. Instagram cdninstagram.com Extraction ──
+  const seenInstaIds = new Set<string>();
   const instaRegex =
     /(https?:\/\/[a-z0-9\.\-]+cdninstagram\.com\/[^\s"'<>\\]+)/gi;
   let instaMatch;
   while ((instaMatch = instaRegex.exec(cleanContent)) !== null) {
     let instaUrl = instaMatch[1].replace(/[",;)\\]+$/, "");
-    if (!instaUrl.includes("/s150x150/") && !instaUrl.includes("/s320x320/")) {
-      addCandidate(instaUrl, instaUrl, "Instagram Photo");
+    if (
+      !instaUrl.includes("/s150x150/") &&
+      !instaUrl.includes("/s320x320/") &&
+      !isJunkOrAd(instaUrl)
+    ) {
+      // Extract unique media ID from Instagram URL path
+      const instaId = instaUrl.split("?")[0].split("/").pop() || instaUrl;
+      if (!seenInstaIds.has(instaId)) {
+        seenInstaIds.add(instaId);
+        registerItem(instaUrl, instaUrl, "Instagram Photo");
+      }
     }
   }
 
@@ -1324,7 +1490,10 @@ export function extractGoogleAndSocialPhotos(
   const instaDisplayRegex = /"display_url"\s*:\s*"(https?:\/\/[^"\\]+)"/gi;
   let instaDispMatch;
   while ((instaDispMatch = instaDisplayRegex.exec(cleanContent)) !== null) {
-    addCandidate(instaDispMatch[1], instaDispMatch[1], "Instagram Photo");
+    const dispUrl = instaDispMatch[1];
+    if (!isJunkOrAd(dispUrl)) {
+      registerItem(dispUrl, dispUrl, "Instagram Photo");
+    }
   }
 
   // ── 5. Direct Bulk Image URLs (Pasted line-by-line or space-separated) ──
@@ -1332,7 +1501,10 @@ export function extractGoogleAndSocialPhotos(
     /(https?:\/\/[^\s"']+\.(?:jpe?g|png|webp|avif)(?:\?[^\s"']*)?)/gi;
   let directMatch;
   while ((directMatch = directUrlRegex.exec(cleanContent)) !== null) {
-    addCandidate(directMatch[1], directMatch[1], "Direct Image Link");
+    const dUrl = directMatch[1];
+    if (!isJunkOrAd(dUrl)) {
+      registerItem(dUrl, dUrl, "Direct Image Link");
+    }
   }
 
   return items;
