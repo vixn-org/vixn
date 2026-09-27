@@ -32,9 +32,46 @@ const MONGODB_URI =
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://vixn.fun";
 
+const dnsPromises = require("dns").promises;
+dnsPromises.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+
+function customDnsLookup(hostname, options, callback) {
+  if (typeof options === "function") {
+    callback = options;
+    options = {};
+  }
+  dnsPromises
+    .resolve4(hostname)
+    .then((ips) => {
+      if (options && options.all) {
+        callback(
+          null,
+          ips.map((ip) => ({ address: ip, family: 4 }))
+        );
+      } else {
+        callback(null, ips[0] || "149.154.164.13", 4);
+      }
+    })
+    .catch(() => {
+      if (hostname === "api.telegra.ph") {
+        if (options && options.all) {
+          callback(null, [{ address: "149.154.164.13", family: 4 }]);
+        } else {
+          callback(null, "149.154.164.13", 4);
+        }
+      } else {
+        require("dns").lookup(hostname, options, callback);
+      }
+    });
+}
+
 function requestPromise(options, postData) {
   return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
+    const opts = {
+      lookup: customDnsLookup,
+      ...options,
+    };
+    const req = https.request(opts, (res) => {
       let body = "";
       res.on("data", (chunk) => (body += chunk));
       res.on("end", () => {
