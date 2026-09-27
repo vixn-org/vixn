@@ -64,6 +64,7 @@ import {
   CloudSyncOutlined as CloudSyncIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
+  TravelExploreOutlined as TravelExploreIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import { useAdminTheme } from "@/components/admin/mui-theme-provider";
@@ -238,7 +239,7 @@ export default function ModelManagementPage() {
   // AI Crawl Import States
   const [crawlTargetType, setCrawlTargetType] = useState<"all" | "photo">("all");
   const [crawlDialogOpen, setCrawlDialogOpen] = useState(false);
-  const [crawlMode, setCrawlMode] = useState<"url" | "paste">("url");
+  const [crawlMode, setCrawlMode] = useState<"url" | "paste" | "google_social">("url");
   const [crawlUrl, setCrawlUrl] = useState("");
   const [pastedHtml, setPastedHtml] = useState("");
   const [crawling, setCrawling] = useState(false);
@@ -903,13 +904,22 @@ export default function ModelManagementPage() {
       toast.error("Please paste the full page source HTML (at least 100 characters)");
       return;
     }
+    if (crawlMode === "google_social" && pastedHtml.trim().length < 30) {
+      toast.error("Please paste the Google / Social page source or image URLs");
+      return;
+    }
     setCrawling(true);
     setCrawlError("");
     try {
       const payload = {
-        ...(crawlMode === "paste"
-          ? { html: pastedHtml, sourceUrl: crawlUrl.trim() || undefined }
-          : { url: crawlUrl.trim() }),
+        ...(crawlMode === "paste" || crawlMode === "google_social"
+          ? {
+              html: pastedHtml,
+              sourceUrl: crawlUrl.trim() || undefined,
+              strategy: crawlMode === "google_social" ? "google_social" : "default",
+              modelName: model?.name || undefined,
+            }
+          : { url: crawlUrl.trim(), modelName: model?.name || undefined }),
         mediaType: crawlTargetType,
       };
 
@@ -981,6 +991,7 @@ export default function ModelManagementPage() {
 
     // URL to download and upload: for video use thumbnail (or url if it's an image), for photo use url
     const targetUrl = item.type === "video" ? (item.thumbnail || item.url) : item.url;
+    const fallbackUrl = item.thumbnail && item.thumbnail !== targetUrl ? item.thumbnail : undefined;
     if (!targetUrl || (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))) {
       toast.error("No valid image URL found to download and upload");
       return;
@@ -993,6 +1004,7 @@ export default function ModelManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: targetUrl,
+          fallbackUrl,
           filenameHint: `${model?.name || "model"}-${item.type}-${index + 1}`,
         }),
       });
@@ -1055,6 +1067,7 @@ export default function ModelManagementPage() {
       const i = selectedIndices[step];
       const item = crawledItems[i];
       const targetUrl = item.type === "video" ? (item.thumbnail || item.url) : item.url;
+      const fallbackUrl = item.thumbnail && item.thumbnail !== targetUrl ? item.thumbnail : undefined;
 
       // If already on Supabase or no valid URL, skip
       if (
@@ -1072,6 +1085,7 @@ export default function ModelManagementPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             imageUrl: targetUrl,
+            fallbackUrl,
             filenameHint: `${model?.name || "model"}-${item.type}-${i + 1}`,
           }),
         });
@@ -3245,6 +3259,38 @@ export default function ModelManagementPage() {
                 variant="outlined"
                 size="small"
                 onClick={() => {
+                  setCrawlTargetType("photo");
+                  setCrawlUrl("");
+                  setPastedHtml("");
+                  setCrawlError("");
+                  setCrawlMode("google_social");
+                  setCrawlDialogOpen(true);
+                }}
+                startIcon={<TravelExploreIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: 1,
+                  borderColor: isDark ? "rgba(234, 88, 12, 0.5)" : "#ea580c",
+                  color: isDark ? "#fb923c" : "#ea580c",
+                  bgcolor: isDark ? "rgba(234, 88, 12, 0.12)" : "#fff7ed",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  px: 1.75,
+                  py: 0.75,
+                  "&:hover": {
+                    borderColor: "#fb923c",
+                    bgcolor: isDark ? "rgba(234, 88, 12, 0.2)" : "#ffedd5",
+                    color: isDark ? "#fdba74" : "#c2410c",
+                  },
+                }}
+              >
+                Google & Social Images
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
                   setUploadType("photo");
                   setUploadDialogOpen(true);
                 }}
@@ -4374,7 +4420,9 @@ export default function ModelManagementPage() {
         >
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              {crawlTargetType === "photo" ? (
+              {crawlMode === "google_social" ? (
+                <TravelExploreIcon sx={{ fontSize: 20, color: "#ea580c" }} />
+              ) : crawlTargetType === "photo" ? (
                 <CameraIcon sx={{ fontSize: 20, color: "#059669" }} />
               ) : (
                 <SmartToyIcon sx={{ fontSize: 20, color: "#7c3aed" }} />
@@ -4387,7 +4435,9 @@ export default function ModelManagementPage() {
                   fontSize: "1.125rem",
                 }}
               >
-                {crawlTargetType === "photo"
+                {crawlMode === "google_social"
+                  ? "Google & Social Image Harvester"
+                  : crawlTargetType === "photo"
                   ? "AI Image Import"
                   : "AI Media Import"}
               </Typography>
@@ -4396,7 +4446,9 @@ export default function ModelManagementPage() {
               variant="body2"
               sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.25 }}
             >
-              {crawlTargetType === "photo"
+              {crawlMode === "google_social"
+                ? "Extract high-resolution photos from Google Images, Instagram, or X.com View Source"
+                : crawlTargetType === "photo"
                 ? "Extract high-resolution photos & image galleries using AI"
                 : "Extract photos & videos from another page using AI"}
             </Typography>
@@ -4417,6 +4469,9 @@ export default function ModelManagementPage() {
             value={crawlMode}
             onChange={(_, v) => {
               setCrawlMode(v);
+              if (v === "google_social") {
+                setCrawlTargetType("photo");
+              }
               setCrawlError("");
             }}
             sx={{
@@ -4430,11 +4485,11 @@ export default function ModelManagementPage() {
                 px: 2,
                 py: 0.5,
                 "&.Mui-selected": {
-                  color: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+                  color: crawlMode === "google_social" ? "#ea580c" : crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                 },
               },
               "& .MuiTabs-indicator": {
-                bgcolor: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+                bgcolor: crawlMode === "google_social" ? "#ea580c" : crawlTargetType === "photo" ? "#059669" : "#7c3aed",
                 height: 2,
               },
             }}
@@ -4450,6 +4505,13 @@ export default function ModelManagementPage() {
               value="paste"
               label="Paste Source"
               icon={<ContentPasteIcon sx={{ fontSize: 16 }} />}
+              iconPosition="start"
+              disabled={crawling}
+            />
+            <Tab
+              value="google_social"
+              label="Google & Social Source"
+              icon={<TravelExploreIcon sx={{ fontSize: 16 }} />}
               iconPosition="start"
               disabled={crawling}
             />
@@ -4589,6 +4651,73 @@ export default function ModelManagementPage() {
             </>
           )}
 
+          {/* Google & Social Mode */}
+          {crawlMode === "google_social" && (
+            <>
+              <Box
+                sx={{
+                  p: 1.75,
+                  borderRadius: 1.25,
+                  bgcolor: isDark ? "rgba(234, 88, 12, 0.08)" : "#fff7ed",
+                  border: isDark ? "1px solid rgba(234, 88, 12, 0.25)" : "1px solid #fed7aa",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: isDark ? "#fb923c" : "#c2410c", mb: 0.5 }}>
+                  🌐 Google Images, Instagram & X.com Deep Harvester
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: textSecondary, lineHeight: 1.5 }}>
+                  1. Open Google Images, Instagram, or X.com in your browser.<br />
+                  2. Press <strong>Cmd+Option+U</strong> (Mac) or <strong>Ctrl+U</strong> (Windows) to <em>View Page Source</em>.<br />
+                  3. Select All (<strong>Cmd+A</strong>) & Copy (<strong>Cmd+C</strong>), then paste it below.<br />
+                  <em>Tip: You can also paste multiple direct image URLs (one per line).</em>
+                </Typography>
+              </Box>
+
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: textLabel,
+                    }}
+                  >
+                    Google / Social View Source HTML or Image URLs *
+                  </Typography>
+                  {pastedHtml.length > 0 && (
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary, fontFamily: "monospace" }}>
+                      {pastedHtml.length.toLocaleString()} chars
+                    </Typography>
+                  )}
+                </Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={8}
+                  placeholder={`Paste full View Page Source from Google Images, Instagram, or X.com here...\n\nExample:\n<!-- Google Images / Instagram / X.com page source -->\nor paste direct image URLs:\nhttps://encrypted-tbn0.gstatic.com/...\nhttps://pbs.twimg.com/...`}
+                  value={pastedHtml}
+                  onChange={(e) => {
+                    setPastedHtml(e.target.value);
+                    setCrawlError("");
+                  }}
+                  disabled={crawling}
+                  slotProps={{
+                    input: {
+                      sx: {
+                        borderRadius: 1,
+                        bgcolor: subcardBg,
+                        color: textPrimary,
+                        fontSize: "0.75rem",
+                        fontFamily: "monospace",
+                        lineHeight: 1.5,
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </>
+          )}
+
           {crawling && (
             <Box sx={{ mt: 1 }}>
               <LinearProgress
@@ -4597,19 +4726,30 @@ export default function ModelManagementPage() {
                   bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
                   "& .MuiLinearProgress-bar": {
                     bgcolor:
-                      crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+                      crawlMode === "google_social"
+                        ? "#ea580c"
+                        : crawlTargetType === "photo"
+                        ? "#059669"
+                        : "#7c3aed",
                   },
                 }}
               />
               <Typography
                 sx={{
                   fontSize: "0.75rem",
-                  color: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+                  color:
+                    crawlMode === "google_social"
+                      ? "#ea580c"
+                      : crawlTargetType === "photo"
+                      ? "#059669"
+                      : "#7c3aed",
                   mt: 0.75,
                   fontWeight: 600,
                 }}
               >
-                {crawlTargetType === "photo"
+                {crawlMode === "google_social"
+                  ? "Extracting Google & Social high-res photos with AI…"
+                  : crawlTargetType === "photo"
                   ? crawlMode === "paste"
                     ? "Extracting high-resolution photos from pasted HTML with AI…"
                     : "Crawling page & extracting photos with AI…"
@@ -4648,7 +4788,9 @@ export default function ModelManagementPage() {
             <Typography
               sx={{ fontSize: "0.7rem", color: textSecondary, lineHeight: 1.5 }}
             >
-              {crawlTargetType === "photo"
+              {crawlMode === "google_social"
+                ? `Our deep harvester unpacks Google's AF_initDataCallback arrays, encrypted-tbn0 CDN links, Twitter/X pbs.twimg.com original camera resolutions, and Instagram CDN images. AI will curate clean titles for ${model?.name || 'this model'} and remove UI graphics.`
+                : crawlTargetType === "photo"
                 ? crawlMode === "paste"
                   ? "Paste the full page source HTML of any image gallery, album, or webpage. The AI will extract all high-resolution photos and clean titles for your media sets."
                   : "Enter any page URL containing photos, albums, or galleries. The AI will crawl the page and extract all high-res photos and image links with clean titles."
@@ -4689,11 +4831,14 @@ export default function ModelManagementPage() {
             disabled={
               crawling ||
               (crawlMode === "url" && !crawlUrl.trim()) ||
-              (crawlMode === "paste" && pastedHtml.trim().length < 100)
+              (crawlMode === "paste" && pastedHtml.trim().length < 100) ||
+              (crawlMode === "google_social" && pastedHtml.trim().length < 30)
             }
             startIcon={
               crawling ? (
                 <CircularProgress size={16} color="inherit" />
+              ) : crawlMode === "google_social" ? (
+                <TravelExploreIcon sx={{ fontSize: 16 }} />
               ) : crawlTargetType === "photo" ? (
                 <CameraIcon sx={{ fontSize: 16 }} />
               ) : (
@@ -4702,18 +4847,39 @@ export default function ModelManagementPage() {
             }
             sx={{
               borderRadius: 1,
-              bgcolor: crawlTargetType === "photo" ? "#059669" : "#7c3aed",
+              bgcolor:
+                crawlMode === "google_social"
+                  ? "#ea580c"
+                  : crawlTargetType === "photo"
+                  ? "#059669"
+                  : "#7c3aed",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
               "&:hover": {
-                bgcolor: crawlTargetType === "photo" ? "#047857" : "#6d28d9",
+                bgcolor:
+                  crawlMode === "google_social"
+                    ? "#c2410c"
+                    : crawlTargetType === "photo"
+                    ? "#047857"
+                    : "#6d28d9",
                 boxShadow: "none",
               },
               "&.Mui-disabled": {
-                bgcolor: crawlTargetType === "photo" ? (isDark ? "rgba(5, 150, 105, 0.3)" : "#a7f3d0") : (isDark ? "rgba(124, 58, 237, 0.3)" : "#c4b5fd"),
+                bgcolor:
+                  crawlMode === "google_social"
+                    ? isDark
+                      ? "rgba(234, 88, 12, 0.3)"
+                      : "#fed7aa"
+                    : crawlTargetType === "photo"
+                    ? isDark
+                      ? "rgba(5, 150, 105, 0.3)"
+                      : "#a7f3d0"
+                    : isDark
+                    ? "rgba(124, 58, 237, 0.3)"
+                    : "#c4b5fd",
                 color: isDark ? "#64748b" : "#ffffff",
               },
             }}
@@ -4722,13 +4888,15 @@ export default function ModelManagementPage() {
               ? crawlTargetType === "photo"
                 ? "Extracting Images…"
                 : "Extracting…"
+              : crawlMode === "google_social"
+              ? "Extract Google & Social Photos"
               : crawlTargetType === "photo"
-                ? crawlMode === "paste"
-                  ? "Extract Images from Source"
-                  : "Crawl & Extract Images"
-                : crawlMode === "paste"
-                  ? "Extract from Source"
-                  : "Crawl & Extract"}
+              ? crawlMode === "paste"
+                ? "Extract Images from Source"
+                : "Crawl & Extract Images"
+              : crawlMode === "paste"
+              ? "Extract from Source"
+              : "Crawl & Extract"}
           </Button>
         </DialogActions>
       </Dialog>

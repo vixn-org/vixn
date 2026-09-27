@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { imageUrl, filenameHint } = body;
+    const { imageUrl, fallbackUrl, filenameHint } = body;
 
     if (!imageUrl || typeof imageUrl !== "string") {
       return NextResponse.json(
@@ -63,11 +63,39 @@ export async function POST(request: Request) {
       headers["Referer"] = referer;
     }
 
-    const fetchRes = await fetch(cleanUrl, {
-      headers,
-      redirect: "follow",
-      signal: AbortSignal.timeout(15000),
-    });
+    let fetchRes: Response;
+    try {
+      fetchRes = await fetch(cleanUrl, {
+        headers,
+        redirect: "follow",
+        signal: AbortSignal.timeout(15000),
+      });
+    } catch (err: any) {
+      if (fallbackUrl && typeof fallbackUrl === "string" && fallbackUrl.startsWith("http")) {
+        fetchRes = await fetch(fallbackUrl.trim(), {
+          headers: { ...headers, Referer: "" },
+          redirect: "follow",
+          signal: AbortSignal.timeout(15000),
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    if (!fetchRes.ok && fallbackUrl && typeof fallbackUrl === "string" && fallbackUrl.startsWith("http")) {
+      try {
+        const fbRes = await fetch(fallbackUrl.trim(), {
+          headers: { ...headers, Referer: "" },
+          redirect: "follow",
+          signal: AbortSignal.timeout(15000),
+        });
+        if (fbRes.ok) {
+          fetchRes = fbRes;
+        }
+      } catch {
+        // ignore and let next check handle fetchRes
+      }
+    }
 
     if (!fetchRes.ok) {
       return NextResponse.json(

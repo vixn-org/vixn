@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { url, html: pastedHtml, sourceUrl, mediaType } = body;
+    const { url, html: pastedHtml, sourceUrl, mediaType, strategy, modelName } = body;
     const isPhotoTarget = mediaType === "photo";
 
     if (
@@ -129,10 +129,29 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── Step 2: Universal Heuristic Pre-Extraction across entire document ──
-    const preExtracted = isPhotoTarget
-      ? extractUniversalPhotos(rawHtml, resolvedSourceUrl)
-      : extractUniversalMedia(rawHtml, resolvedSourceUrl);
+    // ── Step 2: Extraction Strategy (Google & Social Deep Extractor vs Universal) ──
+    const isGoogleSocial =
+      strategy === "google_social" ||
+      (isPhotoTarget &&
+        (rawHtml.includes("encrypted-tbn0.gstatic.com") ||
+          rawHtml.includes("AF_initDataCallback") ||
+          rawHtml.includes("pbs.twimg.com") ||
+          rawHtml.includes("cdninstagram.com")));
+
+    let preExtracted: ExtractedMediaItem[] = [];
+    if (isGoogleSocial) {
+      preExtracted = extractGoogleAndSocialPhotos(rawHtml, resolvedSourceUrl);
+      if (preExtracted.length === 0) {
+        preExtracted = extractUniversalPhotos(rawHtml, resolvedSourceUrl);
+      }
+    } else if (isPhotoTarget) {
+      preExtracted = extractUniversalPhotos(rawHtml, resolvedSourceUrl);
+      if (preExtracted.length === 0) {
+        preExtracted = extractGoogleAndSocialPhotos(rawHtml, resolvedSourceUrl);
+      }
+    } else {
+      preExtracted = extractUniversalMedia(rawHtml, resolvedSourceUrl);
+    }
 
     let finalItems: ExtractedMediaItem[] = [];
 
@@ -151,7 +170,8 @@ export async function POST(request: Request) {
             batch,
             resolvedSourceUrl,
             apiKey,
-            isPhotoTarget ? "photo" : "all"
+            isPhotoTarget ? "photo" : "all",
+            modelName
           );
           finalItems.push(...enrichedBatch);
         } catch (enrichErr) {
@@ -458,7 +478,8 @@ async function enrichBatchWithGroq(
   batch: ExtractedMediaItem[],
   sourceUrl: string,
   apiKey: string,
-  mediaType: "photo" | "all" = "all"
+  mediaType: "photo" | "all" = "all",
+  modelName?: string
 ): Promise<ExtractedMediaItem[]> {
   const isPhotoMode = mediaType === "photo";
   const candidateModels = [
@@ -475,17 +496,19 @@ async function enrichBatchWithGroq(
     rawTitle: item.title || "",
   }));
 
+  const modelContext = modelName ? `These photos feature the adult performer/model: "${modelName}". ` : "";
+
   const prompt = isPhotoMode
     ? `You are an expert adult media curator and SEO specialist.
-Given this list of extracted PHOTOS/IMAGES from: ${sourceUrl || "webpage"}
+${modelContext}Given this list of extracted PHOTOS/IMAGES from: ${sourceUrl || "webpage or social source"}
 
 Candidates:
 ${JSON.stringify(minimalCandidates)}
 
 For each candidate:
-1. "title": Clean up the title (Title Case, remove durations, resolutions like "1080p", "4K", site watermarks, random hash codes, camera file numbers like DSC001). Preserve performer/model names, photo shoot context, and descriptive scenes.
-2. "seoTitle": Create an engaging, search-optimized title tailored for photo sets (e.g. "Model Name - Stunning Photo Shoot").
-3. "keywords": Generate 3 to 6 comma-separated relevant tags/keywords (e.g. "model name, photo gallery, photoshoot, glamour, portrait, high res").
+1. "title": Clean up or generate an appealing, high-quality title (Title Case, remove durations, resolutions like "1080p", "4K", site watermarks, random hash codes, camera file numbers like DSC001). Naturally incorporate performer name "${modelName || 'Model'}" when relevant (e.g. "${modelName || 'Model'} - Glamour Photo Shoot", "${modelName || 'Model'} - Red Lingerie Portrait").
+2. "seoTitle": Create an engaging, search-optimized title tailored for photo sets (e.g. "${modelName || 'Model Name'} - Stunning High Res Photo Shoot").
+3. "keywords": Generate 3 to 6 comma-separated relevant tags/keywords (e.g. "${modelName || 'model name'}, photo gallery, photoshoot, glamour, portrait, high res, hd photos").
 4. "type": Must be "photo".
 5. Keep the same "url" and "thumbnail".
 Filter out any items that are clearly advertisements or UI graphics rather than actual photos.
@@ -1145,3 +1168,173 @@ Return ONLY a JSON object: { "items": [ ... ] }`;
 
   return [];
 }
+
+/**
+ * Specialized Deep Extractor for Google Images, Instagram, and X.com (Twitter)
+ * Raw Source / DOM / Text.
+ *
+ * Handles:
+ * 1. Google Images AF_initDataCallback arrays [["https://original.jpg", 1080, 1920]]
+ * 2. Google Images encrypted-tbn0.gstatic.com CDN cached thumbnails
+ * 3. Google Images data-ou, data-tu, data-src attributes
+ * 4. X.com / Twitter pbs.twimg.com/media/... with auto-upgrade to name=orig
+ * 5. Instagram scontent...cdninstagram.com and display_url JSON fields
+ * 6. Line-separated or space-separated lists of direct image URLs
+ */
+export function extractGoogleAndSocialPhotos(
+  rawContent: string,
+  baseUrl: string = ""
+): ExtractedMediaItem[] {
+  const items: ExtractedMediaItem[] = [];
+  const seenUrls = new Set<string>();
+
+  if (!rawContent || typeof rawContent !== "string") return items;
+
+  // Unescape common JSON and HTML entities found in Google / Social script blobs
+  // e.g. "https:\/\/encrypted-tbn0..." -> "https://encrypted-tbn0..."
+  // "\u003d" -> "=", "\u0026" -> "&", "\u002F" -> "/"
+  const cleanContent = rawContent
+    .replace(/\\\/|\\u002f|\\u002F/g, "/")
+    .replace(/\\u0026/g, "&")
+    .replace(/\\u003d/g, "=")
+    .replace(/&amp;/g, "&");
+
+  function addCandidate(url: string, thumbUrl?: string, rawTitle?: string) {
+    if (!url || typeof url !== "string") return;
+    const cleanUrl = url.trim();
+
+    // Ignore tiny base64 1x1 gifs or SVGs
+    if (
+      cleanUrl.startsWith("data:image/gif") ||
+      cleanUrl.startsWith("data:image/svg") ||
+      cleanUrl.startsWith("data:application")
+    ) {
+      return;
+    }
+
+    // Filter out common UI icons, search engine graphics, logos, trackers
+    const lower = cleanUrl.toLowerCase();
+    if (
+      lower.includes("googlelogo") ||
+      lower.includes("nav_logo") ||
+      lower.includes("favicon") ||
+      lower.includes("cleardot.gif") ||
+      lower.includes("1x1") ||
+      lower.includes("spacer.gif") ||
+      lower.includes("avatar_default") ||
+      lower.includes("tia.png") ||
+      lower.includes("/adsystem/") ||
+      lower.includes("/ads-")
+    ) {
+      return;
+    }
+
+    // Must be valid HTTP(S) or data:image/jpeg
+    if (
+      !cleanUrl.startsWith("http://") &&
+      !cleanUrl.startsWith("https://") &&
+      !cleanUrl.startsWith("data:image/jpeg")
+    ) {
+      return;
+    }
+
+    // Normalize URL key for deduplication
+    const normKey = cleanUrl.split("#")[0].split("&token=")[0].toLowerCase();
+    if (seenUrls.has(normKey)) return;
+    seenUrls.add(normKey);
+
+    const finalThumb =
+      thumbUrl && thumbUrl.startsWith("http") ? thumbUrl.trim() : cleanUrl;
+
+    items.push({
+      type: "photo",
+      url: cleanUrl,
+      thumbnail: finalThumb,
+      title: rawTitle?.trim() || "Model Photo",
+    });
+  }
+
+  // ── 1. Google Images AF_initDataCallback High-Res Source Pairs ──
+  // Matches: ["https://example.com/original.jpg", 1080, 1920]
+  const googlePairRegex =
+    /\["(https?:\/\/[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)",\s*(\d+),\s*(\d+)\]/gi;
+  let gPairMatch;
+  while ((gPairMatch = googlePairRegex.exec(cleanContent)) !== null) {
+    const fullUrl = gPairMatch[1];
+    const width = parseInt(gPairMatch[2], 10);
+    const height = parseInt(gPairMatch[3], 10);
+
+    // Skip tiny icons
+    if (width > 0 && height > 0 && (width < 120 || height < 120)) {
+      continue;
+    }
+
+    addCandidate(fullUrl, fullUrl, "Google High-Res Photo");
+  }
+
+  // Matches: [null, "https://...", ...]
+  const googleJsonMatchRegex =
+    /\[null,\s*"(https?:\/\/[^"\\,]+?\.(?:jpe?g|png|webp|avif)(?:\?[^"\\]*)?)"/gi;
+  let gJsonMatch;
+  while ((gJsonMatch = googleJsonMatchRegex.exec(cleanContent)) !== null) {
+    addCandidate(gJsonMatch[1], gJsonMatch[1], "Google Images Photo");
+  }
+
+  // Matches Google data attributes (data-ou = original url, data-tu = thumbnail)
+  const googleDataOuRegex = /data-ou=["'](https?:\/\/[^"']+)["']/gi;
+  let gOuMatch;
+  while ((gOuMatch = googleDataOuRegex.exec(cleanContent)) !== null) {
+    addCandidate(gOuMatch[1], gOuMatch[1], "Google Photo");
+  }
+
+  // ── 2. Google encrypted-tbn0.gstatic.com CDN Cached Images ──
+  // These are Google's cached images: 100% reliable, zero CORS/hotlink block
+  const googleTbnRegex =
+    /(https:\/\/encrypted-tbn0\.gstatic\.com\/images\?q=tbn:[A-Za-z0-9_\-:]+)/gi;
+  let gTbnMatch;
+  while ((gTbnMatch = googleTbnRegex.exec(cleanContent)) !== null) {
+    addCandidate(gTbnMatch[1], gTbnMatch[1], "Google Cached Image");
+  }
+
+  // ── 3. X.com / Twitter pbs.twimg.com/media Extraction ──
+  // Auto-upgrades to name=orig for camera-master resolution
+  const twitterMediaRegex =
+    /https?:\/\/pbs\.twimg\.com\/media\/([A-Za-z0-9_-]+)(?:\?format=([a-z]+)&name=([a-z0-9_]+)|\.([a-z]+))?/gi;
+  let twMatch;
+  while ((twMatch = twitterMediaRegex.exec(cleanContent)) !== null) {
+    const mediaId = twMatch[1];
+    const format = twMatch[2] || twMatch[4] || "jpg";
+    const fullResUrl = `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=orig`;
+    const thumbUrl = `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=small`;
+    addCandidate(fullResUrl, thumbUrl, "X (Twitter) Photo");
+  }
+
+  // ── 4. Instagram cdninstagram.com Extraction ──
+  const instaRegex =
+    /(https?:\/\/[a-z0-9\.\-]+cdninstagram\.com\/[^\s"'<>\\]+)/gi;
+  let instaMatch;
+  while ((instaMatch = instaRegex.exec(cleanContent)) !== null) {
+    let instaUrl = instaMatch[1].replace(/[",;)\\]+$/, "");
+    if (!instaUrl.includes("/s150x150/") && !instaUrl.includes("/s320x320/")) {
+      addCandidate(instaUrl, instaUrl, "Instagram Photo");
+    }
+  }
+
+  // Instagram JSON display_url
+  const instaDisplayRegex = /"display_url"\s*:\s*"(https?:\/\/[^"\\]+)"/gi;
+  let instaDispMatch;
+  while ((instaDispMatch = instaDisplayRegex.exec(cleanContent)) !== null) {
+    addCandidate(instaDispMatch[1], instaDispMatch[1], "Instagram Photo");
+  }
+
+  // ── 5. Direct Bulk Image URLs (Pasted line-by-line or space-separated) ──
+  const directUrlRegex =
+    /(https?:\/\/[^\s"']+\.(?:jpe?g|png|webp|avif)(?:\?[^\s"']*)?)/gi;
+  let directMatch;
+  while ((directMatch = directUrlRegex.exec(cleanContent)) !== null) {
+    addCandidate(directMatch[1], directMatch[1], "Direct Image Link");
+  }
+
+  return items;
+}
+
