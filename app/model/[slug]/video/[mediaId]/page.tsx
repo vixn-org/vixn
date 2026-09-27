@@ -9,6 +9,10 @@ import {
   getMediaSlug,
   slugify,
 } from "@/lib/seo";
+import {
+  getPublishedModelBySlug,
+  getExploreOtherModelsVideos,
+} from "@/lib/data";
 import HeaderSearch from "@/components/public/header-search";
 import ExploreOtherModelsVideos from "@/components/public/explore-other-models-videos";
 import PublicMuiThemeProvider from "@/components/public/public-mui-theme-provider";
@@ -60,11 +64,7 @@ function findVideoIndex(videos: any[], param: string): number {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, mediaId } = await params;
   try {
-    await connectDB();
-    const model = await Model.findOne({
-      slug: { $regex: new RegExp(`^${slug}$`, "i") },
-      status: "published",
-    }).lean();
+    const model = await getPublishedModelBySlug(slug);
 
     if (!model) return { title: { absolute: "Video Not Found | VIXN" } };
 
@@ -84,26 +84,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ModelVideoPage({ params }: Props) {
   const { slug, mediaId } = await params;
-  await connectDB();
 
-  // ── Fetch model + other models concurrently ─────────────────────────────
-  const modelPromise = Model.findOne({
-    slug: { $regex: new RegExp(`^${slug}$`, "i") },
-    status: "published",
-  }).lean();
-
-  const otherModelsPromise = Model.find({
-    status: "published",
-    "media.type": "video",
-  })
-    .select("name slug profileImage coverImage category media._id media.type media.url media.title media.alt media.thumbnail media.order")
-    .sort({ featured: -1, updatedAt: -1 })
-    .limit(13) // fetch 13 so we can exclude current model and still have 12
-    .lean();
-
+  // ── Fetch model + other models concurrently via cached helpers ─────────
   const [model, otherModelsRaw] = await Promise.all([
-    modelPromise,
-    otherModelsPromise,
+    getPublishedModelBySlug(slug),
+    getExploreOtherModelsVideos(),
   ]);
 
   if (!model) {
@@ -121,6 +106,13 @@ export default async function ModelVideoPage({ params }: Props) {
   const prevVideo = currentIndex > 0 ? allVideos[currentIndex - 1] : null;
   const nextVideo =
     currentIndex < allVideos.length - 1 ? allVideos[currentIndex + 1] : null;
+
+  const prevVideoUrl = prevVideo
+    ? `/model/${model.slug}/video/${getMediaSlug(prevVideo, "video", currentIndex - 1)}`
+    : null;
+  const nextVideoUrl = nextVideo
+    ? `/model/${model.slug}/video/${getMediaSlug(nextVideo, "video", currentIndex + 1)}`
+    : null;
 
   const relatedVideos = allVideos
     .map((v: any, originalIndex: number) => ({ ...v, originalIndex }))
@@ -351,6 +343,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     {prevVideo ? (
                       <Link
                         href={`/model/${model.slug}/video/${getMediaSlug(prevVideo, "video", currentIndex - 1)}`}
+                        prefetch={true}
                         className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
@@ -369,6 +362,7 @@ export default async function ModelVideoPage({ params }: Props) {
                     {nextVideo ? (
                       <Link
                         href={`/model/${model.slug}/video/${getMediaSlug(nextVideo, "video", currentIndex + 1)}`}
+                        prefetch={true}
                         className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <span>Next Video</span>
@@ -599,6 +593,7 @@ export default async function ModelVideoPage({ params }: Props) {
                       >
                         <Link
                           href={`/model/${model.slug}/video/${vidSlug}`}
+                          prefetch={true}
                           className="relative aspect-video rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.015] transition-all duration-300 block"
                         >
                           {vidPoster ? (
@@ -623,7 +618,7 @@ export default async function ModelVideoPage({ params }: Props) {
 
                         {/* Video Title and Action Below Thumbnail - Transparent */}
                         <div className="pt-3 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1.5 bg-transparent">
-                          <Link href={`/model/${model.slug}/video/${vidSlug}`} className="block">
+                          <Link href={`/model/${model.slug}/video/${vidSlug}`} prefetch={true} className="block">
                             <h4 className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-2 leading-snug">
                               {vidTitle}
                             </h4>
@@ -636,6 +631,7 @@ export default async function ModelVideoPage({ params }: Props) {
                             </span>
                             <Link
                               href={`/model/${model.slug}/video/${vidSlug}`}
+                              prefetch={true}
                               className="text-[11px] font-bold text-rose-400 group-hover:text-rose-300 transition-colors flex items-center gap-0.5"
                             >
                               <span>Watch</span>

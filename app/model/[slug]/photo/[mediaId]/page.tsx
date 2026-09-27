@@ -9,8 +9,13 @@ import {
   getMediaSlug,
   slugify,
 } from "@/lib/seo";
+import {
+  getPublishedModelBySlug,
+  getExploreOtherModelsPhotos,
+} from "@/lib/data";
 import HeaderSearch from "@/components/public/header-search";
 import ExploreOtherModelsPhotos from "@/components/public/explore-other-models-photos";
+import PhotoNavigationShortcuts from "@/components/public/photo-navigation-shortcuts";
 import PublicMuiThemeProvider from "@/components/public/public-mui-theme-provider";
 import PublicFooter from "@/components/public/footer";
 
@@ -61,11 +66,7 @@ function findPhotoIndex(photos: any[], param: string): number {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, mediaId } = await params;
   try {
-    await connectDB();
-    const model = await Model.findOne({
-      slug: { $regex: new RegExp(`^${slug}$`, "i") },
-      status: "published",
-    }).lean();
+    const model = await getPublishedModelBySlug(slug);
 
     if (!model) return { title: { absolute: "Photo Not Found | VIXN" } };
 
@@ -87,26 +88,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ModelPhotoPage({ params }: Props) {
   const { slug, mediaId } = await params;
-  await connectDB();
 
-  // ── Fetch model + other models concurrently ─────────────────────────────
-  const modelPromise = Model.findOne({
-    slug: { $regex: new RegExp(`^${slug}$`, "i") },
-    status: "published",
-  }).lean();
-
-  const otherModelsPromise = Model.find({
-    status: "published",
-    "media.type": "photo",
-  })
-    .select("name slug profileImage coverImage category media._id media.type media.url media.title media.alt media.order")
-    .sort({ featured: -1, updatedAt: -1 })
-    .limit(13) // fetch 13 so we can exclude current model and still have 12
-    .lean();
-
+  // ── Fetch model + other models concurrently via cached helpers ─────────
   const [model, otherModelsRaw] = await Promise.all([
-    modelPromise,
-    otherModelsPromise,
+    getPublishedModelBySlug(slug),
+    getExploreOtherModelsPhotos(),
   ]);
 
   if (!model) {
@@ -125,6 +111,13 @@ export default async function ModelPhotoPage({ params }: Props) {
   const prevPhoto = currentIndex > 0 ? allPhotos[currentIndex - 1] : null;
   const nextPhoto =
     currentIndex < allPhotos.length - 1 ? allPhotos[currentIndex + 1] : null;
+
+  const prevPhotoUrl = prevPhoto
+    ? `/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`
+    : null;
+  const nextPhotoUrl = nextPhoto
+    ? `/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`
+    : null;
 
   // Other related photos from the same model (excluding current)
   const relatedPhotos = allPhotos
@@ -174,6 +167,15 @@ export default async function ModelPhotoPage({ params }: Props) {
 
   return (
     <PublicMuiThemeProvider>
+      <PhotoNavigationShortcuts
+        prevUrl={prevPhotoUrl}
+        nextUrl={nextPhotoUrl}
+        nextImageUrl={nextPhoto?.url}
+        prevImageUrl={prevPhoto?.url}
+      />
+      {nextPhoto?.url && (
+        <link rel="preload" as="image" href={nextPhoto.url} />
+      )}
       <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans selection:bg-rose-500 selection:text-white flex flex-col">
         {/* Floating Top Navigation Header - Transparent with Logo */}
         <header className="fixed top-0 left-0 right-0 z-40 bg-[#090d16]/80 backdrop-blur-xl border-none">
@@ -291,13 +293,15 @@ export default async function ModelPhotoPage({ params }: Props) {
                   <img
                     src={currentPhoto.url}
                     alt={currentPhoto.alt || photoTitle}
+                    fetchPriority="high"
                     className="w-full h-auto max-h-[85vh] object-contain mx-auto transition-transform duration-300"
                   />
 
                   {/* Prev Button Overlay */}
-                  {prevPhoto && (
+                  {prevPhotoUrl && (
                     <Link
-                      href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
+                      href={prevPhotoUrl}
+                      prefetch={true}
                       className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-xl border-none"
                       title="Previous Photo"
                     >
@@ -306,9 +310,10 @@ export default async function ModelPhotoPage({ params }: Props) {
                   )}
 
                   {/* Next Button Overlay */}
-                  {nextPhoto && (
+                  {nextPhotoUrl && (
                     <Link
-                      href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
+                      href={nextPhotoUrl}
+                      prefetch={true}
                       className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-80 hover:opacity-100 shadow-xl border-none"
                       title="Next Photo"
                     >
@@ -320,9 +325,10 @@ export default async function ModelPhotoPage({ params }: Props) {
                 {/* Quick Browse & Action Bar */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {prevPhoto ? (
+                    {prevPhotoUrl ? (
                       <Link
-                        href={`/model/${model.slug}/photo/${getMediaSlug(prevPhoto, "photo", currentIndex - 1)}`}
+                        href={prevPhotoUrl}
+                        prefetch={true}
                         className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <ChevronLeftRoundedIcon sx={{ fontSize: 16 }} />
@@ -338,9 +344,10 @@ export default async function ModelPhotoPage({ params }: Props) {
                       </button>
                     )}
 
-                    {nextPhoto ? (
+                    {nextPhotoUrl ? (
                       <Link
-                        href={`/model/${model.slug}/photo/${getMediaSlug(nextPhoto, "photo", currentIndex + 1)}`}
+                        href={nextPhotoUrl}
+                        prefetch={true}
                         className="flex-1 sm:flex-none px-4 py-2.5 rounded-md bg-white/[0.06] hover:bg-white/[0.12] text-slate-200 hover:text-white transition-all text-xs font-bold inline-flex items-center justify-center gap-1 shadow-md border-none"
                       >
                         <span>Next Photo</span>
@@ -558,6 +565,7 @@ export default async function ModelPhotoPage({ params }: Props) {
                       >
                         <Link
                           href={`/model/${model.slug}/photo/${photoSlug}`}
+                          prefetch={true}
                           className="relative aspect-4/5 rounded-md overflow-hidden bg-[#0e1424] shadow-xl group-hover:shadow-2xl group-hover:scale-[1.02] transition-all duration-300 block"
                         >
                           <img
@@ -570,7 +578,11 @@ export default async function ModelPhotoPage({ params }: Props) {
 
                         {/* Title Below Thumbnail - Transparent */}
                         <div className="pt-2.5 pb-1 px-0.5 flex flex-col justify-between flex-1 gap-1 bg-transparent">
-                          <Link href={`/model/${model.slug}/photo/${photoSlug}`} className="block">
+                          <Link
+                            href={`/model/${model.slug}/photo/${photoSlug}`}
+                            prefetch={true}
+                            className="block"
+                          >
                             <h4 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors line-clamp-1 leading-snug">
                               {title}
                             </h4>
