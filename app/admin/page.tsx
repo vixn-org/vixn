@@ -28,7 +28,10 @@ import {
   ArticleOutlined as ArticleIcon,
   LanguageOutlined as GlobeIcon,
   Search as SearchIcon,
+  DarkModeOutlined as DarkModeIcon,
+  LightModeOutlined as LightModeIcon,
 } from "@mui/icons-material";
+import { useAdminTheme } from "@/components/admin/mui-theme-provider";
 
 interface DashboardStats {
   total: number;
@@ -47,6 +50,8 @@ interface RecentModel {
 }
 
 export default function AdminDashboard() {
+  const { mode, toggleMode } = useAdminTheme();
+  const isDark = mode === "dark";
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentModels, setRecentModels] = useState<RecentModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,27 +61,12 @@ export default function AdminDashboard() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [allRes, pubRes, draftRes] = await Promise.all([
-        fetch("/api/models?limit=1"),
-        fetch("/api/models?status=published&limit=1"),
-        fetch("/api/models?status=draft&limit=1"),
-      ]);
-
-      const [allData, pubData, draftData] = await Promise.all([
-        allRes.json(),
-        pubRes.json(),
-        draftRes.json(),
-      ]);
-
-      setStats({
-        total: allData.pagination?.total || 0,
-        published: pubData.pagination?.total || 0,
-        draft: draftData.pagination?.total || 0,
-      });
-
-      const recentRes = await fetch("/api/models?limit=6&sort=-createdAt");
-      const recentData = await recentRes.json();
-      setRecentModels(recentData.models || []);
+      const res = await fetch("/api/admin/stats");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats || { total: 0, published: 0, draft: 0 });
+        setRecentModels(data.recentModels || []);
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
@@ -123,21 +113,21 @@ export default function AdminDashboard() {
     {
       title: "Total Models",
       value: stats?.total || 0,
-      icon: <PeopleIcon sx={{ fontSize: 20, color: "#1e293b" }} />,
+      icon: <PeopleIcon sx={{ fontSize: 20, color: isDark ? "#f8fafc" : "#1e293b" }} />,
       tag: "All registered",
       accent: "#e2e8f0",
     },
     {
       title: "Published Live",
       value: stats?.published || 0,
-      icon: <PublishedIcon sx={{ fontSize: 20, color: "#059669" }} />,
+      icon: <PublishedIcon sx={{ fontSize: 20, color: "#10b981" }} />,
       tag: "Active in sitemap",
       accent: "#bbf7d0",
     },
     {
       title: "Draft Portfolios",
       value: stats?.draft || 0,
-      icon: <DraftIcon sx={{ fontSize: 20, color: "#d97706" }} />,
+      icon: <DraftIcon sx={{ fontSize: 20, color: "#f59e0b" }} />,
       tag: "Unpublished",
       accent: "#fed7aa",
     },
@@ -154,7 +144,8 @@ export default function AdminDashboard() {
           justifyContent: "space-between",
           gap: 2,
           pb: 1,
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
         }}
       >
         <Box>
@@ -162,33 +153,59 @@ export default function AdminDashboard() {
             variant="h5"
             sx={{
               fontWeight: 700,
-              color: "#0f172a",
+              color: isDark ? "#f8fafc" : "#0f172a",
               letterSpacing: "-0.01em",
               fontSize: { xs: "1.4rem", sm: "1.6rem" },
             }}
           >
             Dashboard
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+          <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
             Overview of creator catalogs, SEO pipelines, and content publishing.
           </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                borderRadius: 1,
+                p: 0.85,
+                color: isDark ? "#fbbf24" : "#475569",
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                },
+              }}
+            >
+              {isDark ? (
+                <LightModeIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <DarkModeIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Refresh data">
             <IconButton
               size="small"
               onClick={fetchData}
               disabled={loading}
               sx={{
-                border: "1px solid #e2e8f0",
-                bgcolor: "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
                 borderRadius: 1,
                 p: 0.85,
-                "&:hover": { bgcolor: "#f1f5f9" },
+                color: isDark ? "#94a3b8" : "#475569",
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9" },
               }}
             >
-              <RefreshIcon sx={{ fontSize: 18, color: "#475569" }} />
+              <RefreshIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
 
@@ -200,13 +217,16 @@ export default function AdminDashboard() {
             size="small"
             startIcon={<ExternalLinkIcon sx={{ fontSize: 16 }} />}
             sx={{
-              borderColor: "#e2e8f0",
-              color: "#334155",
-              bgcolor: "#ffffff",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#334155",
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#ffffff",
               borderRadius: 1,
               fontWeight: 600,
               fontSize: "0.8rem",
-              "&:hover": { bgcolor: "#f8fafc", borderColor: "#cbd5e1" },
+              "&:hover": {
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1",
+              },
             }}
           >
             Live Site
@@ -220,12 +240,12 @@ export default function AdminDashboard() {
             disableElevation
             startIcon={<AddIcon sx={{ fontSize: 16 }} />}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               borderRadius: 1,
               fontWeight: 600,
               fontSize: "0.8rem",
-              "&:hover": { bgcolor: "#1e293b" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
             }}
           >
             New Model
@@ -248,11 +268,12 @@ export default function AdminDashboard() {
             sx={{
               p: 2,
               borderRadius: 1.5,
-              border: "1px solid #e2e8f0",
-              bgcolor: "#ffffff",
-              transition: "border-color 0.15s",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              transition: "all 0.15s",
               "&:hover": {
-                borderColor: "#cbd5e1",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "#cbd5e1",
               },
             }}
           >
@@ -261,7 +282,7 @@ export default function AdminDashboard() {
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  color: "#64748b",
+                  color: isDark ? "#94a3b8" : "#64748b",
                   fontSize: "0.75rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.04em",
@@ -274,8 +295,9 @@ export default function AdminDashboard() {
                   width: 32,
                   height: 32,
                   borderRadius: 1,
-                  bgcolor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  border: "1px solid",
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -293,7 +315,7 @@ export default function AdminDashboard() {
                   variant="h4"
                   sx={{
                     fontWeight: 700,
-                    color: "#0f172a",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     lineHeight: 1.1,
                     fontSize: "1.75rem",
                   }}
@@ -301,7 +323,7 @@ export default function AdminDashboard() {
                   {stat.value}
                 </Typography>
               )}
-              <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.75rem", mt: 0.5, display: "block" }}>
+              <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: "0.75rem", mt: 0.5, display: "block" }}>
                 {stat.tag}
               </Typography>
             </Box>
@@ -314,8 +336,9 @@ export default function AdminDashboard() {
         elevation={0}
         sx={{
           borderRadius: 1.5,
-          border: "1px solid #e2e8f0",
-          bgcolor: "#ffffff",
+          border: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+          bgcolor: isDark ? "#0f1422" : "#ffffff",
           overflow: "hidden",
         }}
       >
@@ -337,8 +360,8 @@ export default function AdminDashboard() {
                   size="small"
                   label="Search Automation"
                   sx={{
-                    bgcolor: "#f1f5f9",
-                    color: "#334155",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
+                    color: isDark ? "#cbd5e1" : "#334155",
                     fontWeight: 600,
                     fontSize: "0.7rem",
                     height: 20,
@@ -349,8 +372,8 @@ export default function AdminDashboard() {
                   size="small"
                   label="Active"
                   sx={{
-                    bgcolor: "#ecfdf5",
-                    color: "#059669",
+                    bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
+                    color: isDark ? "#34d399" : "#059669",
                     fontWeight: 600,
                     fontSize: "0.7rem",
                     height: 20,
@@ -361,12 +384,12 @@ export default function AdminDashboard() {
 
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}
+                sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "0.95rem" }}
               >
                 Sitemaps &amp; Automated Indexing Pipeline
               </Typography>
 
-              <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.8rem" }}>
+              <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 0.25, fontSize: "0.8rem" }}>
                 Multi-chunk sitemap indexes with instant IndexNow (Bing/Yandex) pings and dynamic tag route indexing.
               </Typography>
 
@@ -388,14 +411,15 @@ export default function AdminDashboard() {
                     size="small"
                     icon={<ExternalLinkIcon sx={{ fontSize: "11px !important" }} />}
                     sx={{
-                      bgcolor: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      color: "#475569",
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                      border: "1px solid",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+                      color: isDark ? "#cbd5e1" : "#475569",
                       fontSize: "0.725rem",
                       fontWeight: 500,
                       borderRadius: 1,
                       height: 24,
-                      "&:hover": { bgcolor: "#f1f5f9" },
+                      "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" },
                     }}
                   />
                 ))}
@@ -411,14 +435,14 @@ export default function AdminDashboard() {
                 disabled={pinging}
                 startIcon={<SparklesIcon sx={{ fontSize: 16 }} />}
                 sx={{
-                  bgcolor: "#1e293b",
+                  bgcolor: isDark ? "#f43f5e" : "#1e293b",
                   color: "#ffffff",
                   px: 2.25,
                   py: 0.85,
                   borderRadius: 1,
                   fontSize: "0.8rem",
                   width: { xs: "100%", md: "auto" },
-                  "&:hover": { bgcolor: "#0f172a" },
+                  "&:hover": { bgcolor: isDark ? "#e11d48" : "#0f172a" },
                 }}
               >
                 {pinging ? "Dispatching..." : "Trigger Indexing Ping"}
@@ -432,11 +456,17 @@ export default function AdminDashboard() {
                 mt: 1.5,
                 p: 1.25,
                 borderRadius: 1,
-                bgcolor: pingMessage.startsWith("Success") ? "#f0fdf4" : "#fef2f2",
+                bgcolor: pingMessage.startsWith("Success")
+                  ? isDark ? "rgba(16, 185, 129, 0.15)" : "#f0fdf4"
+                  : isDark ? "rgba(239, 68, 68, 0.15)" : "#fef2f2",
                 border: `1px solid ${
-                  pingMessage.startsWith("Success") ? "#bbf7d0" : "#fecaca"
+                  pingMessage.startsWith("Success")
+                    ? isDark ? "rgba(16, 185, 129, 0.3)" : "#bbf7d0"
+                    : isDark ? "rgba(239, 68, 68, 0.3)" : "#fecaca"
                 }`,
-                color: pingMessage.startsWith("Success") ? "#166534" : "#991b1b",
+                color: pingMessage.startsWith("Success")
+                  ? isDark ? "#34d399" : "#166534"
+                  : isDark ? "#fca5a5" : "#991b1b",
                 fontSize: "0.775rem",
                 fontWeight: 600,
               }}
@@ -462,28 +492,32 @@ export default function AdminDashboard() {
           sx={{
             p: 1.75,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             transition: "all 0.15s",
-            "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            "&:hover": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "#cbd5e1",
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <FolderIcon sx={{ fontSize: 18, color: "#475569" }} />
+            <FolderIcon sx={{ fontSize: 18, color: isDark ? "#94a3b8" : "#475569" }} />
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontSize: "0.825rem" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "0.825rem" }}>
                 Models Directory
               </Typography>
-              <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.725rem" }}>
+              <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.725rem" }}>
                 Add, edit &amp; manage models
               </Typography>
             </Box>
           </Box>
-          <ArrowForwardIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+          <ArrowForwardIcon sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }} />
         </Card>
 
         <Card
@@ -493,28 +527,32 @@ export default function AdminDashboard() {
           sx={{
             p: 1.75,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             transition: "all 0.15s",
-            "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            "&:hover": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "#cbd5e1",
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <ArticleIcon sx={{ fontSize: 18, color: "#475569" }} />
+            <ArticleIcon sx={{ fontSize: 18, color: isDark ? "#94a3b8" : "#475569" }} />
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontSize: "0.825rem" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "0.825rem" }}>
                 SEO Articles
               </Typography>
-              <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.725rem" }}>
+              <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.725rem" }}>
                 Manage editorial guides
               </Typography>
             </Box>
           </Box>
-          <ArrowForwardIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+          <ArrowForwardIcon sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }} />
         </Card>
 
         <Card
@@ -525,28 +563,32 @@ export default function AdminDashboard() {
           sx={{
             p: 1.75,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
             textDecoration: "none",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             transition: "all 0.15s",
-            "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+            "&:hover": {
+              borderColor: isDark ? "rgba(255, 255, 255, 0.18)" : "#cbd5e1",
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <GlobeIcon sx={{ fontSize: 18, color: "#475569" }} />
+            <GlobeIcon sx={{ fontSize: 18, color: isDark ? "#94a3b8" : "#475569" }} />
             <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a", fontSize: "0.825rem" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "0.825rem" }}>
                 Category Tags
               </Typography>
-              <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.725rem" }}>
+              <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.725rem" }}>
                 Browse live keyword archive
               </Typography>
             </Box>
           </Box>
-          <ExternalLinkIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+          <ExternalLinkIcon sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }} />
         </Card>
       </Box>
 
@@ -555,8 +597,9 @@ export default function AdminDashboard() {
         elevation={0}
         sx={{
           borderRadius: 1.5,
-          border: "1px solid #e2e8f0",
-          bgcolor: "#ffffff",
+          border: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+          bgcolor: isDark ? "#0f1422" : "#ffffff",
           overflow: "hidden",
         }}
       >
@@ -567,15 +610,16 @@ export default function AdminDashboard() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderBottom: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            borderBottom: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#0f172a", fontSize: "0.875rem" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "0.875rem" }}>
               Recent Models
             </Typography>
-            <Typography variant="caption" sx={{ color: "#64748b", fontSize: "0.725rem" }}>
+            <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.725rem" }}>
               Quick access to edit profiles and media
             </Typography>
           </Box>
@@ -585,7 +629,7 @@ export default function AdminDashboard() {
             href="/admin/models"
             size="small"
             endIcon={<ArrowForwardIcon sx={{ fontSize: 13 }} />}
-            sx={{ color: "#334155", fontWeight: 600, fontSize: "0.75rem", p: 0.5 }}
+            sx={{ color: isDark ? "#f8fafc" : "#334155", fontWeight: 600, fontSize: "0.75rem", p: 0.5 }}
           >
             View all
           </Button>
@@ -603,7 +647,8 @@ export default function AdminDashboard() {
                     gap: 1.5,
                     p: 1.25,
                     borderRadius: 1,
-                    border: "1px solid #f1f5f9",
+                    border: "1px solid",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
                   }}
                 >
                   <Skeleton variant="rounded" width={36} height={36} sx={{ borderRadius: 1 }} />
@@ -616,10 +661,10 @@ export default function AdminDashboard() {
             </Box>
           ) : recentModels.length === 0 ? (
             <Box sx={{ py: 5, textAlign: "center" }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a" }}>
                 No models created yet
               </Typography>
-              <Typography variant="caption" sx={{ color: "#64748b", display: "block", mt: 0.25 }}>
+              <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", display: "block", mt: 0.25 }}>
                 Get started by creating your first model profile.
               </Typography>
               <Button
@@ -628,7 +673,13 @@ export default function AdminDashboard() {
                 variant="contained"
                 size="small"
                 startIcon={<AddIcon sx={{ fontSize: 16 }} />}
-                sx={{ mt: 1.5, bgcolor: "#0f172a", borderRadius: 1 }}
+                sx={{
+                  mt: 1.5,
+                  bgcolor: isDark ? "#f43f5e" : "#0f172a",
+                  color: "#ffffff",
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
+                }}
               >
                 Add Model
               </Button>
@@ -646,13 +697,14 @@ export default function AdminDashboard() {
                     justifyContent: "space-between",
                     p: 1.25,
                     borderRadius: 1,
-                    border: "1px solid #f1f5f9",
+                    border: "1px solid",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
                     textDecoration: "none",
                     transition: "all 0.15s",
-                    bgcolor: "#ffffff",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.02)" : "#ffffff",
                     "&:hover": {
-                      bgcolor: "#f8fafc",
-                      borderColor: "#e2e8f0",
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.14)" : "#e2e8f0",
                     },
                   }}
                 >
@@ -665,11 +717,12 @@ export default function AdminDashboard() {
                         width: 38,
                         height: 38,
                         borderRadius: 1,
-                        bgcolor: "#f1f5f9",
-                        color: "#334155",
+                        bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
+                        color: isDark ? "#f8fafc" : "#334155",
                         fontWeight: 700,
                         fontSize: "0.85rem",
-                        border: "1px solid #e2e8f0",
+                        border: "1px solid",
+                        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                       }}
                     >
                       {m.name.charAt(0)}
@@ -680,10 +733,10 @@ export default function AdminDashboard() {
                         variant="body2"
                         sx={{
                           fontWeight: 600,
-                          color: "#0f172a",
+                          color: isDark ? "#f8fafc" : "#0f172a",
                           lineHeight: 1.2,
                           fontSize: "0.825rem",
-                          "&:hover": { color: "#2563eb" },
+                          "&:hover": { color: isDark ? "#fb7185" : "#2563eb" },
                         }}
                       >
                         {m.name}
@@ -694,16 +747,16 @@ export default function AdminDashboard() {
                           variant="caption"
                           sx={{
                             fontFamily: "monospace",
-                            color: "#64748b",
+                            color: isDark ? "#94a3b8" : "#64748b",
                             fontSize: "0.7rem",
                           }}
                         >
                           /model/{m.slug}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: "#cbd5e1" }}>
+                        <Typography variant="caption" sx={{ color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" }}>
                           •
                         </Typography>
-                        <Typography variant="caption" sx={{ color: "#94a3b8", fontSize: "0.7rem" }}>
+                        <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: "0.7rem" }}>
                           {m.media?.length || 0} assets
                         </Typography>
                       </Box>
@@ -719,15 +772,20 @@ export default function AdminDashboard() {
                         fontSize: "0.68rem",
                         height: 20,
                         borderRadius: 1,
-                        bgcolor: m.status === "published" ? "#ecfdf5" : "#f1f5f9",
-                        color: m.status === "published" ? "#059669" : "#64748b",
-                        border: `1px solid ${
-                          m.status === "published" ? "#a7f3d0" : "#e2e8f0"
-                        }`,
+                        bgcolor: m.status === "published"
+                          ? isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5"
+                          : isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
+                        color: m.status === "published"
+                          ? isDark ? "#34d399" : "#059669"
+                          : isDark ? "#cbd5e1" : "#64748b",
+                        border: "1px solid",
+                        borderColor: m.status === "published"
+                          ? isDark ? "rgba(16, 185, 129, 0.3)" : "#a7f3d0"
+                          : isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                       }}
                     />
 
-                    <ArrowForwardIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
+                    <ArrowForwardIcon sx={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }} />
                   </Box>
                 </Box>
               ))}

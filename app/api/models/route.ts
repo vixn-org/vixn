@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
     const findPromise = Model.find(query)
       .select(
-        "name slug profileImage coverImage category country tags media createdAt status featured",
+        "name slug profileImage coverImage category country tags media._id createdAt status featured reviewed",
       )
       .sort(sort)
       .skip((page - 1) * limit)
@@ -56,6 +56,8 @@ export async function GET(request: Request) {
 
     const countPromise = isFastSearch
       ? Promise.resolve(null)
+      : Object.keys(query).length === 0
+      ? Model.estimatedDocumentCount()
       : Model.countDocuments(query);
 
     const [models, totalCount] = await Promise.all([findPromise, countPromise]);

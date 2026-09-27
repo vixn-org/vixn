@@ -45,9 +45,12 @@ import {
   ArticleOutlined as ArticleIcon,
   AutoAwesomeOutlined as SparklesIcon,
   AccessTimeOutlined as ClockIcon,
+  DarkModeOutlined as DarkModeIcon,
+  LightModeOutlined as LightModeIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
+import { useAdminTheme } from "@/components/admin/mui-theme-provider";
 
 interface BlogItem {
   _id: string;
@@ -67,6 +70,8 @@ interface BlogItem {
 
 export default function AdminBlogsPage() {
   const router = useRouter();
+  const { mode, toggleMode } = useAdminTheme();
+  const isDark = mode === "dark";
   const [blogs, setBlogs] = useState<BlogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -243,7 +248,8 @@ export default function AdminBlogsPage() {
           justifyContent: "space-between",
           gap: 2,
           pb: 1,
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
         }}
       >
         <Box>
@@ -252,7 +258,7 @@ export default function AdminBlogsPage() {
               variant="h5"
               sx={{
                 fontWeight: 700,
-                color: "#0f172a",
+                color: isDark ? "#f8fafc" : "#0f172a",
                 letterSpacing: "-0.01em",
                 fontSize: { xs: "1.4rem", sm: "1.6rem" },
               }}
@@ -266,30 +272,56 @@ export default function AdminBlogsPage() {
                 height: 20,
                 fontSize: "0.68rem",
                 fontWeight: 700,
-                bgcolor: "#fef2f2",
-                color: "#dc2626",
-                border: "1px solid #fecaca",
+                bgcolor: isDark ? "rgba(244, 63, 94, 0.15)" : "#fef2f2",
+                color: isDark ? "#fb7185" : "#dc2626",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(244, 63, 94, 0.3)" : "#fecaca",
                 borderRadius: 1,
               }}
             />
           </Box>
-          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+          <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
             Write, optimize, and publish high-authority editorial articles with live SEO audits.
           </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                borderRadius: 1,
+                color: isDark ? "#fbbf24" : "#475569",
+                p: 0.75,
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                },
+              }}
+            >
+              {isDark ? (
+                <LightModeIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <DarkModeIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Refresh articles">
             <IconButton
               size="small"
               onClick={fetchBlogs}
               sx={{
-                bgcolor: "#ffffff",
-                border: "1px solid #e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
                 borderRadius: 1,
-                color: "#64748b",
+                color: isDark ? "#94a3b8" : "#64748b",
                 p: 0.75,
-                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9", color: isDark ? "#f8fafc" : "#0f172a" },
               }}
             >
               <RefreshIcon sx={{ fontSize: 18 }} />
@@ -301,7 +333,7 @@ export default function AdminBlogsPage() {
             startIcon={<AddIcon />}
             onClick={() => setCreateOpen(true)}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               borderRadius: 1,
               textTransform: "none",
@@ -310,7 +342,7 @@ export default function AdminBlogsPage() {
               px: 1.75,
               py: 0.75,
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             Create New Article
@@ -331,8 +363,9 @@ export default function AdminBlogsPage() {
           sx={{
             p: 2,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -341,21 +374,22 @@ export default function AdminBlogsPage() {
                 width: 36,
                 height: 36,
                 borderRadius: 1,
-                bgcolor: "#f8fafc",
-                border: "1px solid #e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f8fafc",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#334155",
+                color: isDark ? "#f8fafc" : "#334155",
               }}
             >
               <BookOpenIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", lineHeight: 1.1 }}>
                 {totalCount}
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+              <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500, mt: 0.25 }}>
                 Total Articles
               </Typography>
             </Box>
@@ -367,8 +401,9 @@ export default function AdminBlogsPage() {
           sx={{
             p: 2,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -377,21 +412,22 @@ export default function AdminBlogsPage() {
                 width: 36,
                 height: 36,
                 borderRadius: 1,
-                bgcolor: "#ecfdf5",
-                border: "1px solid #a7f3d0",
+                bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#a7f3d0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#059669",
+                color: isDark ? "#34d399" : "#059669",
               }}
             >
               <CheckCircleIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", lineHeight: 1.1 }}>
                 {publishedCount}
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+              <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500, mt: 0.25 }}>
                 Published Live
               </Typography>
             </Box>
@@ -403,8 +439,9 @@ export default function AdminBlogsPage() {
           sx={{
             p: 2,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -413,21 +450,22 @@ export default function AdminBlogsPage() {
                 width: 36,
                 height: 36,
                 borderRadius: 1,
-                bgcolor: "#fffbeb",
-                border: "1px solid #fde68a",
+                bgcolor: isDark ? "rgba(245, 158, 11, 0.15)" : "#fffbeb",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#fde68a",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#d97706",
+                color: isDark ? "#fbbf24" : "#d97706",
               }}
             >
               <ArticleIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", lineHeight: 1.1 }}>
                 {draftCount}
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+              <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500, mt: 0.25 }}>
                 Drafts
               </Typography>
             </Box>
@@ -439,8 +477,9 @@ export default function AdminBlogsPage() {
           sx={{
             p: 2,
             borderRadius: 1.5,
-            border: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -449,21 +488,22 @@ export default function AdminBlogsPage() {
                 width: 36,
                 height: 36,
                 borderRadius: 1,
-                bgcolor: "#eff6ff",
-                border: "1px solid #bfdbfe",
+                bgcolor: isDark ? "rgba(59, 130, 246, 0.15)" : "#eff6ff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#bfdbfe",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#2563eb",
+                color: isDark ? "#60a5fa" : "#2563eb",
               }}
             >
               <SparklesIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "1.25rem", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", lineHeight: 1.1 }}>
                 100%
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500, mt: 0.25 }}>
+              <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500, mt: 0.25 }}>
                 SEO Schema Ready
               </Typography>
             </Box>
@@ -493,16 +533,17 @@ export default function AdminBlogsPage() {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 20 }} />
+                  <SearchIcon sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: 20 }} />
                 </InputAdornment>
               ),
               sx: {
                 borderRadius: 1,
-                bgcolor: "#ffffff",
+                bgcolor: isDark ? "#0f1422" : "#ffffff",
+                color: isDark ? "#f8fafc" : "#0f172a",
                 fontSize: "0.875rem",
-                "& fieldset": { borderColor: "#e2e8f0" },
-                "&:hover fieldset": { borderColor: "#cbd5e1" },
-                "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+                "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: isDark ? "#f43f5e" : "#0f172a" },
               },
             },
           }}
@@ -519,10 +560,13 @@ export default function AdminBlogsPage() {
               displayEmpty
               sx={{
                 borderRadius: 1,
-                bgcolor: "#ffffff",
+                bgcolor: isDark ? "#0f1422" : "#ffffff",
+                color: isDark ? "#f8fafc" : "#0f172a",
                 fontSize: "0.875rem",
                 fontWeight: 500,
-                "& fieldset": { borderColor: "#e2e8f0" },
+                "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: isDark ? "#f43f5e" : "#0f172a" },
               }}
             >
               <MenuItem value="all">All Categories</MenuItem>
@@ -544,10 +588,13 @@ export default function AdminBlogsPage() {
               displayEmpty
               sx={{
                 borderRadius: 1,
-                bgcolor: "#ffffff",
+                bgcolor: isDark ? "#0f1422" : "#ffffff",
+                color: isDark ? "#f8fafc" : "#0f172a",
                 fontSize: "0.875rem",
                 fontWeight: 500,
-                "& fieldset": { borderColor: "#e2e8f0" },
+                "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: isDark ? "#f43f5e" : "#0f172a" },
               }}
             >
               <MenuItem value="all">All Status</MenuItem>
@@ -562,35 +609,42 @@ export default function AdminBlogsPage() {
       <Card
         elevation={0}
         sx={{
-          border: "1px solid #e2e8f0",
+          border: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
           borderRadius: 1.5,
-          bgcolor: "#ffffff",
+          bgcolor: isDark ? "#0f1422" : "#ffffff",
           overflow: "hidden",
         }}
       >
         <TableContainer>
           <Table sx={{ minWidth: 750 }} size="small">
-            <TableHead sx={{ bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+            <TableHead
+              sx={{
+                bgcolor: isDark ? "#090d16" : "#f8fafc",
+                borderBottom: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              }}
+            >
               <TableRow>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em", width: 70 }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em", width: 70 }}>
                   Cover
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Article Title
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Category
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Read Time
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Status
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Date
                 </TableCell>
-                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Actions
                 </TableCell>
               </TableRow>
@@ -598,7 +652,7 @@ export default function AdminBlogsPage() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} sx={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <TableRow key={i} sx={{ borderBottom: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9" }}>
                     <TableCell sx={{ py: 1.5, px: 2 }}>
                       <Skeleton variant="rounded" width={52} height={36} sx={{ borderRadius: 1 }} />
                     </TableCell>
@@ -627,11 +681,11 @@ export default function AdminBlogsPage() {
                 <TableRow>
                   <TableCell colSpan={7} sx={{ py: 8, textAlign: "center" }}>
                     <Box sx={{ maxWidth: 300, mx: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                      <BookOpenIcon sx={{ fontSize: 36, color: "#cbd5e1" }} />
-                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                      <BookOpenIcon sx={{ fontSize: 36, color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: isDark ? "#f8fafc" : "#0f172a" }}>
                         No blog articles found
                       </Typography>
-                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b" }}>
                         {search || statusFilter !== "all" || categoryFilter !== "all"
                           ? "Try adjusting your search criteria or category filters."
                           : "Create your first SEO article to rank on search engines."}
@@ -643,12 +697,13 @@ export default function AdminBlogsPage() {
                         startIcon={<AddIcon sx={{ fontSize: 16 }} />}
                         sx={{
                           mt: 1,
-                          bgcolor: "#0f172a",
+                          bgcolor: isDark ? "#f43f5e" : "#0f172a",
                           color: "#ffffff",
                           borderRadius: 1,
                           textTransform: "none",
                           fontSize: "0.75rem",
                           fontWeight: 600,
+                          "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
                         }}
                       >
                         New Article
@@ -664,9 +719,10 @@ export default function AdminBlogsPage() {
                     onClick={() => router.push(`/admin/blogs/${blog._id}`)}
                     sx={{
                       cursor: "pointer",
-                      borderBottom: "1px solid #f1f5f9",
+                      borderBottom: "1px solid",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
                       "&:last-child": { borderBottom: "none" },
-                      "&:hover": { bgcolor: "#f8fafc" },
+                      "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc" },
                       transition: "background-color 0.15s ease",
                     }}
                   >
@@ -677,9 +733,10 @@ export default function AdminBlogsPage() {
                           width: 52,
                           height: 36,
                           borderRadius: 1,
-                          bgcolor: "#f1f5f9",
+                          bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
                           overflow: "hidden",
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -693,7 +750,7 @@ export default function AdminBlogsPage() {
                             sx={{ width: "100%", height: "100%", objectFit: "cover" }}
                           />
                         ) : (
-                          <ArticleIcon sx={{ fontSize: 18, color: "#94a3b8" }} />
+                          <ArticleIcon sx={{ fontSize: 18, color: isDark ? "#94a3b8" : "#94a3b8" }} />
                         )}
                       </Box>
                     </TableCell>
@@ -706,12 +763,12 @@ export default function AdminBlogsPage() {
                           sx={{
                             fontWeight: 600,
                             fontSize: "0.825rem",
-                            color: "#0f172a",
+                            color: isDark ? "#f8fafc" : "#0f172a",
                             lineHeight: 1.2,
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            "&:hover": { color: "#2563eb" },
+                            "&:hover": { color: isDark ? "#fb7185" : "#2563eb" },
                           }}
                         >
                           {blog.title}
@@ -722,7 +779,7 @@ export default function AdminBlogsPage() {
                             variant="caption"
                             sx={{
                               fontFamily: "monospace",
-                              color: "#64748b",
+                              color: isDark ? "#94a3b8" : "#64748b",
                               fontSize: "0.7rem",
                             }}
                           >
@@ -737,9 +794,10 @@ export default function AdminBlogsPage() {
                                 fontSize: "0.6rem",
                                 fontWeight: 600,
                                 borderRadius: 0.75,
-                                bgcolor: "#f8fafc",
-                                color: "#64748b",
-                                border: "1px solid #e2e8f0",
+                                bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                                color: isDark ? "#cbd5e1" : "#64748b",
+                                border: "1px solid",
+                                borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                               }}
                             />
                           )}
@@ -757,9 +815,10 @@ export default function AdminBlogsPage() {
                           fontSize: "0.68rem",
                           fontWeight: 600,
                           borderRadius: 1,
-                          bgcolor: "#f1f5f9",
-                          color: "#475569",
-                          border: "1px solid #e2e8f0",
+                          bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+                          color: isDark ? "#cbd5e1" : "#475569",
+                          border: "1px solid",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                         }}
                       />
                     </TableCell>
@@ -767,8 +826,8 @@ export default function AdminBlogsPage() {
                     {/* Reading Time */}
                     <TableCell sx={{ py: 1.5, px: 2 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <ClockIcon sx={{ fontSize: 14, color: "#94a3b8" }} />
-                        <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                        <ClockIcon sx={{ fontSize: 14, color: isDark ? "#94a3b8" : "#94a3b8" }} />
+                        <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#cbd5e1" : "#64748b", fontWeight: 500 }}>
                           {blog.readingTime || 3} min
                         </Typography>
                       </Box>
@@ -798,7 +857,7 @@ export default function AdminBlogsPage() {
                           sx={{
                             fontSize: "0.7rem",
                             fontWeight: 700,
-                            color: blog.status === "published" ? "#059669" : "#94a3b8",
+                            color: blog.status === "published" ? (isDark ? "#34d399" : "#059669") : (isDark ? "#64748b" : "#94a3b8"),
                           }}
                         >
                           {blog.status === "published" ? "Published" : "Draft"}
@@ -808,7 +867,7 @@ export default function AdminBlogsPage() {
 
                     {/* Date */}
                     <TableCell sx={{ py: 1.5, px: 2 }}>
-                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500 }}>
                         {new Date(blog.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -827,10 +886,10 @@ export default function AdminBlogsPage() {
                         size="small"
                         onClick={(e) => handleOpenMenu(e, blog)}
                         sx={{
-                          color: "#94a3b8",
+                          color: isDark ? "#94a3b8" : "#94a3b8",
                           borderRadius: 1,
                           p: 0.5,
-                          "&:hover": { color: "#0f172a", bgcolor: "#f1f5f9" },
+                          "&:hover": { color: isDark ? "#f8fafc" : "#0f172a", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" },
                         }}
                       >
                         <MoreVertIcon sx={{ fontSize: 17 }} />
@@ -856,24 +915,25 @@ export default function AdminBlogsPage() {
           }}
           rowsPerPageOptions={[5, 10, 20, 50]}
           sx={{
-            borderTop: "1px solid #e2e8f0",
-            bgcolor: "#ffffff",
+            borderTop: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
             ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
               fontSize: "0.75rem",
-              color: "#64748b",
+              color: isDark ? "#94a3b8" : "#64748b",
               fontWeight: 500,
             },
             ".MuiTablePagination-select": {
               fontSize: "0.75rem",
               fontWeight: 600,
-              color: "#334155",
+              color: isDark ? "#f8fafc" : "#334155",
             },
             ".MuiTablePagination-actions button": {
-              color: "#475569",
+              color: isDark ? "#cbd5e1" : "#475569",
               p: 0.5,
               borderRadius: 1,
               "&.Mui-disabled": {
-                color: "#cbd5e1",
+                color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1",
               },
             },
           }}
@@ -889,10 +949,12 @@ export default function AdminBlogsPage() {
           paper: {
             elevation: 2,
             sx: {
-              border: "1px solid #e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
               borderRadius: 1,
               minWidth: 170,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.5)" : "0 4px 12px rgba(0,0,0,0.06)",
               p: 0.5,
             },
           },
@@ -910,13 +972,14 @@ export default function AdminBlogsPage() {
               sx={{
                 fontSize: "0.8125rem",
                 fontWeight: 500,
-                color: "#1e293b",
+                color: isDark ? "#f8fafc" : "#1e293b",
                 borderRadius: 1,
                 gap: 1.25,
                 py: 0.75,
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
               }}
             >
-              <EditIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              <EditIcon sx={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b" }} />
               Edit Article &amp; SEO
             </MenuItem>
 
@@ -928,13 +991,14 @@ export default function AdminBlogsPage() {
               sx={{
                 fontSize: "0.8125rem",
                 fontWeight: 500,
-                color: "#1e293b",
+                color: isDark ? "#f8fafc" : "#1e293b",
                 borderRadius: 1,
                 gap: 1.25,
                 py: 0.75,
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
               }}
             >
-              <OpenInNewIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              <OpenInNewIcon sx={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b" }} />
               View Public Post
             </MenuItem>
 
@@ -947,14 +1011,14 @@ export default function AdminBlogsPage() {
               sx={{
                 fontSize: "0.8125rem",
                 fontWeight: 500,
-                color: "#dc2626",
+                color: "#f87171",
                 borderRadius: 1,
                 gap: 1.25,
                 py: 0.75,
-                "&:hover": { bgcolor: "#fef2f2" },
+                "&:hover": { bgcolor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fef2f2" },
               }}
             >
-              <DeleteOutlineIcon sx={{ fontSize: 16, color: "#dc2626" }} />
+              <DeleteOutlineIcon sx={{ fontSize: 16, color: "#f87171" }} />
               Delete Article
             </MenuItem>
           </>
@@ -970,23 +1034,29 @@ export default function AdminBlogsPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: {
+              borderRadius: 1.5,
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
+            },
           },
         }}
       >
         <form onSubmit={handleCreate}>
           <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "1.125rem" }}>
               New Blog Article
             </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+            <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
               Set the title, target keyword, and category to initialize a new SEO-optimized article.
             </Typography>
           </DialogTitle>
 
           <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
             <Box>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
                 Article Title *
               </Typography>
               <TextField
@@ -997,14 +1067,22 @@ export default function AdminBlogsPage() {
                 value={newTitle}
                 onChange={handleTitleChange}
                 slotProps={{
-                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                  input: {
+                    sx: {
+                      borderRadius: 1,
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      fontSize: "0.875rem",
+                      "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                    },
+                  },
                 }}
               />
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
               <Box>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
                   URL Slug *
                 </Typography>
                 <TextField
@@ -1018,26 +1096,39 @@ export default function AdminBlogsPage() {
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Typography sx={{ color: "#94a3b8", fontSize: "0.75rem", fontFamily: "monospace" }}>
+                          <Typography sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: "0.75rem", fontFamily: "monospace" }}>
                             /blog/
                           </Typography>
                         </InputAdornment>
                       ),
-                      sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem", fontFamily: "monospace" },
+                      sx: {
+                        borderRadius: 1,
+                        bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                        color: isDark ? "#f8fafc" : "#0f172a",
+                        fontSize: "0.8125rem",
+                        fontFamily: "monospace",
+                        "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                      },
                     },
                   }}
                 />
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
                   Category
                 </Typography>
                 <FormControl fullWidth size="small">
                   <Select
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem" }}
+                    sx={{
+                      borderRadius: 1,
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      fontSize: "0.8125rem",
+                      "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                    }}
                   >
                     <MenuItem value="Guides">Guides &amp; Tutorials</MenuItem>
                     <MenuItem value="Model Spotlights">Model Spotlights</MenuItem>
@@ -1050,7 +1141,7 @@ export default function AdminBlogsPage() {
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
                 Focus Keyphrase (SEO)
               </Typography>
               <TextField
@@ -1060,13 +1151,21 @@ export default function AdminBlogsPage() {
                 value={newFocusKeyphrase}
                 onChange={(e) => setNewFocusKeyphrase(e.target.value)}
                 slotProps={{
-                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                  input: {
+                    sx: {
+                      borderRadius: 1,
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      fontSize: "0.875rem",
+                      "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                    },
+                  },
                 }}
               />
             </Box>
 
             <Box>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
                 Brief Excerpt / Summary
               </Typography>
               <TextField
@@ -1077,25 +1176,33 @@ export default function AdminBlogsPage() {
                 value={newExcerpt}
                 onChange={(e) => setNewExcerpt(e.target.value)}
                 slotProps={{
-                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                  input: {
+                    sx: {
+                      borderRadius: 1,
+                      bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      fontSize: "0.875rem",
+                      "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                    },
+                  },
                 }}
               />
             </Box>
           </DialogContent>
 
-          <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+          <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", gap: 1 }}>
             <Button
               variant="outlined"
               onClick={() => setCreateOpen(false)}
               disabled={creating}
               sx={{
                 borderRadius: 1,
-                borderColor: "#e2e8f0",
-                color: "#475569",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0",
+                color: isDark ? "#cbd5e1" : "#475569",
                 textTransform: "none",
                 fontWeight: 600,
                 fontSize: "0.8125rem",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+                "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
               }}
             >
               Cancel
@@ -1106,13 +1213,13 @@ export default function AdminBlogsPage() {
               disabled={creating}
               sx={{
                 borderRadius: 1,
-                bgcolor: "#0f172a",
+                bgcolor: isDark ? "#f43f5e" : "#0f172a",
                 color: "#ffffff",
                 textTransform: "none",
                 fontWeight: 600,
                 fontSize: "0.8125rem",
                 boxShadow: "none",
-                "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
               }}
             >
               {creating ? "Creating..." : "Create & Edit"}
@@ -1130,21 +1237,27 @@ export default function AdminBlogsPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: {
+              borderRadius: 1.5,
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
+            },
           },
         }}
       >
         <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+          <Typography sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "1.0625rem" }}>
             Delete Article?
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ px: 3, py: 1 }}>
-          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
-            Are you sure you want to delete &quot;{blogToDelete?.title}&quot;? This action cannot be undone and its public URL routing will be removed.
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: isDark ? "#94a3b8" : "#64748b" }}>
+            Are you sure you want to delete <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>&quot;{blogToDelete?.title}&quot;</strong>? This action cannot be undone and its public URL routing will be removed.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => {
@@ -1154,12 +1267,12 @@ export default function AdminBlogsPage() {
             disabled={deleting}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0",
+              color: isDark ? "#cbd5e1" : "#475569",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
             }}
           >
             Cancel

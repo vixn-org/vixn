@@ -62,8 +62,12 @@ import {
   LinkOutlined as LinkIcon,
   StorageOutlined as StorageIcon,
   CloudSyncOutlined as CloudSyncIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
+import { useAdminTheme } from "@/components/admin/mui-theme-provider";
+
 
 interface MediaItem {
   _id: string;
@@ -125,6 +129,17 @@ export default function ModelManagementPage() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
   const modelId = params.id as string;
+
+  const { mode, toggleMode } = useAdminTheme();
+  const isDark = mode === "dark";
+
+  const cardBg = isDark ? "#0f1422" : "#ffffff";
+  const cardBorder = isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0";
+  const subcardBg = isDark ? "rgba(255, 255, 255, 0.03)" : "#f8fafc";
+  const textPrimary = isDark ? "#f8fafc" : "#0f172a";
+  const textSecondary = isDark ? "#94a3b8" : "#64748b";
+  const textLabel = isDark ? "#cbd5e1" : "#334155";
+  const dividerBorder = isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9";
 
   const [model, setModel] = useState<ModelData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1138,8 +1153,8 @@ export default function ModelManagementPage() {
   if (loading) {
     return (
       <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-        <Skeleton variant="rounded" width={240} height={40} sx={{ borderRadius: 1 }} />
-        <Skeleton variant="rounded" width="100%" height={400} sx={{ borderRadius: 1.5 }} />
+        <Skeleton variant="rounded" width={240} height={40} sx={{ borderRadius: 1, bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : undefined }} />
+        <Skeleton variant="rounded" width="100%" height={400} sx={{ borderRadius: 1.5, bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : undefined }} />
       </Box>
     );
   }
@@ -1147,7 +1162,7 @@ export default function ModelManagementPage() {
   if (!model) return null;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 4 }}>
+    <Box className="admin-model-editor" sx={{ display: "flex", flexDirection: "column", gap: 3, pb: 4 }}>
       {/* Top Header Bar - Exact Match to /admin */}
       <Box
         sx={{
@@ -1157,7 +1172,7 @@ export default function ModelManagementPage() {
           justifyContent: "space-between",
           gap: 2,
           pb: 1,
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: `1px solid ${cardBorder}`,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -1166,12 +1181,12 @@ export default function ModelManagementPage() {
               size="small"
               onClick={() => router.push("/admin/models")}
               sx={{
-                bgcolor: "#ffffff",
-                border: "1px solid #e2e8f0",
+                bgcolor: cardBg,
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1,
-                color: "#475569",
+                color: textSecondary,
                 p: 0.75,
-                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9", color: textPrimary },
               }}
             >
               <ArrowBackIcon sx={{ fontSize: 18 }} />
@@ -1184,7 +1199,7 @@ export default function ModelManagementPage() {
                 variant="h5"
                 sx={{
                   fontWeight: 700,
-                  color: "#0f172a",
+                  color: textPrimary,
                   letterSpacing: "-0.01em",
                   fontSize: { xs: "1.3rem", sm: "1.5rem" },
                 }}
@@ -1200,16 +1215,28 @@ export default function ModelManagementPage() {
                   fontWeight: 600,
                   borderRadius: 1,
                   ...(model.status === "published"
-                    ? {
-                        bgcolor: "#ecfdf5",
-                        color: "#059669",
-                        border: "1px solid #a7f3d0",
-                      }
-                    : {
-                        bgcolor: "#f1f5f9",
-                        color: "#64748b",
-                        border: "1px solid #e2e8f0",
-                      }),
+                    ? isDark
+                      ? {
+                          bgcolor: "rgba(16, 185, 129, 0.15)",
+                          color: "#34d399",
+                          border: "1px solid rgba(16, 185, 129, 0.3)",
+                        }
+                      : {
+                          bgcolor: "#ecfdf5",
+                          color: "#059669",
+                          border: "1px solid #a7f3d0",
+                        }
+                    : isDark
+                      ? {
+                          bgcolor: "rgba(255, 255, 255, 0.06)",
+                          color: "#94a3b8",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                        }
+                      : {
+                          bgcolor: "#f1f5f9",
+                          color: "#64748b",
+                          border: "1px solid #e2e8f0",
+                        }),
                 }}
               />
             </Box>
@@ -1217,7 +1244,7 @@ export default function ModelManagementPage() {
               variant="caption"
               sx={{
                 fontFamily: "monospace",
-                color: "#64748b",
+                color: textSecondary,
                 fontSize: "0.75rem",
                 display: "block",
                 mt: 0.25,
@@ -1229,6 +1256,26 @@ export default function ModelManagementPage() {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          {/* Theme Toggle Button */}
+          <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#ffffff",
+                border: `1px solid ${cardBorder}`,
+                borderRadius: 1,
+                color: isDark ? "#f43f5e" : "#64748b",
+                p: 0.75,
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                },
+              }}
+            >
+              {isDark ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
+            </IconButton>
+          </Tooltip>
+
           <Button
             variant="outlined"
             size="small"
@@ -1238,14 +1285,18 @@ export default function ModelManagementPage() {
             startIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#334155",
+              borderColor: cardBorder,
+              color: textLabel,
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "transparent",
               fontSize: "0.8125rem",
               fontWeight: 600,
               textTransform: "none",
               px: 1.75,
               py: 0.75,
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": {
+                borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc",
+              },
             }}
           >
             Preview Page
@@ -1264,7 +1315,7 @@ export default function ModelManagementPage() {
               )
             }
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               borderRadius: 1,
               textTransform: "none",
@@ -1273,7 +1324,7 @@ export default function ModelManagementPage() {
               px: 2,
               py: 0.75,
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             {saving ? "Saving Changes..." : "Save Changes"}
@@ -1284,8 +1335,8 @@ export default function ModelManagementPage() {
       {/* Tabs Navigation Bar */}
       <Box
         sx={{
-          bgcolor: "#ffffff",
-          border: "1px solid #e2e8f0",
+          bgcolor: cardBg,
+          border: `1px solid ${cardBorder}`,
           borderRadius: 1.5,
           p: 0.5,
         }}
@@ -1308,11 +1359,11 @@ export default function ModelManagementPage() {
               py: 0.75,
               px: 1.75,
               borderRadius: 1,
-              color: "#64748b",
+              color: textSecondary,
               mr: 0.5,
               transition: "all 0.15s ease",
               "&.Mui-selected": {
-                bgcolor: "#0f172a",
+                bgcolor: isDark ? "#f43f5e" : "#0f172a",
                 color: "#ffffff",
               },
             },
@@ -1329,7 +1380,7 @@ export default function ModelManagementPage() {
           {isAdmin && (
             <Tab
               value="seo"
-              label="Main SEO &amp; Tags"
+              label="Main SEO & Tags"
               icon={<GlobeIcon sx={{ fontSize: 16 }} />}
               iconPosition="start"
             />
@@ -1375,28 +1426,28 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Profile Details
                   </Typography>
                 }
                 subheader={
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
                     Core model metadata rendered at /model/{model.slug}
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Display Name *
                     </Typography>
                     <TextField
@@ -1406,14 +1457,14 @@ export default function ModelManagementPage() {
                       onChange={(e) => updateField("name", e.target.value)}
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Route Slug *
                     </Typography>
                     <TextField
@@ -1425,7 +1476,8 @@ export default function ModelManagementPage() {
                         input: {
                           sx: {
                             borderRadius: 1,
-                            bgcolor: "#f8fafc",
+                            bgcolor: subcardBg,
+                            color: textPrimary,
                             fontSize: "0.875rem",
                             fontFamily: "monospace",
                           },
@@ -1436,7 +1488,7 @@ export default function ModelManagementPage() {
                 </Box>
 
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Biography &amp; Career Summary
                   </Typography>
                   <TextField
@@ -1448,7 +1500,7 @@ export default function ModelManagementPage() {
                     placeholder="Write a rich biographical overview of the creator..."
                     slotProps={{
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
                     }}
                   />
@@ -1456,7 +1508,7 @@ export default function ModelManagementPage() {
 
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Category / Niche
                     </Typography>
                     <TextField
@@ -1467,14 +1519,14 @@ export default function ModelManagementPage() {
                       placeholder="e.g. Glamour, Fashion, Lifestyle"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Country / Origin
                     </Typography>
                     <TextField
@@ -1485,7 +1537,7 @@ export default function ModelManagementPage() {
                       placeholder="e.g. India, United States"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -1494,7 +1546,7 @@ export default function ModelManagementPage() {
 
                 {/* Profile Tags */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Profile Tags
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1 }}>
@@ -1507,7 +1559,7 @@ export default function ModelManagementPage() {
                       placeholder="Add tag and press Enter"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -1516,11 +1568,12 @@ export default function ModelManagementPage() {
                       onClick={handleAddTag}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#e2e8f0",
-                        color: "#334155",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Add
@@ -1529,6 +1582,7 @@ export default function ModelManagementPage() {
 
                   {model.tags && model.tags.length > 0 && (
                     <Box
+                      className="admin-well"
                       sx={{
                         display: "flex",
                         flexWrap: "wrap",
@@ -1536,8 +1590,8 @@ export default function ModelManagementPage() {
                         mt: 1.5,
                         p: 1.25,
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     >
                       {model.tags.map((tag) => (
@@ -1548,11 +1602,11 @@ export default function ModelManagementPage() {
                           onDelete={() => handleRemoveTag(tag)}
                           sx={{
                             borderRadius: 1,
-                            bgcolor: "#ffffff",
-                            border: "1px solid #e2e8f0",
+                            bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#ffffff",
+                            border: `1px solid ${cardBorder}`,
                             fontWeight: 600,
                             fontSize: "0.75rem",
-                            color: "#334155",
+                            color: textLabel,
                           }}
                         />
                       ))}
@@ -1569,23 +1623,23 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Imagery Assets
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 {/* Profile Avatar */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Avatar Photo
                   </Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -1596,11 +1650,11 @@ export default function ModelManagementPage() {
                         width: 54,
                         height: 54,
                         borderRadius: 1,
-                        bgcolor: "#f1f5f9",
-                        color: "#334155",
+                        bgcolor: subcardBg,
+                        color: textPrimary,
                         fontWeight: 700,
                         fontSize: "1.1rem",
-                        border: "1px solid #e2e8f0",
+                        border: `1px solid ${cardBorder}`,
                       }}
                     >
                       {model.name.charAt(0)}
@@ -1615,11 +1669,12 @@ export default function ModelManagementPage() {
                           startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
                           sx={{
                             borderRadius: 1,
-                            borderColor: "#e2e8f0",
-                            color: "#334155",
+                            borderColor: cardBorder,
+                            color: textLabel,
                             fontSize: "0.75rem",
                             textTransform: "none",
                             fontWeight: 600,
+                            "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                           }}
                         >
                           {uploadingAvatar ? "Uploading..." : "Upload Avatar"}
@@ -1638,7 +1693,7 @@ export default function ModelManagementPage() {
                         onChange={(e) => updateField("profileImage", e.target.value)}
                         slotProps={{
                           input: {
-                            sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.75rem" },
+                            sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.75rem" },
                           },
                         }}
                       />
@@ -1646,11 +1701,11 @@ export default function ModelManagementPage() {
                   </Box>
                 </Box>
 
-                <Divider sx={{ borderColor: "#f1f5f9" }} />
+                <Divider sx={{ borderColor: dividerBorder }} />
 
                 {/* Cover Banner */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Cover Banner
                   </Typography>
                   {model.coverImage && (
@@ -1663,7 +1718,7 @@ export default function ModelManagementPage() {
                         height: 90,
                         objectFit: "cover",
                         borderRadius: 1,
-                        border: "1px solid #e2e8f0",
+                        border: `1px solid ${cardBorder}`,
                         mb: 1,
                       }}
                     />
@@ -1677,7 +1732,7 @@ export default function ModelManagementPage() {
                       onChange={(e) => updateField("coverImage", e.target.value)}
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.75rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.75rem" },
                         },
                       }}
                     />
@@ -1690,12 +1745,13 @@ export default function ModelManagementPage() {
                         startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
                         sx={{
                           borderRadius: 1,
-                          borderColor: "#e2e8f0",
-                          color: "#334155",
+                          borderColor: cardBorder,
+                          color: textLabel,
                           fontSize: "0.75rem",
                           textTransform: "none",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
+                          "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                         }}
                       >
                         {uploadingCover ? "..." : "Upload"}
@@ -1716,22 +1772,22 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Publication Controls
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Status
                   </Typography>
                   <FormControl fullWidth size="small">
@@ -1740,9 +1796,13 @@ export default function ModelManagementPage() {
                       onChange={(e) => updateField("status", e.target.value)}
                       sx={{
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
+                        bgcolor: subcardBg,
+                        color: textPrimary,
                         fontSize: "0.8125rem",
                         fontWeight: 600,
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: cardBorder,
+                        },
                       }}
                     >
                       <MenuItem value="published">Published (Live for Public)</MenuItem>
@@ -1753,10 +1813,10 @@ export default function ModelManagementPage() {
 
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: textPrimary }}>
                       Reviewed Model
                     </Typography>
-                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.7rem", color: textSecondary }}>
                       Mark verification checklist complete
                     </Typography>
                   </Box>
@@ -1769,10 +1829,10 @@ export default function ModelManagementPage() {
 
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: textPrimary }}>
                       Featured Creator
                     </Typography>
-                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.7rem", color: textSecondary }}>
                       Promote on home feeds &amp; top banners
                     </Typography>
                   </Box>
@@ -1785,10 +1845,10 @@ export default function ModelManagementPage() {
 
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: "#0f172a" }}>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 600, color: textPrimary }}>
                       Cornerstone Content
                     </Typography>
-                    <Typography sx={{ fontSize: "0.7rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.7rem", color: textSecondary }}>
                       Primary domain authority pillar
                     </Typography>
                   </Box>
@@ -1820,28 +1880,28 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Search Engine Optimization (SEO)
                   </Typography>
                 }
                 subheader={
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
                     Configure organic search indexing snippet, keyphrases, and crawler directives
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 {/* Focus Keyphrase */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Focus Keyphrase
                   </Typography>
                   <TextField
@@ -1852,7 +1912,7 @@ export default function ModelManagementPage() {
                     placeholder="e.g. Aditi Mistry photos videos"
                     slotProps={{
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
                     }}
                   />
@@ -1861,7 +1921,7 @@ export default function ModelManagementPage() {
                 {/* Meta Title */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Meta Title (Google Snippet)
                     </Typography>
                     <Typography
@@ -1870,7 +1930,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           model.metaTitle.length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : model.metaTitle.length <= 60
                             ? "#059669"
                             : "#dc2626",
@@ -1894,9 +1954,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 60 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -1904,7 +1964,7 @@ export default function ModelManagementPage() {
                 {/* Meta Description */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Meta Description (Search Snippet)
                     </Typography>
                     <Typography
@@ -1913,7 +1973,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           model.metaDescription.length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : model.metaDescription.length < 50
                             ? "#d97706"
                             : model.metaDescription.length <= 155
@@ -1942,9 +2002,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 155 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -1952,10 +2012,10 @@ export default function ModelManagementPage() {
                 {/* Meta Keywords */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Meta Keywords
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {model.metaKeywords?.length || 0} keywords
                     </Typography>
                   </Box>
@@ -1971,7 +2031,7 @@ export default function ModelManagementPage() {
                       placeholder="Add keyword and press Enter"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -1980,11 +2040,12 @@ export default function ModelManagementPage() {
                       onClick={handleAddKeyword}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#e2e8f0",
-                        color: "#334155",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Add
@@ -1999,12 +2060,13 @@ export default function ModelManagementPage() {
                       startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#cbd5e1",
-                        color: "#1e293b",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
                         whiteSpace: "nowrap",
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Bulk
@@ -2013,6 +2075,7 @@ export default function ModelManagementPage() {
 
                   {model.metaKeywords && model.metaKeywords.length > 0 && (
                     <Box
+                      className="admin-well"
                       sx={{
                         display: "flex",
                         flexWrap: "wrap",
@@ -2022,8 +2085,8 @@ export default function ModelManagementPage() {
                         overflowY: "auto",
                         p: 1.25,
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     >
                       {model.metaKeywords.map((kw) => (
@@ -2034,11 +2097,11 @@ export default function ModelManagementPage() {
                           onDelete={() => handleRemoveKeyword(kw)}
                           sx={{
                             borderRadius: 1,
-                            bgcolor: "#ffffff",
-                            border: "1px solid #e2e8f0",
+                            bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#ffffff",
+                            border: `1px solid ${cardBorder}`,
                             fontWeight: 600,
                             fontSize: "0.75rem",
-                            color: "#334155",
+                            color: textLabel,
                           }}
                         />
                       ))}
@@ -2049,7 +2112,7 @@ export default function ModelManagementPage() {
                 {/* Canonical & Robots */}
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Canonical URL Override
                     </Typography>
                     <TextField
@@ -2060,21 +2123,29 @@ export default function ModelManagementPage() {
                       placeholder={`https://vixn.fun/model/${model.slug}`}
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       Robots Directive
                     </Typography>
                     <FormControl fullWidth size="small">
                       <Select
                         value={model.robotsDirective || "index, follow"}
                         onChange={(e) => updateField("robotsDirective", e.target.value)}
-                        sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.8125rem" }}
+                        sx={{
+                          borderRadius: 1,
+                          bgcolor: subcardBg,
+                          color: textPrimary,
+                          fontSize: "0.8125rem",
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: cardBorder,
+                          },
+                        }}
                       >
                         <MenuItem value="index, follow">Index, Follow (Recommended)</MenuItem>
                         <MenuItem value="noindex, follow">No Index, Follow</MenuItem>
@@ -2091,23 +2162,23 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Social Sharing Cards (OpenGraph &amp; Twitter)
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       OG Title
                     </Typography>
                     <TextField
@@ -2118,14 +2189,14 @@ export default function ModelManagementPage() {
                       placeholder="OpenGraph social title"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
                   </Box>
 
                   <Box>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                       OG Image URL (1200x630)
                     </Typography>
                     <TextField
@@ -2136,7 +2207,7 @@ export default function ModelManagementPage() {
                       placeholder="https://.../og-preview.jpg"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -2144,7 +2215,7 @@ export default function ModelManagementPage() {
                 </Box>
 
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     OG Description
                   </Typography>
                   <TextField
@@ -2156,7 +2227,7 @@ export default function ModelManagementPage() {
                     placeholder="Social snippet description..."
                     slotProps={{
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
                     }}
                   />
@@ -2168,23 +2239,23 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                     Editorial Article &amp; About Story
                   </Typography>
                 }
                 subheader={
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
                     In-depth editorial biography for long-tail SEO ranking and indexing authority
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5 }}>
                 <TextField
@@ -2196,7 +2267,7 @@ export default function ModelManagementPage() {
                   placeholder="Write a long-form article covering career biography, photoshoot highlights, media background..."
                   slotProps={{
                     input: {
-                      sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.6 },
+                      sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem", lineHeight: 1.6 },
                     },
                   }}
                 />
@@ -2210,38 +2281,40 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
                 position: "sticky",
                 top: 20,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: textSecondary, letterSpacing: "0.05em" }}>
                     Google SERP Preview
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.5, px: 2 }}
               />
               <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
                 <Box
+                  className="admin-serp-preview"
                   sx={{
                     p: 2,
                     borderRadius: 1,
-                    border: "1px solid #e2e8f0",
-                    bgcolor: "#f8fafc",
+                    border: `1px solid ${cardBorder}`,
+                    bgcolor: isDark ? "#090d16" : "#f8fafc",
                     display: "flex",
                     flexDirection: "column",
                     gap: 0.5,
                   }}
                 >
                   <Typography
+                    className="admin-serp-title"
                     sx={{
                       fontSize: "0.875rem",
                       fontWeight: 600,
-                      color: "#1a0dab",
+                      color: isDark ? "#8ab4f8" : "#1a0dab",
                       lineHeight: 1.3,
                       textOverflow: "ellipsis",
                       overflow: "hidden",
@@ -2253,10 +2326,11 @@ export default function ModelManagementPage() {
                       : `${model.name} - Photos & Videos | VIXN`}
                   </Typography>
                   <Typography
+                    className="admin-serp-url"
                     sx={{
                       fontSize: "0.6875rem",
                       fontFamily: "monospace",
-                      color: "#006621",
+                      color: isDark ? "#81c995" : "#006621",
                       textOverflow: "ellipsis",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
@@ -2265,9 +2339,10 @@ export default function ModelManagementPage() {
                     https://vixn.fun/model/{model.slug}
                   </Typography>
                   <Typography
+                    className="admin-serp-desc"
                     sx={{
                       fontSize: "0.75rem",
-                      color: "#4d5156",
+                      color: isDark ? "#cbd5e1" : "#4d5156",
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",
@@ -2282,7 +2357,7 @@ export default function ModelManagementPage() {
 
                 {/* SEO Checklist */}
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1, pt: 1 }}>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                     SEO Checklist
                   </Typography>
                   {[
@@ -2298,14 +2373,14 @@ export default function ModelManagementPage() {
                           width: 8,
                           height: 8,
                           borderRadius: "50%",
-                          bgcolor: item.ok ? "#10b981" : "#cbd5e1",
+                          bgcolor: item.ok ? "#10b981" : (isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
                         }}
                       />
                       <Typography
                         sx={{
                           fontSize: "0.75rem",
                           fontWeight: item.ok ? 600 : 400,
-                          color: item.ok ? "#334155" : "#94a3b8",
+                          color: item.ok ? textPrimary : textSecondary,
                         }}
                       >
                         {item.label}
@@ -2335,15 +2410,15 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                       Dedicated Photos Page SEO &amp; Copy
                     </Typography>
                     <Chip
@@ -2353,28 +2428,28 @@ export default function ModelManagementPage() {
                         fontFamily: "monospace",
                         fontSize: "0.7rem",
                         borderRadius: 1,
-                        bgcolor: "#f1f5f9",
-                        color: "#475569",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        color: textSecondary,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     />
                   </Box>
                 }
                 subheader={
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary, mt: 0.25 }}>
                     Target &quot;{model.name} photos&quot;, &quot;{model.name} photoshoot pics&quot;, and gallery queries
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 {/* Custom Page Heading (H1) */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Custom Page Heading (H1)
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {(model.photosSeo?.heading || "").length}/80
                     </Typography>
                   </Box>
@@ -2388,9 +2463,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 80 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2398,7 +2473,7 @@ export default function ModelManagementPage() {
                 {/* Photos Page Meta Title */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Photos Meta Title
                     </Typography>
                     <Typography
@@ -2407,7 +2482,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           (model.photosSeo?.metaTitle || "").length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : (model.photosSeo?.metaTitle || "").length <= 60
                             ? "#059669"
                             : "#dc2626",
@@ -2426,9 +2501,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 60 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2436,7 +2511,7 @@ export default function ModelManagementPage() {
                 {/* Photos Page Meta Description */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Photos Meta Description
                     </Typography>
                     <Typography
@@ -2445,7 +2520,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           (model.photosSeo?.metaDescription || "").length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : (model.photosSeo?.metaDescription || "").length <= 155
                             ? "#059669"
                             : "#dc2626",
@@ -2465,9 +2540,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 155 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2475,10 +2550,10 @@ export default function ModelManagementPage() {
                 {/* Photos SEO Keywords */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Photo Specific Keywords
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {(model.photosSeo?.metaKeywords || []).length} keywords
                     </Typography>
                   </Box>
@@ -2494,7 +2569,7 @@ export default function ModelManagementPage() {
                       placeholder="Add photo keyword and press Enter"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -2503,11 +2578,12 @@ export default function ModelManagementPage() {
                       onClick={handleAddPhotoKeyword}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#e2e8f0",
-                        color: "#334155",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Add
@@ -2522,12 +2598,13 @@ export default function ModelManagementPage() {
                       startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#cbd5e1",
-                        color: "#1e293b",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
                         whiteSpace: "nowrap",
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Bulk
@@ -2536,6 +2613,7 @@ export default function ModelManagementPage() {
 
                   {(model.photosSeo?.metaKeywords || []).length > 0 && (
                     <Box
+                      className="admin-well"
                       sx={{
                         display: "flex",
                         flexWrap: "wrap",
@@ -2545,8 +2623,8 @@ export default function ModelManagementPage() {
                         overflowY: "auto",
                         p: 1.25,
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     >
                       {model.photosSeo?.metaKeywords?.map((kw) => (
@@ -2557,11 +2635,11 @@ export default function ModelManagementPage() {
                           onDelete={() => handleRemovePhotoKeyword(kw)}
                           sx={{
                             borderRadius: 1,
-                            bgcolor: "#ffffff",
-                            border: "1px solid #e2e8f0",
+                            bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#ffffff",
+                            border: `1px solid ${cardBorder}`,
                             fontWeight: 600,
                             fontSize: "0.75rem",
-                            color: "#334155",
+                            color: textLabel,
                           }}
                         />
                       ))}
@@ -2571,7 +2649,7 @@ export default function ModelManagementPage() {
 
                 {/* Photos Intro Text */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Photo Gallery Editorial Story / Intro Paragraph
                   </Typography>
                   <TextField
@@ -2584,9 +2662,9 @@ export default function ModelManagementPage() {
                     helperText="Rendered at the top of /model/[slug]/photos for crawlers and visitors."
                     slotProps={{
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.5 },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem", lineHeight: 1.5 },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2599,38 +2677,40 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
                 position: "sticky",
                 top: 20,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: textSecondary, letterSpacing: "0.05em" }}>
                     Google Photos SERP Preview
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.5, px: 2 }}
               />
               <CardContent sx={{ p: 2 }}>
                 <Box
+                  className="admin-serp-preview"
                   sx={{
                     p: 2,
                     borderRadius: 1,
-                    border: "1px solid #e2e8f0",
-                    bgcolor: "#f8fafc",
+                    border: `1px solid ${cardBorder}`,
+                    bgcolor: isDark ? "#090d16" : "#f8fafc",
                     display: "flex",
                     flexDirection: "column",
                     gap: 0.5,
                   }}
                 >
                   <Typography
+                    className="admin-serp-title"
                     sx={{
                       fontSize: "0.875rem",
                       fontWeight: 600,
-                      color: "#1a0dab",
+                      color: isDark ? "#8ab4f8" : "#1a0dab",
                       lineHeight: 1.3,
                       textOverflow: "ellipsis",
                       overflow: "hidden",
@@ -2642,10 +2722,11 @@ export default function ModelManagementPage() {
                       : `${model.name} Photos, HD Galleries & Pictures (${model.media?.filter((m) => m.type === "photo").length || 0}) | VIXN`}
                   </Typography>
                   <Typography
+                    className="admin-serp-url"
                     sx={{
                       fontSize: "0.6875rem",
                       fontFamily: "monospace",
-                      color: "#006621",
+                      color: isDark ? "#81c995" : "#006621",
                       textOverflow: "ellipsis",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
@@ -2654,9 +2735,10 @@ export default function ModelManagementPage() {
                     https://vixn.fun/model/{model.slug}/photos
                   </Typography>
                   <Typography
+                    className="admin-serp-desc"
                     sx={{
                       fontSize: "0.75rem",
-                      color: "#4d5156",
+                      color: isDark ? "#cbd5e1" : "#4d5156",
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",
@@ -2690,15 +2772,15 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
               }}
             >
               <CardHeader
                 title={
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                    <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                       Dedicated Videos Page SEO &amp; Copy
                     </Typography>
                     <Chip
@@ -2708,28 +2790,28 @@ export default function ModelManagementPage() {
                         fontFamily: "monospace",
                         fontSize: "0.7rem",
                         borderRadius: 1,
-                        bgcolor: "#f1f5f9",
-                        color: "#475569",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        color: textSecondary,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     />
                   </Box>
                 }
                 subheader={
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.25 }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary, mt: 0.25 }}>
                     Target &quot;{model.name} videos&quot;, &quot;{model.name} 4k clips&quot;, and streaming reel queries
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.75, px: 2.5 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.75, px: 2.5 }}
               />
               <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
                 {/* Custom Page Heading (H1) */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Custom Page Heading (H1)
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {(model.videosSeo?.heading || "").length}/80
                     </Typography>
                   </Box>
@@ -2743,9 +2825,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 80 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2753,7 +2835,7 @@ export default function ModelManagementPage() {
                 {/* Videos Page Meta Title */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Videos Meta Title
                     </Typography>
                     <Typography
@@ -2762,7 +2844,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           (model.videosSeo?.metaTitle || "").length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : (model.videosSeo?.metaTitle || "").length <= 60
                             ? "#059669"
                             : "#dc2626",
@@ -2781,9 +2863,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 60 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2791,7 +2873,7 @@ export default function ModelManagementPage() {
                 {/* Videos Page Meta Description */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Videos Meta Description
                     </Typography>
                     <Typography
@@ -2800,7 +2882,7 @@ export default function ModelManagementPage() {
                         fontWeight: 700,
                         color:
                           (model.videosSeo?.metaDescription || "").length === 0
-                            ? "#94a3b8"
+                            ? textSecondary
                             : (model.videosSeo?.metaDescription || "").length <= 155
                             ? "#059669"
                             : "#dc2626",
@@ -2820,9 +2902,9 @@ export default function ModelManagementPage() {
                     slotProps={{
                       htmlInput: { maxLength: 155 },
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2830,10 +2912,10 @@ export default function ModelManagementPage() {
                 {/* Videos SEO Keywords */}
                 <Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel }}>
                       Video Specific Keywords
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {(model.videosSeo?.metaKeywords || []).length} keywords
                     </Typography>
                   </Box>
@@ -2849,7 +2931,7 @@ export default function ModelManagementPage() {
                       placeholder="Add video keyword and press Enter"
                       slotProps={{
                         input: {
-                          sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" },
+                          sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem" },
                         },
                       }}
                     />
@@ -2858,11 +2940,12 @@ export default function ModelManagementPage() {
                       onClick={handleAddVideoKeyword}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#e2e8f0",
-                        color: "#334155",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Add
@@ -2877,12 +2960,13 @@ export default function ModelManagementPage() {
                       startIcon={<PlaylistAddIcon sx={{ fontSize: 16 }} />}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#cbd5e1",
-                        color: "#1e293b",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         textTransform: "none",
                         fontWeight: 600,
                         px: 2,
                         whiteSpace: "nowrap",
+                        "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
                       }}
                     >
                       Bulk
@@ -2891,6 +2975,7 @@ export default function ModelManagementPage() {
 
                   {(model.videosSeo?.metaKeywords || []).length > 0 && (
                     <Box
+                      className="admin-well"
                       sx={{
                         display: "flex",
                         flexWrap: "wrap",
@@ -2900,8 +2985,8 @@ export default function ModelManagementPage() {
                         overflowY: "auto",
                         p: 1.25,
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
+                        bgcolor: subcardBg,
+                        border: `1px solid ${cardBorder}`,
                       }}
                     >
                       {model.videosSeo?.metaKeywords?.map((kw) => (
@@ -2912,11 +2997,11 @@ export default function ModelManagementPage() {
                           onDelete={() => handleRemoveVideoKeyword(kw)}
                           sx={{
                             borderRadius: 1,
-                            bgcolor: "#ffffff",
-                            border: "1px solid #e2e8f0",
+                            bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#ffffff",
+                            border: `1px solid ${cardBorder}`,
                             fontWeight: 600,
                             fontSize: "0.75rem",
-                            color: "#334155",
+                            color: textLabel,
                           }}
                         />
                       ))}
@@ -2926,7 +3011,7 @@ export default function ModelManagementPage() {
 
                 {/* Videos Intro Text */}
                 <Box>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                     Video Showcase Editorial Story / Intro Paragraph
                   </Typography>
                   <TextField
@@ -2939,9 +3024,9 @@ export default function ModelManagementPage() {
                     helperText="Rendered at the top of /model/[slug]/videos for crawlers and visitors."
                     slotProps={{
                       input: {
-                        sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem", lineHeight: 1.5 },
+                        sx: { borderRadius: 1, bgcolor: subcardBg, color: textPrimary, fontSize: "0.875rem", lineHeight: 1.5 },
                       },
-                      formHelperText: { sx: { fontSize: "0.6875rem", color: "#94a3b8" } },
+                      formHelperText: { sx: { fontSize: "0.6875rem", color: textSecondary } },
                     }}
                   />
                 </Box>
@@ -2954,38 +3039,40 @@ export default function ModelManagementPage() {
             <Card
               elevation={0}
               sx={{
-                border: "1px solid #e2e8f0",
+                border: `1px solid ${cardBorder}`,
                 borderRadius: 1.5,
-                bgcolor: "#ffffff",
+                bgcolor: cardBg,
                 position: "sticky",
                 top: 20,
               }}
             >
               <CardHeader
                 title={
-                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.05em" }}>
+                  <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", textTransform: "uppercase", color: textSecondary, letterSpacing: "0.05em" }}>
                     Google Videos SERP Preview
                   </Typography>
                 }
-                sx={{ borderBottom: "1px solid #f1f5f9", py: 1.5, px: 2 }}
+                sx={{ borderBottom: `1px solid ${dividerBorder}`, py: 1.5, px: 2 }}
               />
               <CardContent sx={{ p: 2 }}>
                 <Box
+                  className="admin-serp-preview"
                   sx={{
                     p: 2,
                     borderRadius: 1,
-                    border: "1px solid #e2e8f0",
-                    bgcolor: "#f8fafc",
+                    border: `1px solid ${cardBorder}`,
+                    bgcolor: isDark ? "#090d16" : "#f8fafc",
                     display: "flex",
                     flexDirection: "column",
                     gap: 0.5,
                   }}
                 >
                   <Typography
+                    className="admin-serp-title"
                     sx={{
                       fontSize: "0.875rem",
                       fontWeight: 600,
-                      color: "#1a0dab",
+                      color: isDark ? "#8ab4f8" : "#1a0dab",
                       lineHeight: 1.3,
                       textOverflow: "ellipsis",
                       overflow: "hidden",
@@ -2997,10 +3084,11 @@ export default function ModelManagementPage() {
                       : `${model.name} Videos, 4K Clips & Streaming (${model.media?.filter((m) => m.type === "video").length || 0}) | VIXN`}
                   </Typography>
                   <Typography
+                    className="admin-serp-url"
                     sx={{
                       fontSize: "0.6875rem",
                       fontFamily: "monospace",
-                      color: "#006621",
+                      color: isDark ? "#81c995" : "#006621",
                       textOverflow: "ellipsis",
                       overflow: "hidden",
                       whiteSpace: "nowrap",
@@ -3009,9 +3097,10 @@ export default function ModelManagementPage() {
                     https://vixn.fun/model/{model.slug}/videos
                   </Typography>
                   <Typography
+                    className="admin-serp-desc"
                     sx={{
                       fontSize: "0.75rem",
-                      color: "#4d5156",
+                      color: isDark ? "#cbd5e1" : "#4d5156",
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",
@@ -3036,9 +3125,9 @@ export default function ModelManagementPage() {
         <Card
           elevation={0}
           sx={{
-            border: "1px solid #e2e8f0",
+            border: `1px solid ${cardBorder}`,
             borderRadius: 1.5,
-            bgcolor: "#ffffff",
+            bgcolor: cardBg,
           }}
         >
           <Box
@@ -3048,12 +3137,12 @@ export default function ModelManagementPage() {
               alignItems: { xs: "flex-start", sm: "center" },
               justifyContent: "space-between",
               p: 2.5,
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: `1px solid ${dividerBorder}`,
               gap: 2,
             }}
           >
             <Box>
-              <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                 Media Sets Gallery
               </Typography>
             </Box>
@@ -3070,18 +3159,18 @@ export default function ModelManagementPage() {
                 startIcon={<LinkIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   borderRadius: 1,
-                  borderColor: "#0284c7",
-                  color: "#0284c7",
-                  bgcolor: "#f0f9ff",
+                  borderColor: isDark ? "rgba(2, 132, 199, 0.5)" : "#0284c7",
+                  color: isDark ? "#38bdf8" : "#0284c7",
+                  bgcolor: isDark ? "rgba(2, 132, 199, 0.12)" : "#f0f9ff",
                   fontSize: "0.8125rem",
                   fontWeight: 600,
                   textTransform: "none",
                   px: 1.75,
                   py: 0.75,
                   "&:hover": {
-                    borderColor: "#0369a1",
-                    bgcolor: "#e0f2fe",
-                    color: "#0369a1",
+                    borderColor: "#38bdf8",
+                    bgcolor: isDark ? "rgba(2, 132, 199, 0.2)" : "#e0f2fe",
+                    color: isDark ? "#7dd3fc" : "#0369a1",
                   },
                 }}
               >
@@ -3102,17 +3191,18 @@ export default function ModelManagementPage() {
                 startIcon={<SmartToyIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   borderRadius: 1,
-                  borderColor: "#7c3aed",
-                  color: "#7c3aed",
+                  borderColor: isDark ? "rgba(124, 58, 237, 0.5)" : "#7c3aed",
+                  color: isDark ? "#a78bfa" : "#7c3aed",
+                  bgcolor: isDark ? "rgba(124, 58, 237, 0.12)" : "transparent",
                   fontSize: "0.8125rem",
                   fontWeight: 600,
                   textTransform: "none",
                   px: 1.75,
                   py: 0.75,
                   "&:hover": {
-                    borderColor: "#6d28d9",
-                    bgcolor: "#f5f3ff",
-                    color: "#6d28d9",
+                    borderColor: "#a78bfa",
+                    bgcolor: isDark ? "rgba(124, 58, 237, 0.2)" : "#f5f3ff",
+                    color: isDark ? "#c4b5fd" : "#6d28d9",
                   },
                 }}
               >
@@ -3133,18 +3223,18 @@ export default function ModelManagementPage() {
                 startIcon={<CameraIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   borderRadius: 1,
-                  borderColor: "#059669",
-                  color: "#059669",
-                  bgcolor: "#f0fdf4",
+                  borderColor: isDark ? "rgba(5, 150, 105, 0.5)" : "#059669",
+                  color: isDark ? "#34d399" : "#059669",
+                  bgcolor: isDark ? "rgba(5, 150, 105, 0.12)" : "#f0fdf4",
                   fontSize: "0.8125rem",
                   fontWeight: 600,
                   textTransform: "none",
                   px: 1.75,
                   py: 0.75,
                   "&:hover": {
-                    borderColor: "#047857",
-                    bgcolor: "#dcfce7",
-                    color: "#047857",
+                    borderColor: "#34d399",
+                    bgcolor: isDark ? "rgba(5, 150, 105, 0.2)" : "#dcfce7",
+                    color: isDark ? "#6ee7b7" : "#047857",
                   },
                 }}
               >
@@ -3161,14 +3251,18 @@ export default function ModelManagementPage() {
                 startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   borderRadius: 1,
-                  borderColor: "#e2e8f0",
-                  color: "#334155",
+                  borderColor: cardBorder,
+                  color: textLabel,
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "transparent",
                   fontSize: "0.8125rem",
                   fontWeight: 600,
                   textTransform: "none",
                   px: 1.75,
                   py: 0.75,
-                  "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+                  "&:hover": {
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc",
+                  },
                 }}
               >
                 Upload File
@@ -3181,7 +3275,7 @@ export default function ModelManagementPage() {
                 startIcon={<AddIcon sx={{ fontSize: 16 }} />}
                 sx={{
                   borderRadius: 1,
-                  bgcolor: "#0f172a",
+                  bgcolor: isDark ? "#f43f5e" : "#0f172a",
                   color: "#ffffff",
                   fontSize: "0.8125rem",
                   fontWeight: 600,
@@ -3189,7 +3283,7 @@ export default function ModelManagementPage() {
                   px: 1.75,
                   py: 0.75,
                   boxShadow: "none",
-                  "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                  "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
                 }}
               >
                 Add Direct URL
@@ -3200,11 +3294,11 @@ export default function ModelManagementPage() {
           <CardContent sx={{ p: 2.5 }}>
             {model.media.length === 0 ? (
               <Box sx={{ py: 10, textAlign: "center", maxWidth: 360, mx: "auto" }}>
-                <PhotoLibraryIcon sx={{ fontSize: 42, color: "#cbd5e1", mb: 1.5 }} />
-                <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                <PhotoLibraryIcon sx={{ fontSize: 42, color: isDark ? "#475569" : "#cbd5e1", mb: 1.5 }} />
+                <Typography sx={{ fontWeight: 700, fontSize: "0.95rem", color: textPrimary }}>
                   No media assets in gallery
                 </Typography>
-                <Typography sx={{ fontSize: "0.75rem", color: "#64748b", mt: 0.5 }}>
+                <Typography sx={{ fontSize: "0.75rem", color: textSecondary, mt: 0.5 }}>
                   Upload photos or configure external video links to populate the public media gallery.
                 </Typography>
               </Box>
@@ -3224,13 +3318,17 @@ export default function ModelManagementPage() {
                   <Card
                     key={item._id}
                     elevation={0}
+                    className="admin-media-card"
                     sx={{
-                      border: "1px solid #e2e8f0",
+                      border: `1px solid ${cardBorder}`,
                       borderRadius: 1.5,
                       overflow: "hidden",
                       position: "relative",
-                      bgcolor: "#ffffff",
+                      bgcolor: cardBg,
                       transition: "all 0.15s ease",
+                      "&:hover": {
+                        borderColor: isDark ? "rgba(244, 63, 94, 0.4)" : "#cbd5e1",
+                      },
                       "&:hover .delete-btn": { opacity: 1 },
                     }}
                   >
@@ -3252,7 +3350,7 @@ export default function ModelManagementPage() {
                           position: "relative",
                           width: "100%",
                           height: 180,
-                          bgcolor: "#0f172a",
+                          bgcolor: "#090d16",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -3308,8 +3406,9 @@ export default function ModelManagementPage() {
                               fontSize: "0.6rem",
                               fontWeight: 700,
                               borderRadius: 1,
-                              bgcolor: "#0f172a",
-                              color: "#ffffff",
+                              bgcolor: isDark ? "rgba(244, 63, 94, 0.2)" : "#0f172a",
+                              color: isDark ? "#fb7185" : "#ffffff",
+                              border: isDark ? "1px solid rgba(244, 63, 94, 0.3)" : "none",
                             }}
                           />
                           {item.isExternal && (
@@ -3336,7 +3435,7 @@ export default function ModelManagementPage() {
                         sx={{
                           fontSize: "0.75rem",
                           fontWeight: 700,
-                          color: "#0f172a",
+                          color: textPrimary,
                           lineHeight: 1.3,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -3348,7 +3447,7 @@ export default function ModelManagementPage() {
                       <Typography
                         sx={{
                           fontSize: "0.6875rem",
-                          color: "#64748b",
+                          color: textSecondary,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -3370,13 +3469,13 @@ export default function ModelManagementPage() {
                                 fontSize: "0.625rem",
                                 fontWeight: 600,
                                 borderRadius: 0.75,
-                                bgcolor: "#f1f5f9",
-                                color: "#475569",
+                                bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
+                                color: isDark ? "#cbd5e1" : "#475569",
                               }}
                             />
                           ))}
                           {item.keywords.length > 2 && (
-                            <Typography sx={{ fontSize: "0.625rem", color: "#94a3b8", alignSelf: "center" }}>
+                            <Typography sx={{ fontSize: "0.625rem", color: textSecondary, alignSelf: "center" }}>
                               +{item.keywords.length - 2}
                             </Typography>
                           )}
@@ -3431,18 +3530,26 @@ export default function ModelManagementPage() {
           },
         }}
       >
-        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1, borderBottom: `1px solid ${dividerBorder}` }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: textPrimary, fontSize: "1.125rem" }}>
             Upload Media to Gallery
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.25 }}>
             Upload high-resolution photos or configure video redirect streams
           </Typography>
         </DialogTitle>
 
         <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Media Type Switcher */}
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, bgcolor: "#f1f5f9", p: 0.5, borderRadius: 1 }}>
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 1,
+            bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+            p: 0.5,
+            borderRadius: 1,
+            border: isDark ? `1px solid ${cardBorder}` : "none",
+          }}>
             <Button
               size="small"
               onClick={() => setUploadType("photo")}
@@ -3453,8 +3560,12 @@ export default function ModelManagementPage() {
                 fontWeight: 600,
                 fontSize: "0.75rem",
                 ...(uploadType === "photo"
-                  ? { bgcolor: "#ffffff", color: "#0f172a", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }
-                  : { color: "#64748b" }),
+                  ? {
+                      bgcolor: isDark ? "#0f1422" : "#ffffff",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      boxShadow: isDark ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.05)",
+                    }
+                  : { color: textSecondary }),
               }}
             >
               Photo (Image File)
@@ -3469,8 +3580,12 @@ export default function ModelManagementPage() {
                 fontWeight: 600,
                 fontSize: "0.75rem",
                 ...(uploadType === "video"
-                  ? { bgcolor: "#ffffff", color: "#0f172a", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }
-                  : { color: "#64748b" }),
+                  ? {
+                      bgcolor: isDark ? "#0f1422" : "#ffffff",
+                      color: isDark ? "#f8fafc" : "#0f172a",
+                      boxShadow: isDark ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.05)",
+                    }
+                  : { color: textSecondary }),
               }}
             >
               Video (Redirect Stream)
@@ -3480,30 +3595,34 @@ export default function ModelManagementPage() {
           {/* Photo File Dropzone */}
           {uploadType === "photo" && (
             <Box>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                 Select Image File *
               </Typography>
               {!uploadFile ? (
                 <label style={{ cursor: "pointer", display: "block" }}>
                   <Box
+                    className="admin-dropzone"
                     sx={{
                       height: 120,
                       borderRadius: 1,
-                      border: "2px dashed #cbd5e1",
-                      bgcolor: "#f8fafc",
+                      border: isDark ? "2px dashed rgba(255, 255, 255, 0.15)" : "2px dashed #cbd5e1",
+                      bgcolor: subcardBg,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 0.5,
-                      "&:hover": { bgcolor: "#f1f5f9", borderColor: "#94a3b8" },
+                      "&:hover": {
+                        bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+                        borderColor: isDark ? "#f43f5e" : "#94a3b8",
+                      },
                     }}
                   >
-                    <CloudUploadIcon sx={{ fontSize: 28, color: "#64748b" }} />
-                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#0f172a" }}>
+                    <CloudUploadIcon sx={{ fontSize: 28, color: textSecondary }} />
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textPrimary }}>
                       Click to choose image file
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#94a3b8" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       JPG, PNG, WebP, AVIF (Max 50MB)
                     </Typography>
                   </Box>
@@ -3522,21 +3641,21 @@ export default function ModelManagementPage() {
                     gap: 1.5,
                     p: 1.5,
                     borderRadius: 1,
-                    border: "1px solid #e2e8f0",
-                    bgcolor: "#f8fafc",
+                    border: `1px solid ${cardBorder}`,
+                    bgcolor: subcardBg,
                   }}
                 >
                   <Box
                     component="img"
                     src={uploadPreview}
                     alt="Preview"
-                    sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1, border: "1px solid #e2e8f0" }}
+                    sx={{ width: 56, height: 56, objectFit: "cover", borderRadius: 1, border: `1px solid ${cardBorder}` }}
                   />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#0f172a" }} noWrap>
+                    <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: textPrimary }} noWrap>
                       {uploadFile.name}
                     </Typography>
-                    <Typography sx={{ fontSize: "0.6875rem", color: "#64748b" }}>
+                    <Typography sx={{ fontSize: "0.6875rem", color: textSecondary }}>
                       {(uploadFile.size / (1024 * 1024)).toFixed(2)} MB
                     </Typography>
                   </Box>
@@ -3560,7 +3679,7 @@ export default function ModelManagementPage() {
           {uploadType === "video" && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Box>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                   Video Stream / Redirect URL *
                 </Typography>
                 <TextField
@@ -3570,13 +3689,13 @@ export default function ModelManagementPage() {
                   value={uploadForm.videoUrl}
                   onChange={(e) => setUploadForm({ ...uploadForm, videoUrl: e.target.value })}
                   slotProps={{
-                    input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                    input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
                   }}
                 />
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                   Video Poster / Thumbnail Image
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
@@ -3587,7 +3706,7 @@ export default function ModelManagementPage() {
                     value={uploadForm.thumbnailUrl}
                     onChange={(e) => setUploadForm({ ...uploadForm, thumbnailUrl: e.target.value })}
                     slotProps={{
-                      input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                      input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
                     }}
                   />
                   <label style={{ cursor: "pointer" }}>
@@ -3598,8 +3717,8 @@ export default function ModelManagementPage() {
                       startIcon={<CloudUploadIcon sx={{ fontSize: 16 }} />}
                       sx={{
                         borderRadius: 1,
-                        borderColor: "#e2e8f0",
-                        color: "#334155",
+                        borderColor: cardBorder,
+                        color: textLabel,
                         fontSize: "0.75rem",
                         textTransform: "none",
                         fontWeight: 600,
@@ -3623,7 +3742,7 @@ export default function ModelManagementPage() {
 
           {/* Shared Metadata Fields */}
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               Title Caption
             </Typography>
             <TextField
@@ -3633,13 +3752,13 @@ export default function ModelManagementPage() {
               value={uploadForm.title}
               onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               Alt Text (SEO Image/Video Ranking)
             </Typography>
             <TextField
@@ -3649,13 +3768,13 @@ export default function ModelManagementPage() {
               value={uploadForm.alt}
               onChange={(e) => setUploadForm({ ...uploadForm, alt: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               SEO Keywords (Comma-separated)
             </Typography>
             <TextField
@@ -3665,25 +3784,25 @@ export default function ModelManagementPage() {
               value={uploadForm.keywords}
               onChange={(e) => setUploadForm({ ...uploadForm, keywords: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${dividerBorder}`, gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => setUploadDialogOpen(false)}
             disabled={uploading}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -3694,13 +3813,13 @@ export default function ModelManagementPage() {
             disabled={uploading}
             sx={{
               borderRadius: 1,
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             {uploading ? "Uploading & Adding..." : "Add to Media Set"}
@@ -3717,22 +3836,22 @@ export default function ModelManagementPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: { borderRadius: 1.5, border: `1px solid ${cardBorder}`, bgcolor: cardBg },
           },
         }}
       >
-        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1, borderBottom: `1px solid ${dividerBorder}` }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: textPrimary, fontSize: "1.125rem" }}>
             Add Media by URL
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.25 }}>
             Link externally hosted images or streaming video urls
           </Typography>
         </DialogTitle>
 
         <DialogContent sx={{ px: 3, py: 1.5, display: "flex", flexDirection: "column", gap: 2 }}>
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               Media Type
             </Typography>
             <FormControl fullWidth size="small">
@@ -3741,7 +3860,7 @@ export default function ModelManagementPage() {
                 onChange={(e) =>
                   setNewMedia({ ...newMedia, type: e.target.value as "photo" | "video" })
                 }
-                sx={{ borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" }}
+                sx={{ borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" }}
               >
                 <MenuItem value="photo">Photo</MenuItem>
                 <MenuItem value="video">Video (Redirect Stream)</MenuItem>
@@ -3750,7 +3869,7 @@ export default function ModelManagementPage() {
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               {newMedia.type === "video" ? "Video Stream URL *" : "Photo Image URL *"}
             </Typography>
             <TextField
@@ -3760,14 +3879,14 @@ export default function ModelManagementPage() {
               value={newMedia.url}
               onChange={(e) => setNewMedia({ ...newMedia, url: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
 
           {newMedia.type === "video" && (
             <Box>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
                 Video Thumbnail / Poster Image URL
               </Typography>
               <TextField
@@ -3777,14 +3896,14 @@ export default function ModelManagementPage() {
                 value={newMedia.thumbnail}
                 onChange={(e) => setNewMedia({ ...newMedia, thumbnail: e.target.value })}
                 slotProps={{
-                  input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                  input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
                 }}
               />
             </Box>
           )}
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               Title Caption
             </Typography>
             <TextField
@@ -3794,13 +3913,13 @@ export default function ModelManagementPage() {
               value={newMedia.title}
               onChange={(e) => setNewMedia({ ...newMedia, title: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               Alt Text (SEO Image Ranking)
             </Typography>
             <TextField
@@ -3810,13 +3929,13 @@ export default function ModelManagementPage() {
               value={newMedia.alt}
               onChange={(e) => setNewMedia({ ...newMedia, alt: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
 
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: textLabel, mb: 0.75 }}>
               SEO Keywords (Comma-separated)
             </Typography>
             <TextField
@@ -3826,25 +3945,25 @@ export default function ModelManagementPage() {
               value={newMedia.keywords}
               onChange={(e) => setNewMedia({ ...newMedia, keywords: e.target.value })}
               slotProps={{
-                input: { sx: { borderRadius: 1, bgcolor: "#f8fafc", fontSize: "0.875rem" } },
+                input: { sx: { borderRadius: 1, bgcolor: subcardBg, fontSize: "0.875rem" } },
               }}
             />
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${dividerBorder}`, gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => setMediaDialogOpen(false)}
             disabled={directMediaAdding}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -3855,13 +3974,13 @@ export default function ModelManagementPage() {
             disabled={directMediaAdding}
             sx={{
               borderRadius: 1,
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             {directMediaAdding ? "Adding..." : "Add to Gallery"}
@@ -3878,15 +3997,15 @@ export default function ModelManagementPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: { borderRadius: 1.5, border: `1px solid ${cardBorder}`, bgcolor: cardBg },
           },
         }}
       >
-        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1, borderBottom: `1px solid ${dividerBorder}` }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: textPrimary, fontSize: "1.125rem" }}>
             Add Keywords in Bulk
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.25 }}>
             Paste keywords line-by-line or comma-separated. Duplicates will be deduplicated.
           </Typography>
         </DialogTitle>
@@ -3903,7 +4022,7 @@ export default function ModelManagementPage() {
               input: {
                 sx: {
                   borderRadius: 1,
-                  bgcolor: "#f8fafc",
+                  bgcolor: subcardBg,
                   fontSize: "0.8125rem",
                   fontFamily: "monospace",
                   lineHeight: 1.6,
@@ -3911,9 +4030,9 @@ export default function ModelManagementPage() {
               },
             }}
           />
-          <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+          <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
             Detected:{" "}
-            <strong style={{ color: "#0f172a" }}>
+            <strong style={{ color: textPrimary }}>
               {
                 bulkKeywordsText
                   .split(/\r?\n|,/)
@@ -3925,18 +4044,18 @@ export default function ModelManagementPage() {
           </Typography>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${dividerBorder}`, gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => setBulkKeywordsOpen(false)}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -3947,13 +4066,13 @@ export default function ModelManagementPage() {
             disabled={!bulkKeywordsText.trim()}
             sx={{
               borderRadius: 1,
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             Add Keywords
@@ -3970,21 +4089,21 @@ export default function ModelManagementPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: { borderRadius: 1.5, border: `1px solid ${cardBorder}`, bgcolor: cardBg },
           },
         }}
       >
-        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+        <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1, borderBottom: `1px solid ${dividerBorder}` }}>
+          <Typography sx={{ fontWeight: 800, color: textPrimary, fontSize: "1.0625rem" }}>
             Delete Media Item?
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ px: 3, py: 1 }}>
-          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
+        <DialogContent sx={{ px: 3, py: 1.5 }}>
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: textSecondary }}>
             Are you sure you want to remove &quot;{mediaToDelete?.title || "this media item"}&quot; from this model&apos;s gallery?
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${dividerBorder}`, gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => {
@@ -3993,12 +4112,12 @@ export default function ModelManagementPage() {
             }}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -4030,7 +4149,7 @@ export default function ModelManagementPage() {
         slotProps={{
           paper: {
             elevation: 6,
-            sx: { borderRadius: 2, border: "1px solid #e2e8f0" },
+            sx: { borderRadius: 2, border: `1px solid ${cardBorder}`, bgcolor: cardBg },
           },
         }}
       >
@@ -4040,7 +4159,7 @@ export default function ModelManagementPage() {
             pt: 2.5,
             px: 3,
             pb: 1.5,
-            borderBottom: "1px solid #f1f5f9",
+            borderBottom: `1px solid ${dividerBorder}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -4052,8 +4171,8 @@ export default function ModelManagementPage() {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                bgcolor: "#f0f9ff",
-                color: "#0284c7",
+                bgcolor: isDark ? "rgba(2, 132, 199, 0.15)" : "#f0f9ff",
+                color: isDark ? "#38bdf8" : "#0284c7",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -4062,10 +4181,10 @@ export default function ModelManagementPage() {
               <LinkIcon sx={{ fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 700, color: "#0f172a", fontSize: "1.0625rem" }}>
+              <Typography sx={{ fontWeight: 700, color: textPrimary, fontSize: "1.0625rem" }}>
                 Upload Photos with Links
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
                 Paste image URLs line by line. Direct bulk import without AI.
               </Typography>
             </Box>
@@ -4074,11 +4193,11 @@ export default function ModelManagementPage() {
             size="small"
             label="Direct Bulk Import"
             sx={{
-              bgcolor: "#f0f9ff",
-              color: "#0284c7",
+              bgcolor: isDark ? "rgba(2, 132, 199, 0.15)" : "#f0f9ff",
+              color: isDark ? "#38bdf8" : "#0284c7",
               fontWeight: 600,
               fontSize: "0.725rem",
-              border: "1px solid #bae6fd",
+              border: isDark ? "1px solid rgba(2, 132, 199, 0.3)" : "1px solid #bae6fd",
             }}
           />
         </DialogTitle>
@@ -4090,9 +4209,9 @@ export default function ModelManagementPage() {
             </Alert>
           )}
 
-          <Typography sx={{ fontSize: "0.8125rem", color: "#475569", lineHeight: 1.6 }}>
+          <Typography sx={{ fontSize: "0.8125rem", color: textSecondary, lineHeight: 1.6 }}>
             Paste image links in bulk below (one URL per line). Each photo will be directly saved with the title:{" "}
-            <strong style={{ color: "#0f172a" }}>
+            <strong style={{ color: textPrimary }}>
               {model?.name} nude photo &lt;photo number&gt;
             </strong>
           </Typography>
@@ -4111,9 +4230,9 @@ export default function ModelManagementPage() {
                   borderRadius: 1.5,
                   fontSize: "0.8125rem",
                   fontFamily: "monospace",
-                  bgcolor: "#f8fafc",
-                  "& fieldset": { borderColor: "#cbd5e1" },
-                  "&:hover fieldset": { borderColor: "#94a3b8" },
+                  bgcolor: subcardBg,
+                  "& fieldset": { borderColor: cardBorder },
+                  "&:hover fieldset": { borderColor: isDark ? "rgba(255,255,255,0.25)" : "#94a3b8" },
                   "&.Mui-focused fieldset": { borderColor: "#0284c7" },
                 },
               },
@@ -4133,21 +4252,21 @@ export default function ModelManagementPage() {
                 sx={{
                   p: 1.5,
                   borderRadius: 1.5,
-                  bgcolor: valid.length > 0 ? "#f0f9ff" : "#f8fafc",
-                  border: `1px solid ${valid.length > 0 ? "#bae6fd" : "#e2e8f0"}`,
+                  bgcolor: valid.length > 0 ? (isDark ? "rgba(2, 132, 199, 0.1)" : "#f0f9ff") : subcardBg,
+                  border: `1px solid ${valid.length > 0 ? (isDark ? "rgba(2, 132, 199, 0.3)" : "#bae6fd") : cardBorder}`,
                   display: "flex",
                   flexDirection: "column",
                   gap: 0.75,
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: "#0f172a" }}>
+                  <Typography sx={{ fontSize: "0.8125rem", fontWeight: 700, color: textPrimary }}>
                     Detected Links:{" "}
-                    <span style={{ color: valid.length > 0 ? "#0284c7" : "#64748b" }}>
+                    <span style={{ color: valid.length > 0 ? (isDark ? "#38bdf8" : "#0284c7") : textSecondary }}>
                       {valid.length} valid URL{valid.length === 1 ? "" : "s"}
                     </span>
                   </Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                  <Typography sx={{ fontSize: "0.75rem", color: textSecondary }}>
                     Existing photos in gallery: {existingCount}
                   </Typography>
                 </Box>
@@ -4168,7 +4287,7 @@ export default function ModelManagementPage() {
           })()}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: `1px solid ${dividerBorder}`, gap: 1 }}>
           <Button
             variant="outlined"
             disabled={bulkLinksUploading}
@@ -4178,12 +4297,12 @@ export default function ModelManagementPage() {
             }}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -4211,7 +4330,7 @@ export default function ModelManagementPage() {
               py: 0.85,
               boxShadow: "none",
               "&:hover": { bgcolor: "#0369a1", boxShadow: "none" },
-              "&:disabled": { bgcolor: "#93c5fd", color: "#ffffff" },
+              "&:disabled": { bgcolor: isDark ? "rgba(2, 132, 199, 0.3)" : "#93c5fd", color: "#ffffff" },
             }}
           >
             {bulkLinksUploading
@@ -4238,7 +4357,7 @@ export default function ModelManagementPage() {
         slotProps={{
           paper: {
             elevation: 4,
-            sx: { borderRadius: 1.5, border: "1px solid #e2e8f0" },
+            sx: { borderRadius: 1.5, border: `1px solid ${cardBorder}`, bgcolor: cardBg },
           },
         }}
       >
@@ -4264,7 +4383,7 @@ export default function ModelManagementPage() {
                 variant="h6"
                 sx={{
                   fontWeight: 800,
-                  color: "#0f172a",
+                  color: textPrimary,
                   fontSize: "1.125rem",
                 }}
               >
@@ -4275,7 +4394,7 @@ export default function ModelManagementPage() {
             </Box>
             <Typography
               variant="body2"
-              sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}
+              sx={{ color: textSecondary, fontSize: "0.75rem", mt: 0.25 }}
             >
               {crawlTargetType === "photo"
                 ? "Extract high-resolution photos & image galleries using AI"
@@ -4286,14 +4405,14 @@ export default function ModelManagementPage() {
             size="small"
             onClick={() => setCrawlDialogOpen(false)}
             disabled={crawling}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: textSecondary }}
           >
             <CloseIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </DialogTitle>
 
         {/* Mode Tabs */}
-        <Box sx={{ px: 3, borderBottom: "1px solid #e2e8f0" }}>
+        <Box sx={{ px: 3, borderBottom: `1px solid ${dividerBorder}` }}>
           <Tabs
             value={crawlMode}
             onChange={(_, v) => {
@@ -4353,7 +4472,7 @@ export default function ModelManagementPage() {
                 sx={{
                   fontSize: "0.75rem",
                   fontWeight: 700,
-                  color: "#334155",
+                  color: textLabel,
                   mb: 0.75,
                 }}
               >
@@ -4376,7 +4495,8 @@ export default function ModelManagementPage() {
                   input: {
                     sx: {
                       borderRadius: 1,
-                      bgcolor: "#f8fafc",
+                      bgcolor: subcardBg,
+                      color: textPrimary,
                       fontSize: "0.875rem",
                       fontFamily: "monospace",
                     },
@@ -4394,7 +4514,7 @@ export default function ModelManagementPage() {
                   sx={{
                     fontSize: "0.75rem",
                     fontWeight: 700,
-                    color: "#334155",
+                    color: textLabel,
                     mb: 0.75,
                   }}
                 >
@@ -4411,7 +4531,8 @@ export default function ModelManagementPage() {
                     input: {
                       sx: {
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
+                        bgcolor: subcardBg,
+                        color: textPrimary,
                         fontSize: "0.875rem",
                         fontFamily: "monospace",
                       },
@@ -4425,7 +4546,7 @@ export default function ModelManagementPage() {
                     sx={{
                       fontSize: "0.75rem",
                       fontWeight: 700,
-                      color: "#334155",
+                      color: textLabel,
                     }}
                   >
                     Page Source HTML *
@@ -4433,7 +4554,7 @@ export default function ModelManagementPage() {
                   <Typography
                     sx={{
                       fontSize: "0.65rem",
-                      color: "#94a3b8",
+                      color: textSecondary,
                       fontFamily: "monospace",
                     }}
                   >
@@ -4455,7 +4576,8 @@ export default function ModelManagementPage() {
                     input: {
                       sx: {
                         borderRadius: 1,
-                        bgcolor: "#f8fafc",
+                        bgcolor: subcardBg,
+                        color: textPrimary,
                         fontSize: "0.75rem",
                         fontFamily: "monospace",
                         lineHeight: 1.5,
@@ -4472,7 +4594,7 @@ export default function ModelManagementPage() {
               <LinearProgress
                 sx={{
                   borderRadius: 1,
-                  bgcolor: "#f1f5f9",
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
                   "& .MuiLinearProgress-bar": {
                     bgcolor:
                       crawlTargetType === "photo" ? "#059669" : "#7c3aed",
@@ -4502,9 +4624,9 @@ export default function ModelManagementPage() {
             <Typography
               sx={{
                 fontSize: "0.8125rem",
-                color: "#dc2626",
-                bgcolor: "#fef2f2",
-                border: "1px solid #fecaca",
+                color: isDark ? "#fca5a5" : "#dc2626",
+                bgcolor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fef2f2",
+                border: isDark ? "1px solid rgba(239, 68, 68, 0.3)" : "1px solid #fecaca",
                 borderRadius: 1,
                 px: 1.5,
                 py: 1,
@@ -4516,15 +4638,15 @@ export default function ModelManagementPage() {
 
           <Box
             sx={{
-              bgcolor: "#f8fafc",
+              bgcolor: subcardBg,
               borderRadius: 1,
               px: 1.5,
               py: 1,
-              border: "1px solid #e2e8f0",
+              border: `1px solid ${cardBorder}`,
             }}
           >
             <Typography
-              sx={{ fontSize: "0.7rem", color: "#64748b", lineHeight: 1.5 }}
+              sx={{ fontSize: "0.7rem", color: textSecondary, lineHeight: 1.5 }}
             >
               {crawlTargetType === "photo"
                 ? crawlMode === "paste"
@@ -4541,7 +4663,7 @@ export default function ModelManagementPage() {
           sx={{
             px: 3,
             py: 2,
-            borderTop: "1px solid #e2e8f0",
+            borderTop: `1px solid ${dividerBorder}`,
             gap: 1,
           }}
         >
@@ -4551,12 +4673,12 @@ export default function ModelManagementPage() {
             disabled={crawling}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
             }}
           >
             Cancel
@@ -4591,8 +4713,8 @@ export default function ModelManagementPage() {
                 boxShadow: "none",
               },
               "&.Mui-disabled": {
-                bgcolor: crawlTargetType === "photo" ? "#a7f3d0" : "#c4b5fd",
-                color: "#ffffff",
+                bgcolor: crawlTargetType === "photo" ? (isDark ? "rgba(5, 150, 105, 0.3)" : "#a7f3d0") : (isDark ? "rgba(124, 58, 237, 0.3)" : "#c4b5fd"),
+                color: isDark ? "#64748b" : "#ffffff",
               },
             }}
           >
@@ -4622,7 +4744,8 @@ export default function ModelManagementPage() {
             elevation: 4,
             sx: {
               borderRadius: 1.5,
-              border: "1px solid #e2e8f0",
+              bgcolor: cardBg,
+              border: `1px solid ${cardBorder}`,
               maxHeight: "90vh",
             },
           },
@@ -4637,7 +4760,7 @@ export default function ModelManagementPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            borderBottom: "1px solid #e2e8f0",
+            borderBottom: `1px solid ${dividerBorder}`,
           }}
         >
           <Box>
@@ -4651,7 +4774,7 @@ export default function ModelManagementPage() {
                 variant="h6"
                 sx={{
                   fontWeight: 800,
-                  color: "#0f172a",
+                  color: textPrimary,
                   fontSize: "1.125rem",
                 }}
               >
@@ -4667,16 +4790,16 @@ export default function ModelManagementPage() {
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   borderRadius: 1,
-                  bgcolor: "#f5f3ff",
-                  color: "#7c3aed",
-                  border: "1px solid #ddd6fe",
+                  bgcolor: isDark ? "rgba(124, 58, 237, 0.2)" : "#f5f3ff",
+                  color: isDark ? "#c4b5fd" : "#7c3aed",
+                  border: isDark ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid #ddd6fe",
                 }}
               />
             </Box>
             <Typography
               variant="body2"
               sx={{
-                color: "#64748b",
+                color: textSecondary,
                 fontSize: "0.75rem",
                 mt: 0.25,
                 fontFamily: "monospace",
@@ -4689,7 +4812,7 @@ export default function ModelManagementPage() {
             size="small"
             onClick={() => setCrawlPreviewOpen(false)}
             disabled={importingCrawled}
-            sx={{ color: "#94a3b8" }}
+            sx={{ color: textSecondary }}
           >
             <CloseIcon sx={{ fontSize: 18 }} />
           </IconButton>
@@ -4702,8 +4825,8 @@ export default function ModelManagementPage() {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            borderBottom: "1px solid #f1f5f9",
-            bgcolor: "#fafafa",
+            borderBottom: `1px solid ${dividerBorder}`,
+            bgcolor: subcardBg,
           }}
         >
           <Button
@@ -4713,14 +4836,14 @@ export default function ModelManagementPage() {
               textTransform: "none",
               fontSize: "0.75rem",
               fontWeight: 600,
-              color: "#334155",
+              color: textLabel,
               minWidth: "auto",
               px: 1,
             }}
           >
             Select All
           </Button>
-          <Divider orientation="vertical" flexItem />
+          <Divider orientation="vertical" flexItem sx={{ borderColor: dividerBorder }} />
           <Button
             size="small"
             onClick={() => handleSelectAllCrawled(false)}
@@ -4728,15 +4851,15 @@ export default function ModelManagementPage() {
               textTransform: "none",
               fontSize: "0.75rem",
               fontWeight: 600,
-              color: "#334155",
+              color: textLabel,
               minWidth: "auto",
               px: 1,
             }}
           >
             Deselect All
           </Button>
-          <Divider orientation="vertical" flexItem />
-          <Typography sx={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+          <Divider orientation="vertical" flexItem sx={{ borderColor: dividerBorder }} />
+          <Typography sx={{ fontSize: "0.7rem", color: textSecondary }}>
             {crawledItems.filter((i) => i.type === "photo").length} photos ·{" "}
             {crawledItems.filter((i) => i.type === "video").length} videos
           </Typography>
@@ -4761,16 +4884,16 @@ export default function ModelManagementPage() {
               textTransform: "none",
               fontSize: "0.725rem",
               fontWeight: 700,
-              color: "#059669",
-              borderColor: "#a7f3d0",
-              bgcolor: "#ecfdf5",
+              color: isDark ? "#6ee7b7" : "#059669",
+              borderColor: isDark ? "rgba(16, 185, 129, 0.4)" : "#a7f3d0",
+              bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
               py: 0.4,
               px: 1.25,
               borderRadius: 1,
               "&:hover": {
-                bgcolor: "#d1fae5",
-                borderColor: "#6ee7b7",
-                color: "#047857",
+                bgcolor: isDark ? "rgba(16, 185, 129, 0.25)" : "#d1fae5",
+                borderColor: isDark ? "rgba(16, 185, 129, 0.6)" : "#6ee7b7",
+                color: isDark ? "#a7f3d0" : "#047857",
               },
             }}
           >
@@ -4794,7 +4917,7 @@ export default function ModelManagementPage() {
               sx={{
                 borderRadius: 1,
                 height: 5,
-                bgcolor: "#f1f5f9",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
                 "& .MuiLinearProgress-bar": {
                   bgcolor: "#059669",
                   borderRadius: 1,
@@ -4823,7 +4946,7 @@ export default function ModelManagementPage() {
               sx={{
                 borderRadius: 1,
                 height: 6,
-                bgcolor: "#f1f5f9",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
                 "& .MuiLinearProgress-bar": {
                   bgcolor: "#7c3aed",
                   borderRadius: 1,
@@ -4848,6 +4971,7 @@ export default function ModelManagementPage() {
             px: 3,
             py: 2,
             overflowY: "auto",
+            bgcolor: cardBg,
           }}
         >
           <Box
@@ -4868,14 +4992,16 @@ export default function ModelManagementPage() {
                 sx={{
                   border: item.selected
                     ? "2px solid #7c3aed"
-                    : "1px solid #e2e8f0",
+                    : `1px solid ${cardBorder}`,
                   borderRadius: 1.5,
-                  bgcolor: item.selected ? "#faf5ff" : "#ffffff",
+                  bgcolor: item.selected
+                    ? (isDark ? "rgba(124, 58, 237, 0.15)" : "#faf5ff")
+                    : cardBg,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                   "&:hover": {
-                    borderColor: item.selected ? "#6d28d9" : "#cbd5e1",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    borderColor: item.selected ? "#6d28d9" : (isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                   },
                   opacity: importingCrawled ? 0.7 : 1,
                   pointerEvents: importingCrawled ? "none" : "auto",
@@ -4888,8 +5014,8 @@ export default function ModelManagementPage() {
                     position: "relative",
                     width: "100%",
                     pt: "56.25%",
-                    bgcolor: "#f1f5f9",
-                    borderBottom: "1px solid #e2e8f0",
+                    bgcolor: isDark ? "#090d16" : "#f1f5f9",
+                    borderBottom: `1px solid ${cardBorder}`,
                     overflow: "hidden",
                   }}
                 >
@@ -4927,10 +5053,10 @@ export default function ModelManagementPage() {
                       }}
                     >
                       <VideoLibraryIcon
-                        sx={{ fontSize: 28, color: "#94a3b8" }}
+                        sx={{ fontSize: 28, color: textSecondary }}
                       />
                       <Typography
-                        sx={{ fontSize: "0.65rem", color: "#94a3b8" }}
+                        sx={{ fontSize: "0.65rem", color: textSecondary }}
                       >
                         No thumbnail
                       </Typography>
@@ -4981,7 +5107,7 @@ export default function ModelManagementPage() {
                       position: "absolute",
                       top: 4,
                       right: 4,
-                      bgcolor: "rgba(255,255,255,0.85)",
+                      bgcolor: isDark ? "rgba(15, 20, 34, 0.85)" : "rgba(255,255,255,0.85)",
                       borderRadius: 0.75,
                       p: 0.25,
                       color: "#7c3aed",
@@ -4995,7 +5121,7 @@ export default function ModelManagementPage() {
                     sx={{
                       fontSize: "0.8125rem",
                       fontWeight: 600,
-                      color: "#0f172a",
+                      color: textPrimary,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -5006,7 +5132,7 @@ export default function ModelManagementPage() {
                   <Typography
                     sx={{
                       fontSize: "0.65rem",
-                      color: "#94a3b8",
+                      color: textSecondary,
                       fontFamily: "monospace",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -5051,8 +5177,9 @@ export default function ModelManagementPage() {
                             sx={{
                               height: 18,
                               fontSize: "0.575rem",
-                              bgcolor: "#f1f5f9",
-                              color: "#475569",
+                              bgcolor: subcardBg,
+                              color: textLabel,
+                              border: `1px solid ${cardBorder}`,
                               borderRadius: 0.5,
                             }}
                           />
@@ -5065,7 +5192,7 @@ export default function ModelManagementPage() {
                     sx={{
                       mt: 1.25,
                       pt: 1,
-                      borderTop: "1px solid #f1f5f9",
+                      borderTop: `1px solid ${dividerBorder}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
@@ -5081,9 +5208,9 @@ export default function ModelManagementPage() {
                           height: 22,
                           fontSize: "0.65rem",
                           fontWeight: 700,
-                          bgcolor: "#ecfdf5",
-                          color: "#059669",
-                          border: "1px solid #a7f3d0",
+                          bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
+                          color: isDark ? "#6ee7b7" : "#059669",
+                          border: isDark ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid #a7f3d0",
                         }}
                       />
                     ) : (
@@ -5113,14 +5240,14 @@ export default function ModelManagementPage() {
                           py: 0.25,
                           px: 1,
                           height: 24,
-                          color: "#7c3aed",
-                          borderColor: "#ddd6fe",
-                          bgcolor: "#f5f3ff",
+                          color: isDark ? "#c4b5fd" : "#7c3aed",
+                          borderColor: isDark ? "rgba(124, 58, 237, 0.4)" : "#ddd6fe",
+                          bgcolor: isDark ? "rgba(124, 58, 237, 0.15)" : "#f5f3ff",
                           borderRadius: 0.75,
                           "&:hover": {
-                            bgcolor: "#ede9fe",
-                            borderColor: "#c4b5fd",
-                            color: "#6d28d9",
+                            bgcolor: isDark ? "rgba(124, 58, 237, 0.25)" : "#ede9fe",
+                            borderColor: isDark ? "rgba(124, 58, 237, 0.6)" : "#c4b5fd",
+                            color: isDark ? "#ddd6fe" : "#6d28d9",
                           },
                         }}
                       >
@@ -5130,7 +5257,7 @@ export default function ModelManagementPage() {
                       </Button>
                     )}
 
-                    <Typography sx={{ fontSize: "0.6rem", color: "#94a3b8" }}>
+                    <Typography sx={{ fontSize: "0.6rem", color: textSecondary }}>
                       {item.type === "video" ? "Thumbnail" : "Photo"}
                     </Typography>
                   </Box>
@@ -5142,7 +5269,7 @@ export default function ModelManagementPage() {
           {crawledItems.length === 0 && (
             <Box sx={{ py: 6, textAlign: "center" }}>
               <Typography
-                sx={{ fontSize: "0.875rem", color: "#64748b" }}
+                sx={{ fontSize: "0.875rem", color: textSecondary }}
               >
                 No items extracted
               </Typography>
@@ -5154,7 +5281,7 @@ export default function ModelManagementPage() {
           sx={{
             px: 3,
             py: 2,
-            borderTop: "1px solid #e2e8f0",
+            borderTop: `1px solid ${dividerBorder}`,
             gap: 1,
             justifyContent: "space-between",
           }}
@@ -5176,12 +5303,12 @@ export default function ModelManagementPage() {
             }
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: cardBorder,
+              color: textSecondary,
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
             }}
           >
             {crawlTargetType === "photo"
@@ -5195,12 +5322,12 @@ export default function ModelManagementPage() {
               disabled={importingCrawled}
               sx={{
                 borderRadius: 1,
-                borderColor: "#e2e8f0",
-                color: "#475569",
+                borderColor: cardBorder,
+                color: textSecondary,
                 textTransform: "none",
                 fontWeight: 600,
                 fontSize: "0.8125rem",
-                "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+                "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1", bgcolor: subcardBg },
               }}
             >
               Cancel
@@ -5232,8 +5359,8 @@ export default function ModelManagementPage() {
                   boxShadow: "none",
                 },
                 "&.Mui-disabled": {
-                  bgcolor: crawlTargetType === "photo" ? "#a7f3d0" : "#c4b5fd",
-                  color: "#ffffff",
+                  bgcolor: crawlTargetType === "photo" ? (isDark ? "rgba(5, 150, 105, 0.3)" : "#a7f3d0") : (isDark ? "rgba(124, 58, 237, 0.3)" : "#c4b5fd"),
+                  color: isDark ? "#64748b" : "#ffffff",
                 },
               }}
             >

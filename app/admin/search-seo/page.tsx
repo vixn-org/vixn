@@ -42,9 +42,12 @@ import {
   EditOutlined as EditIcon,
   CheckCircleOutlined as CheckCircleIcon,
   Language as LanguageIcon,
+  DarkModeOutlined as DarkModeIcon,
+  LightModeOutlined as LightModeIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
+import { useAdminTheme } from "@/components/admin/mui-theme-provider";
 
 interface SearchTagItem {
   _id: string;
@@ -68,6 +71,8 @@ interface Pagination {
 export default function AdminSearchSeoPage() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
+  const { mode, toggleMode } = useAdminTheme();
+  const isDark = mode === "dark";
 
   const [tags, setTags] = useState<SearchTagItem[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -254,7 +259,8 @@ export default function AdminSearchSeoPage() {
           justifyContent: "space-between",
           gap: 2,
           pb: 1,
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
         }}
       >
         <Box>
@@ -262,30 +268,55 @@ export default function AdminSearchSeoPage() {
             variant="h5"
             sx={{
               fontWeight: 700,
-              color: "#0f172a",
+              color: isDark ? "#f8fafc" : "#0f172a",
               letterSpacing: "-0.01em",
               fontSize: { xs: "1.4rem", sm: "1.6rem" },
             }}
           >
             Search SEO &amp; Target Keywords
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+          <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
             Add creator names, high-traffic search terms, and keywords in bulk to generate indexed 4K search landing pages and auto-chunked sitemaps.
           </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                borderRadius: 1,
+                color: isDark ? "#fbbf24" : "#475569",
+                p: 0.75,
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                },
+              }}
+            >
+              {isDark ? (
+                <LightModeIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <DarkModeIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Refresh data">
             <IconButton
               size="small"
               onClick={fetchTags}
               sx={{
-                bgcolor: "#ffffff",
-                border: "1px solid #e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
                 borderRadius: 1,
-                color: "#64748b",
+                color: isDark ? "#94a3b8" : "#64748b",
                 p: 0.75,
-                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9" },
               }}
             >
               <RefreshIcon sx={{ fontSize: 18 }} />
@@ -298,7 +329,7 @@ export default function AdminSearchSeoPage() {
               startIcon={<PlaylistAddIcon />}
               onClick={() => setBulkOpen(true)}
               sx={{
-                bgcolor: "#0f172a",
+                bgcolor: isDark ? "#f43f5e" : "#0f172a",
                 color: "#ffffff",
                 borderRadius: 1,
                 textTransform: "none",
@@ -307,7 +338,7 @@ export default function AdminSearchSeoPage() {
                 px: 2,
                 py: 0.85,
                 boxShadow: "none",
-                "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
               }}
             >
               Add Tags in Bulk
@@ -328,15 +359,16 @@ export default function AdminSearchSeoPage() {
           elevation={0}
           sx={{
             p: 2.25,
-            border: "1px solid #e2e8f0",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
             borderRadius: 2,
-            bgcolor: "#ffffff",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
-          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             TOTAL SEARCH KEYWORDS
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: "#0f172a", mt: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", mt: 0.5 }}>
             {stats.total.toLocaleString()}
           </Typography>
           <Typography variant="caption" sx={{ color: "#94a3b8" }}>
@@ -348,15 +380,16 @@ export default function AdminSearchSeoPage() {
           elevation={0}
           sx={{
             p: 2.25,
-            border: "1px solid #e2e8f0",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
             borderRadius: 2,
-            bgcolor: "#ffffff",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
-          <Typography variant="caption" sx={{ color: "#16a34a", fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: isDark ? "#34d399" : "#16a34a", fontWeight: 600 }}>
             INDEXED IN SITEMAP
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: "#16a34a", mt: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: isDark ? "#34d399" : "#16a34a", mt: 0.5 }}>
             {stats.totalActive.toLocaleString()}
           </Typography>
           <Typography variant="caption" sx={{ color: "#94a3b8" }}>
@@ -368,15 +401,16 @@ export default function AdminSearchSeoPage() {
           elevation={0}
           sx={{
             p: 2.25,
-            border: "1px solid #e2e8f0",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
             borderRadius: 2,
-            bgcolor: "#ffffff",
+            bgcolor: isDark ? "#0f1422" : "#ffffff",
           }}
         >
-          <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+          <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
             SITEMAP PRIORITY
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: "#6366f1", mt: 0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#818cf8", mt: 0.5 }}>
             0.85
           </Typography>
           <Typography variant="caption" sx={{ color: "#94a3b8" }}>
@@ -412,9 +446,11 @@ export default function AdminSearchSeoPage() {
               ),
               sx: {
                 borderRadius: 1,
-                bgcolor: "#ffffff",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#ffffff",
                 fontSize: "0.875rem",
-                "& fieldset": { borderColor: "#e2e8f0" },
+                "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: "#f43f5e" },
               },
             },
           }}
@@ -428,10 +464,12 @@ export default function AdminSearchSeoPage() {
               setPage(0);
             }}
             sx={{
-              bgcolor: "#ffffff",
+              bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#ffffff",
+              color: isDark ? "#f8fafc" : "#0f172a",
               borderRadius: 1,
               fontSize: "0.875rem",
-              "& fieldset": { borderColor: "#e2e8f0" },
+              "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
+              "&.Mui-focused fieldset": { borderColor: "#f43f5e" },
             }}
           >
             <MenuItem value="all">All Status</MenuItem>
@@ -445,29 +483,30 @@ export default function AdminSearchSeoPage() {
       <Card
         elevation={0}
         sx={{
-          border: "1px solid #e2e8f0",
+          border: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
           borderRadius: 2,
           overflow: "hidden",
-          bgcolor: "#ffffff",
+          bgcolor: isDark ? "#0f1422" : "#ffffff",
         }}
       >
         <TableContainer>
           <Table size="small">
-            <TableHead sx={{ bgcolor: "#f8fafc" }}>
+            <TableHead sx={{ bgcolor: isDark ? "#090d16" : "#f8fafc", borderBottom: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 600, color: "#475569", py: 1.5, width: "30%" }}>
+                <TableCell sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "#475569", py: 1.5, width: "30%" }}>
                   Keyword / Search Tag
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#475569", py: 1.5, width: "25%" }}>
+                <TableCell sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "#475569", py: 1.5, width: "25%" }}>
                   URL Slug
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#475569", py: 1.5, width: "15%" }}>
+                <TableCell sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "#475569", py: 1.5, width: "15%" }}>
                   Sitemap Status
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#475569", py: 1.5, width: "10%" }}>
+                <TableCell sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "#475569", py: 1.5, width: "10%" }}>
                   Searches
                 </TableCell>
-                <TableCell sx={{ fontWeight: 600, color: "#475569", py: 1.5, width: "20%", textAlign: "right" }}>
+                <TableCell sx={{ fontWeight: 600, color: isDark ? "#94a3b8" : "#475569", py: 1.5, width: "20%", textAlign: "right" }}>
                   Actions
                 </TableCell>
               </TableRow>
@@ -477,8 +516,8 @@ export default function AdminSearchSeoPage() {
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={5} sx={{ py: 6, textAlign: "center" }}>
-                    <CircularProgress size={28} sx={{ color: "#0f172a" }} />
-                    <Typography variant="body2" sx={{ color: "#64748b", mt: 1 }}>
+                    <CircularProgress size={28} sx={{ color: isDark ? "#f43f5e" : "#0f172a" }} />
+                    <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 1 }}>
                       Loading search SEO tags...
                     </Typography>
                   </TableCell>
@@ -486,11 +525,11 @@ export default function AdminSearchSeoPage() {
               ) : tags.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} sx={{ py: 8, textAlign: "center" }}>
-                    <LanguageIcon sx={{ fontSize: 40, color: "#cbd5e1" }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#0f172a", mt: 1 }}>
+                    <LanguageIcon sx={{ fontSize: 40, color: isDark ? "#475569" : "#cbd5e1" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a", mt: 1 }}>
                       No search tags found
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#64748b", mb: 2 }}>
+                    <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mb: 2 }}>
                       Click "Add Tags in Bulk" above to paste creator names and keywords.
                     </Typography>
                     {isAdmin && (
@@ -500,9 +539,10 @@ export default function AdminSearchSeoPage() {
                         startIcon={<PlaylistAddIcon />}
                         onClick={() => setBulkOpen(true)}
                         sx={{
-                          bgcolor: "#0f172a",
+                          bgcolor: isDark ? "#f43f5e" : "#0f172a",
                           textTransform: "none",
                           fontWeight: 600,
+                          "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
                         }}
                       >
                         Add First Batch
@@ -516,19 +556,22 @@ export default function AdminSearchSeoPage() {
                     key={t._id}
                     hover
                     sx={{
-                      "&:last-child td, &:last-child th": { border: 0 },
+                      borderBottom: "1px solid",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+                      "&:last-child": { borderBottom: 0 },
                       transition: "background-color 0.15s",
+                      "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc" },
                     }}
                   >
                     <TableCell sx={{ py: 1.25 }}>
                       <Box>
-                        <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", color: "#0f172a" }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: "0.875rem", color: isDark ? "#f8fafc" : "#0f172a" }}>
                           {t.tag}
                         </Typography>
                         {t.customTitle && (
                           <Typography
                             variant="caption"
-                            sx={{ color: "#64748b", display: "block", fontStyle: "italic", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            sx={{ color: isDark ? "#94a3b8" : "#64748b", display: "block", fontStyle: "italic", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                           >
                             SEO: {t.customTitle}
                           </Typography>
@@ -541,8 +584,10 @@ export default function AdminSearchSeoPage() {
                         label={`/search?q=${encodeURIComponent(t.tag)}`}
                         size="small"
                         sx={{
-                          bgcolor: "#f1f5f9",
-                          color: "#475569",
+                          bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#f1f5f9",
+                          color: isDark ? "#cbd5e1" : "#475569",
+                          border: "1px solid",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "transparent",
                           fontSize: "0.75rem",
                           fontFamily: "monospace",
                           maxWidth: 240,
@@ -558,9 +603,9 @@ export default function AdminSearchSeoPage() {
                           onChange={() => handleToggleActive(t)}
                           sx={{
                             "& .MuiSwitch-switchBase.Mui-checked": {
-                              color: "#16a34a",
+                              color: "#10b981",
                               "& + .MuiSwitch-track": {
-                                backgroundColor: "#16a34a",
+                                backgroundColor: "#10b981",
                               },
                             },
                           }}
@@ -569,7 +614,7 @@ export default function AdminSearchSeoPage() {
                           variant="caption"
                           sx={{
                             fontWeight: 600,
-                            color: t.active ? "#16a34a" : "#94a3b8",
+                            color: t.active ? "#34d399" : "#94a3b8",
                           }}
                         >
                           {t.active ? "Indexed" : "Disabled"}
@@ -578,7 +623,7 @@ export default function AdminSearchSeoPage() {
                     </TableCell>
 
                     <TableCell sx={{ py: 1.25 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: isDark ? "#f8fafc" : "#0f172a" }}>
                         {(t.clicks || 0).toLocaleString()}
                       </Typography>
                     </TableCell>
@@ -591,7 +636,7 @@ export default function AdminSearchSeoPage() {
                             component={Link}
                             href={`/search?q=${encodeURIComponent(t.tag)}`}
                             target="_blank"
-                            sx={{ color: "#64748b", "&:hover": { color: "#0f172a" } }}
+                            sx={{ color: isDark ? "#94a3b8" : "#64748b", "&:hover": { color: isDark ? "#f8fafc" : "#0f172a" } }}
                           >
                             <OpenInNewIcon sx={{ fontSize: 17 }} />
                           </IconButton>
@@ -601,7 +646,7 @@ export default function AdminSearchSeoPage() {
                           <IconButton
                             size="small"
                             onClick={() => handleOpenEdit(t)}
-                            sx={{ color: "#64748b", "&:hover": { color: "#0f172a" } }}
+                            sx={{ color: isDark ? "#94a3b8" : "#64748b", "&:hover": { color: isDark ? "#f8fafc" : "#0f172a" } }}
                           >
                             <EditIcon sx={{ fontSize: 17 }} />
                           </IconButton>
@@ -639,7 +684,29 @@ export default function AdminSearchSeoPage() {
               setPage(0);
             }}
             rowsPerPageOptions={[15, 25, 50, 100]}
-            sx={{ borderTop: "1px solid #e2e8f0" }}
+            sx={{
+              borderTop: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+                fontSize: "0.75rem",
+                color: isDark ? "#94a3b8" : "#64748b",
+                fontWeight: 500,
+              },
+              ".MuiTablePagination-select": {
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: isDark ? "#f8fafc" : "#334155",
+              },
+              ".MuiTablePagination-actions button": {
+                color: isDark ? "#cbd5e1" : "#475569",
+                p: 0.5,
+                borderRadius: 1,
+                "&.Mui-disabled": {
+                  color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1",
+                },
+              },
+            }}
           />
         )}
       </Card>
@@ -650,12 +717,24 @@ export default function AdminSearchSeoPage() {
         onClose={() => !bulkSaving && setBulkOpen(false)}
         maxWidth="md"
         fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
+            },
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700, color: "#0f172a", pb: 1 }}>
+        <DialogTitle sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", pb: 1 }}>
           Bulk Add Search SEO Keywords &amp; Model Tags
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "12px !important" }}>
-          <DialogContentText sx={{ fontSize: "0.875rem", color: "#64748b" }}>
+          <DialogContentText sx={{ fontSize: "0.875rem", color: isDark ? "#94a3b8" : "#64748b" }}>
             Paste target search queries, creator names, or keyword phrases line by line. Slugs are automatically created, duplicates are skipped, and all new tags will be dynamically indexed into your XML sitemaps.
           </DialogContentText>
 
@@ -667,27 +746,34 @@ export default function AdminSearchSeoPage() {
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             placeholder={`Alanna Pow\nAlanna Pow 4K Videos\nClaudia Rivier\nShilpa Sethi hot scenes\nAngela White uncensored\nTabby Lookofsky streaming`}
-            sx={{
-              fontFamily: "monospace",
-              fontSize: "0.875rem",
-              "& .MuiOutlinedInput-root": { borderRadius: 1.5 },
+            slotProps={{
+              input: {
+                sx: {
+                  borderRadius: 1.5,
+                  fontSize: "0.875rem",
+                  fontFamily: "monospace",
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                },
+              },
             }}
           />
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
+            <Typography variant="caption" sx={{ color: isDark ? "#cbd5e1" : "#64748b", fontWeight: 600 }}>
               Detected phrases to process: <strong>{bulkPreviewLines.length}</strong>
             </Typography>
-            <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+            <Typography variant="caption" sx={{ color: isDark ? "#94a3b8" : "#94a3b8" }}>
               Duplicates within the batch and database are auto-skipped.
             </Typography>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, pt: 1, borderTop: "1px solid #f1f5f9" }}>
+        <DialogActions sx={{ p: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" }}>
           <Button
             onClick={() => setBulkOpen(false)}
             disabled={bulkSaving}
-            sx={{ color: "#64748b", textTransform: "none" }}
+            sx={{ color: isDark ? "#cbd5e1" : "#64748b", textTransform: "none" }}
           >
             Cancel
           </Button>
@@ -697,11 +783,11 @@ export default function AdminSearchSeoPage() {
             disabled={bulkSaving || bulkPreviewLines.length === 0}
             startIcon={bulkSaving ? <CircularProgress size={16} color="inherit" /> : <PlaylistAddIcon />}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
-              "&:hover": { bgcolor: "#1e293b" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
             }}
           >
             {bulkSaving ? "Processing & Inserting..." : `Add ${bulkPreviewLines.length} Tags to SEO`}
@@ -715,8 +801,20 @@ export default function AdminSearchSeoPage() {
         onClose={() => !editSaving && setEditingTag(null)}
         maxWidth="sm"
         fullWidth
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
+            },
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700, color: "#0f172a", pb: 1 }}>
+        <DialogTitle sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", pb: 1 }}>
           Edit SEO Metadata: {editingTag?.tag}
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: "12px !important" }}>
@@ -727,6 +825,18 @@ export default function AdminSearchSeoPage() {
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
             helperText="Leave empty to use the auto-generated high-converting default title"
+            slotProps={{
+              input: {
+                sx: {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                },
+              },
+              formHelperText: {
+                sx: { color: isDark ? "#94a3b8" : "#64748b" },
+              },
+            }}
           />
 
           <TextField
@@ -738,13 +848,25 @@ export default function AdminSearchSeoPage() {
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
             helperText="Target 120-155 characters for optimal Google & Bing CTR snippet performance"
+            slotProps={{
+              input: {
+                sx: {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                },
+              },
+              formHelperText: {
+                sx: { color: isDark ? "#94a3b8" : "#64748b" },
+              },
+            }}
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+        <DialogActions sx={{ p: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" }}>
           <Button
             onClick={() => setEditingTag(null)}
             disabled={editSaving}
-            sx={{ color: "#64748b", textTransform: "none" }}
+            sx={{ color: isDark ? "#cbd5e1" : "#64748b", textTransform: "none" }}
           >
             Cancel
           </Button>
@@ -753,11 +875,11 @@ export default function AdminSearchSeoPage() {
             onClick={handleSaveEdit}
             disabled={editSaving}
             sx={{
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
-              "&:hover": { bgcolor: "#1e293b" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b" },
             }}
           >
             {editSaving ? "Saving..." : "Save SEO Metadata"}
@@ -769,20 +891,32 @@ export default function AdminSearchSeoPage() {
       <Dialog
         open={Boolean(tagToDelete)}
         onClose={() => !deleting && setTagToDelete(null)}
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              borderRadius: 1.5,
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
+            },
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700, color: "#0f172a" }}>
+        <DialogTitle sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>
           Delete Search SEO Tag?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ fontSize: "0.875rem", color: "#64748b" }}>
-            Are you sure you want to delete <strong>"{tagToDelete?.tag}"</strong>? It will no longer be listed in XML sitemaps or indexed.
+          <DialogContentText sx={{ fontSize: "0.875rem", color: isDark ? "#94a3b8" : "#64748b" }}>
+            Are you sure you want to delete <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>&quot;{tagToDelete?.tag}&quot;</strong>? It will no longer be listed in XML sitemaps or indexed.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
+        <DialogActions sx={{ p: 2, pt: 1, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" }}>
           <Button
             onClick={() => setTagToDelete(null)}
             disabled={deleting}
-            sx={{ color: "#64748b", textTransform: "none" }}
+            sx={{ color: isDark ? "#cbd5e1" : "#64748b", textTransform: "none" }}
           >
             Cancel
           </Button>

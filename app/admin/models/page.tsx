@@ -47,9 +47,12 @@ import {
   EditOutlined as EditIcon,
   Refresh as RefreshIcon,
   AutoAwesome as SparklesIcon,
+  DarkModeOutlined as DarkModeIcon,
+  LightModeOutlined as LightModeIcon,
 } from "@mui/icons-material";
 import { toast } from "sonner";
 import { slugify } from "@/lib/seo";
+import { useAdminTheme } from "@/components/admin/mui-theme-provider";
 
 interface ModelItem {
   _id: string;
@@ -75,14 +78,25 @@ export default function AdminModelsPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
+  const { mode, toggleMode } = useAdminTheme();
+  const isDark = mode === "dark";
 
   const [models, setModels] = useState<ModelItem[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(15);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 280);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Create Dialog State
   const [createOpen, setCreateOpen] = useState(false);
@@ -299,7 +313,8 @@ export default function AdminModelsPage() {
           justifyContent: "space-between",
           gap: 2,
           pb: 1,
-          borderBottom: "1px solid #e2e8f0",
+          borderBottom: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
         }}
       >
         <Box>
@@ -307,30 +322,55 @@ export default function AdminModelsPage() {
             variant="h5"
             sx={{
               fontWeight: 700,
-              color: "#0f172a",
+              color: isDark ? "#f8fafc" : "#0f172a",
               letterSpacing: "-0.01em",
               fontSize: { xs: "1.4rem", sm: "1.6rem" },
             }}
           >
             Models Directory
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
+          <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", mt: 0.25, fontSize: "0.85rem" }}>
             Overview of creator catalogs, custom routes, SEO pipelines, and content publishing.
           </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                borderRadius: 1,
+                color: isDark ? "#fbbf24" : "#475569",
+                p: 0.75,
+                "&:hover": {
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9",
+                },
+              }}
+            >
+              {isDark ? (
+                <LightModeIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <DarkModeIcon sx={{ fontSize: 18 }} />
+              )}
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Refresh data">
             <IconButton
               size="small"
               onClick={fetchModels}
               sx={{
-                bgcolor: "#ffffff",
-                border: "1px solid #e2e8f0",
+                bgcolor: isDark ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
                 borderRadius: 1,
-                color: "#64748b",
+                color: isDark ? "#94a3b8" : "#64748b",
                 p: 0.75,
-                "&:hover": { bgcolor: "#f1f5f9", color: "#0f172a" },
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.1)" : "#f1f5f9", color: isDark ? "#f8fafc" : "#0f172a" },
               }}
             >
               <RefreshIcon sx={{ fontSize: 18 }} />
@@ -344,7 +384,7 @@ export default function AdminModelsPage() {
                 startIcon={<AddIcon />}
                 onClick={() => setCreateOpen(true)}
                 sx={{
-                  bgcolor: "#0f172a",
+                  bgcolor: isDark ? "#f43f5e" : "#0f172a",
                   color: "#ffffff",
                   borderRadius: 1,
                   textTransform: "none",
@@ -353,7 +393,7 @@ export default function AdminModelsPage() {
                   px: 1.75,
                   py: 0.75,
                   boxShadow: "none",
-                  "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+                  "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
                 }}
               >
                 Create Model Route
@@ -361,15 +401,15 @@ export default function AdminModelsPage() {
 
               <Button
                 variant="outlined"
-                startIcon={<SparklesIcon sx={{ fontSize: 18, color: "#7c3aed" }} />}
+                startIcon={<SparklesIcon sx={{ fontSize: 18, color: isDark ? "#c084fc" : "#7c3aed" }} />}
                 onClick={() => {
                   setAiError("");
                   setAiDialogOpen(true);
                 }}
                 sx={{
-                  borderColor: "#c4b5fd",
-                  bgcolor: "#f5f3ff",
-                  color: "#6d28d9",
+                  borderColor: isDark ? "rgba(168, 85, 247, 0.4)" : "#c4b5fd",
+                  bgcolor: isDark ? "rgba(168, 85, 247, 0.12)" : "#f5f3ff",
+                  color: isDark ? "#d8b4fe" : "#6d28d9",
                   borderRadius: 1,
                   textTransform: "none",
                   fontWeight: 600,
@@ -378,8 +418,8 @@ export default function AdminModelsPage() {
                   py: 0.75,
                   boxShadow: "none",
                   "&:hover": {
-                    borderColor: "#8b5cf6",
-                    bgcolor: "#ede9fe",
+                    borderColor: isDark ? "rgba(168, 85, 247, 0.6)" : "#8b5cf6",
+                    bgcolor: isDark ? "rgba(168, 85, 247, 0.2)" : "#ede9fe",
                     boxShadow: "none",
                   },
                 }}
@@ -402,27 +442,25 @@ export default function AdminModelsPage() {
       >
         <TextField
           placeholder="Search model name, tags or slug..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           size="small"
           fullWidth
           slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: "#94a3b8", fontSize: 20 }} />
+                  <SearchIcon sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: 20 }} />
                 </InputAdornment>
               ),
               sx: {
                 borderRadius: 1,
-                bgcolor: "#ffffff",
+                bgcolor: isDark ? "#0f1422" : "#ffffff",
+                color: isDark ? "#f8fafc" : "#0f172a",
                 fontSize: "0.875rem",
-                "& fieldset": { borderColor: "#e2e8f0" },
-                "&:hover fieldset": { borderColor: "#cbd5e1" },
-                "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+                "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0" },
+                "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" },
+                "&.Mui-focused fieldset": { borderColor: isDark ? "#f43f5e" : "#0f172a" },
               },
             },
           }}
@@ -438,12 +476,13 @@ export default function AdminModelsPage() {
             displayEmpty
             sx={{
               borderRadius: 1,
-              bgcolor: "#ffffff",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              color: isDark ? "#f8fafc" : "#0f172a",
               fontSize: "0.875rem",
               fontWeight: 500,
-              "& fieldset": { borderColor: "#e2e8f0" },
-              "&:hover fieldset": { borderColor: "#cbd5e1" },
-              "&.Mui-focused fieldset": { borderColor: "#0f172a" },
+              "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0" },
+              "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" },
+              "&.Mui-focused fieldset": { borderColor: isDark ? "#f43f5e" : "#0f172a" },
             }}
           >
             <MenuItem value="all">All Status</MenuItem>
@@ -457,35 +496,42 @@ export default function AdminModelsPage() {
       <Card
         elevation={0}
         sx={{
-          border: "1px solid #e2e8f0",
+          border: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
           borderRadius: 1.5,
-          bgcolor: "#ffffff",
+          bgcolor: isDark ? "#0f1422" : "#ffffff",
           overflow: "hidden",
         }}
       >
         <TableContainer>
           <Table sx={{ minWidth: 700 }} size="small">
-            <TableHead sx={{ bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+            <TableHead
+              sx={{
+                bgcolor: isDark ? "#090d16" : "#f8fafc",
+                borderBottom: "1px solid",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              }}
+            >
               <TableRow>
-                <TableCell sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Model
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Live Route
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Status
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Review
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Media
                 </TableCell>
-                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell sx={{ py: 1.5, px: 2, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Created
                 </TableCell>
-                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", letterSpacing: "0.04em" }}>
+                <TableCell align="right" sx={{ py: 1.5, px: 2.5, fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", color: isDark ? "#94a3b8" : "#64748b", letterSpacing: "0.04em" }}>
                   Actions
                 </TableCell>
               </TableRow>
@@ -493,7 +539,7 @@ export default function AdminModelsPage() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={i} sx={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <TableRow key={i} sx={{ borderBottom: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9" }}>
                     <TableCell sx={{ py: 1.5, px: 2.5 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <Skeleton variant="rounded" width={38} height={38} sx={{ borderRadius: 1 }} />
@@ -527,11 +573,11 @@ export default function AdminModelsPage() {
                 <TableRow>
                   <TableCell colSpan={7} sx={{ py: 8, textAlign: "center" }}>
                     <Box sx={{ maxWidth: 300, mx: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                      <FlameIcon sx={{ fontSize: 36, color: "#cbd5e1" }} />
-                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: "#0f172a" }}>
+                      <FlameIcon sx={{ fontSize: 36, color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1" }} />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.875rem", color: isDark ? "#f8fafc" : "#0f172a" }}>
                         No models found
                       </Typography>
-                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b" }}>
                         {search || statusFilter !== "all"
                           ? "Try adjusting your search criteria or status filter."
                           : "Create your first model route to populate the directory."}
@@ -547,9 +593,10 @@ export default function AdminModelsPage() {
                     onClick={() => router.push(`/admin/models/${model._id}`)}
                     sx={{
                       cursor: "pointer",
-                      borderBottom: "1px solid #f1f5f9",
+                      borderBottom: "1px solid",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
                       "&:last-child": { borderBottom: "none" },
-                      "&:hover": { bgcolor: "#f8fafc" },
+                      "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc" },
                       transition: "background-color 0.15s ease",
                     }}
                   >
@@ -563,11 +610,12 @@ export default function AdminModelsPage() {
                             width: 38,
                             height: 38,
                             borderRadius: 1,
-                            bgcolor: "#f1f5f9",
-                            color: "#334155",
+                            bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
+                            color: isDark ? "#f8fafc" : "#334155",
                             fontWeight: 700,
                             fontSize: "0.85rem",
-                            border: "1px solid #e2e8f0",
+                            border: "1px solid",
+                            borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
                           }}
                         >
                           {model.name.charAt(0)}
@@ -578,22 +626,22 @@ export default function AdminModelsPage() {
                             sx={{
                               fontWeight: 600,
                               fontSize: "0.825rem",
-                              color: "#0f172a",
+                              color: isDark ? "#f8fafc" : "#0f172a",
                               lineHeight: 1.2,
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              "&:hover": { color: "#2563eb" },
+                              "&:hover": { color: isDark ? "#fb7185" : "#2563eb" },
                             }}
                           >
                             {model.name}
                           </Typography>
                           {model.country ? (
-                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "#64748b", display: "block", mt: 0.25 }}>
+                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: isDark ? "#94a3b8" : "#64748b", display: "block", mt: 0.25 }}>
                               {model.country}
                             </Typography>
                           ) : (
-                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "#94a3b8", display: "block", mt: 0.25 }}>
+                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: isDark ? "#64748b" : "#94a3b8", display: "block", mt: 0.25 }}>
                               {model.tags?.slice(0, 2).join(", ") || "Creator"}
                             </Typography>
                           )}
@@ -609,12 +657,13 @@ export default function AdminModelsPage() {
                           fontFamily: "monospace",
                           fontSize: "0.7rem",
                           fontWeight: 500,
-                          color: "#64748b",
-                          bgcolor: "#f8fafc",
+                          color: isDark ? "#cbd5e1" : "#64748b",
+                          bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
                           px: 1,
                           py: 0.4,
                           borderRadius: 1,
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid",
+                          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
                           display: "inline-block",
                         }}
                       >
@@ -634,14 +683,16 @@ export default function AdminModelsPage() {
                           borderRadius: 1,
                           ...(model.status === "published"
                             ? {
-                                bgcolor: "#ecfdf5",
-                                color: "#059669",
-                                border: "1px solid #a7f3d0",
+                                bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ecfdf5",
+                                color: isDark ? "#34d399" : "#059669",
+                                border: "1px solid",
+                                borderColor: isDark ? "rgba(16, 185, 129, 0.3)" : "#a7f3d0",
                               }
                             : {
-                                bgcolor: "#f1f5f9",
-                                color: "#64748b",
-                                border: "1px solid #e2e8f0",
+                                bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
+                                color: isDark ? "#cbd5e1" : "#64748b",
+                                border: "1px solid",
+                                borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
                               }),
                         }}
                       />
@@ -671,7 +722,7 @@ export default function AdminModelsPage() {
                           sx={{
                             fontSize: "0.7rem",
                             fontWeight: 700,
-                            color: model.reviewed ? "#059669" : "#94a3b8",
+                            color: model.reviewed ? "#059669" : (isDark ? "#64748b" : "#94a3b8"),
                           }}
                         >
                           {model.reviewed ? "Reviewed" : "Pending"}
@@ -683,7 +734,7 @@ export default function AdminModelsPage() {
                     <TableCell sx={{ py: 1.5, px: 2 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                         <PhotoLibraryIcon sx={{ fontSize: 15, color: "#f43f5e" }} />
-                        <Typography sx={{ fontSize: "0.775rem", fontWeight: 600, color: "#334155" }}>
+                        <Typography sx={{ fontSize: "0.775rem", fontWeight: 600, color: isDark ? "#f8fafc" : "#334155" }}>
                           {model.media?.length || 0}
                         </Typography>
                       </Box>
@@ -691,7 +742,7 @@ export default function AdminModelsPage() {
 
                     {/* Created Date */}
                     <TableCell sx={{ py: 1.5, px: 2 }}>
-                      <Typography sx={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>
+                      <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 500 }}>
                         {new Date(model.createdAt).toLocaleDateString()}
                       </Typography>
                     </TableCell>
@@ -706,10 +757,10 @@ export default function AdminModelsPage() {
                         size="small"
                         onClick={(e) => handleOpenMenu(e, model)}
                         sx={{
-                          color: "#94a3b8",
+                          color: isDark ? "#94a3b8" : "#94a3b8",
                           borderRadius: 1,
                           p: 0.5,
-                          "&:hover": { color: "#0f172a", bgcolor: "#f1f5f9" },
+                          "&:hover": { color: isDark ? "#f8fafc" : "#0f172a", bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9" },
                         }}
                       >
                         <MoreVertIcon sx={{ fontSize: 17 }} />
@@ -736,24 +787,25 @@ export default function AdminModelsPage() {
             }}
             rowsPerPageOptions={[10, 15, 25, 50]}
             sx={{
-              borderTop: "1px solid #e2e8f0",
-              bgcolor: "#ffffff",
+              borderTop: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
               ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
                 fontSize: "0.75rem",
-                color: "#64748b",
+                color: isDark ? "#94a3b8" : "#64748b",
                 fontWeight: 500,
               },
               ".MuiTablePagination-select": {
                 fontSize: "0.75rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: isDark ? "#f8fafc" : "#334155",
               },
               ".MuiTablePagination-actions button": {
-                color: "#475569",
+                color: isDark ? "#cbd5e1" : "#475569",
                 p: 0.5,
                 borderRadius: 1,
                 "&.Mui-disabled": {
-                  color: "#cbd5e1",
+                  color: isDark ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1",
                 },
               },
             }}
@@ -770,10 +822,12 @@ export default function AdminModelsPage() {
           paper: {
             elevation: 2,
             sx: {
-              border: "1px solid #e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
               borderRadius: 1,
               minWidth: 180,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+              boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.5)" : "0 4px 12px rgba(0,0,0,0.06)",
               p: 0.5,
             },
           },
@@ -791,13 +845,14 @@ export default function AdminModelsPage() {
               sx={{
                 fontSize: "0.8125rem",
                 fontWeight: 500,
-                color: "#1e293b",
+                color: isDark ? "#f8fafc" : "#1e293b",
                 borderRadius: 1,
                 gap: 1.25,
                 py: 0.75,
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
               }}
             >
-              <EditIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              <EditIcon sx={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b" }} />
               Edit Model &amp; Media
             </MenuItem>
 
@@ -809,13 +864,14 @@ export default function AdminModelsPage() {
               sx={{
                 fontSize: "0.8125rem",
                 fontWeight: 500,
-                color: "#1e293b",
+                color: isDark ? "#f8fafc" : "#1e293b",
                 borderRadius: 1,
                 gap: 1.25,
                 py: 0.75,
+                "&:hover": { bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
               }}
             >
-              <OpenInNewIcon sx={{ fontSize: 16, color: "#64748b" }} />
+              <OpenInNewIcon sx={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b" }} />
               View Public Route
             </MenuItem>
 
@@ -829,14 +885,14 @@ export default function AdminModelsPage() {
                 sx={{
                   fontSize: "0.8125rem",
                   fontWeight: 500,
-                  color: "#dc2626",
+                  color: "#f87171",
                   borderRadius: 1,
                   gap: 1.25,
                   py: 0.75,
-                  "&:hover": { bgcolor: "#fef2f2" },
+                  "&:hover": { bgcolor: isDark ? "rgba(239, 68, 68, 0.15)" : "#fef2f2" },
                 }}
               >
-                <DeleteOutlineIcon sx={{ fontSize: 16, color: "#dc2626" }} />
+                <DeleteOutlineIcon sx={{ fontSize: 16, color: "#f87171" }} />
                 Delete Model
               </MenuItem>
             )}
@@ -855,16 +911,19 @@ export default function AdminModelsPage() {
             elevation: 4,
             sx: {
               borderRadius: 1.5,
-              border: "1px solid #e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
             },
           },
         }}
       >
         <DialogTitle component="div" sx={{ pb: 1, pt: 2.5, px: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.125rem" }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "1.125rem" }}>
             Create New Model Route
           </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
+          <Typography variant="body2" sx={{ color: isDark ? "#94a3b8" : "#64748b", fontSize: "0.75rem", mt: 0.25 }}>
             Establish a canonical directory route at /model/[slug] with custom metadata.
           </Typography>
         </DialogTitle>
@@ -872,7 +931,7 @@ export default function AdminModelsPage() {
         <DialogContent sx={{ px: 3, py: 1, display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Full Name */}
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
               Model Full Name *
             </Typography>
             <TextField
@@ -885,9 +944,10 @@ export default function AdminModelsPage() {
                 input: {
                   sx: {
                     borderRadius: 1,
-                    bgcolor: "#f8fafc",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     fontSize: "0.875rem",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                   },
                 },
               }}
@@ -896,7 +956,7 @@ export default function AdminModelsPage() {
 
           {/* Route Slug */}
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
               Canonical Route Slug *
             </Typography>
             <TextField
@@ -911,17 +971,18 @@ export default function AdminModelsPage() {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Typography sx={{ color: "#94a3b8", fontSize: "0.8125rem", fontFamily: "monospace" }}>
+                      <Typography sx={{ color: isDark ? "#94a3b8" : "#94a3b8", fontSize: "0.8125rem", fontFamily: "monospace" }}>
                         /model/
                       </Typography>
                     </InputAdornment>
                   ),
                   sx: {
                     borderRadius: 1,
-                    bgcolor: "#f8fafc",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     fontSize: "0.875rem",
                     fontFamily: "monospace",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                   },
                 },
               }}
@@ -930,7 +991,7 @@ export default function AdminModelsPage() {
 
           {/* Country */}
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
               Country / Origin
             </Typography>
             <TextField
@@ -945,9 +1006,10 @@ export default function AdminModelsPage() {
                 input: {
                   sx: {
                     borderRadius: 1,
-                    bgcolor: "#f8fafc",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     fontSize: "0.875rem",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                   },
                 },
               }}
@@ -957,7 +1019,7 @@ export default function AdminModelsPage() {
           {/* Meta Title */}
           <Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155" }}>
                 Meta Title (SEO)
               </Typography>
               <Typography
@@ -966,10 +1028,10 @@ export default function AdminModelsPage() {
                   fontWeight: 700,
                   color:
                     newModel.metaTitle.length === 0
-                      ? "#94a3b8"
+                      ? (isDark ? "#94a3b8" : "#94a3b8")
                       : newModel.metaTitle.length <= 60
-                      ? "#059669"
-                      : "#dc2626",
+                      ? (isDark ? "#34d399" : "#059669")
+                      : "#f87171",
                 }}
               >
                 {newModel.metaTitle.length}/60{" "}
@@ -994,13 +1056,14 @@ export default function AdminModelsPage() {
                 input: {
                   sx: {
                     borderRadius: 1,
-                    bgcolor: "#f8fafc",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     fontSize: "0.875rem",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                   },
                 },
                 formHelperText: {
-                  sx: { fontSize: "0.6875rem", color: "#94a3b8" },
+                  sx: { fontSize: "0.6875rem", color: isDark ? "#94a3b8" : "#94a3b8" },
                 },
               }}
             />
@@ -1009,7 +1072,7 @@ export default function AdminModelsPage() {
           {/* Meta Description */}
           <Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155" }}>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155" }}>
                 Meta Description
               </Typography>
               <Typography
@@ -1018,12 +1081,12 @@ export default function AdminModelsPage() {
                   fontWeight: 700,
                   color:
                     newModel.metaDescription.length === 0
-                      ? "#94a3b8"
+                      ? (isDark ? "#94a3b8" : "#94a3b8")
                       : newModel.metaDescription.length < 50
-                      ? "#d97706"
+                      ? (isDark ? "#fbbf24" : "#d97706")
                       : newModel.metaDescription.length <= 155
-                      ? "#059669"
-                      : "#dc2626",
+                      ? (isDark ? "#34d399" : "#059669")
+                      : "#f87171",
                 }}
               >
                 {newModel.metaDescription.length}/155{" "}
@@ -1052,13 +1115,14 @@ export default function AdminModelsPage() {
                 input: {
                   sx: {
                     borderRadius: 1,
-                    bgcolor: "#f8fafc",
+                    bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                    color: isDark ? "#f8fafc" : "#0f172a",
                     fontSize: "0.875rem",
-                    "& fieldset": { borderColor: "#e2e8f0" },
+                    "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                   },
                 },
                 formHelperText: {
-                  sx: { fontSize: "0.6875rem", color: "#94a3b8" },
+                  sx: { fontSize: "0.6875rem", color: isDark ? "#94a3b8" : "#94a3b8" },
                 },
               }}
             />
@@ -1066,7 +1130,7 @@ export default function AdminModelsPage() {
 
           {/* Status Select */}
           <Box>
-            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", mb: 0.75 }}>
+            <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#e2e8f0" : "#334155", mb: 0.75 }}>
               Publication Status
             </Typography>
             <FormControl fullWidth size="small">
@@ -1080,9 +1144,10 @@ export default function AdminModelsPage() {
                 }
                 sx={{
                   borderRadius: 1,
-                  bgcolor: "#f8fafc",
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  color: isDark ? "#f8fafc" : "#0f172a",
                   fontSize: "0.875rem",
-                  "& fieldset": { borderColor: "#e2e8f0" },
+                  "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0" },
                 }}
               >
                 <MenuItem value="published">Published (Live for Public)</MenuItem>
@@ -1096,8 +1161,9 @@ export default function AdminModelsPage() {
             sx={{
               p: 2,
               borderRadius: 1,
-              border: "1px solid #e2e8f0",
-              bgcolor: "#f8fafc",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              bgcolor: isDark ? "#090d16" : "#f8fafc",
               display: "flex",
               flexDirection: "column",
               gap: 0.5,
@@ -1108,7 +1174,7 @@ export default function AdminModelsPage() {
                 fontSize: "0.625rem",
                 fontWeight: 700,
                 textTransform: "uppercase",
-                color: "#94a3b8",
+                color: isDark ? "#94a3b8" : "#94a3b8",
                 letterSpacing: "0.05em",
               }}
             >
@@ -1118,7 +1184,7 @@ export default function AdminModelsPage() {
               sx={{
                 fontSize: "0.875rem",
                 fontWeight: 600,
-                color: "#1a0dab",
+                color: isDark ? "#8ab4f8" : "#1a0dab",
                 lineHeight: 1.3,
                 textOverflow: "ellipsis",
                 overflow: "hidden",
@@ -1133,7 +1199,7 @@ export default function AdminModelsPage() {
               sx={{
                 fontSize: "0.6875rem",
                 fontFamily: "monospace",
-                color: "#006621",
+                color: isDark ? "#81c995" : "#006621",
                 textOverflow: "ellipsis",
                 overflow: "hidden",
                 whiteSpace: "nowrap",
@@ -1144,7 +1210,7 @@ export default function AdminModelsPage() {
             <Typography
               sx={{
                 fontSize: "0.75rem",
-                color: "#4d5156",
+                color: isDark ? "#cbd5e1" : "#4d5156",
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
@@ -1158,19 +1224,19 @@ export default function AdminModelsPage() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => setCreateOpen(false)}
             disabled={creating}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0",
+              color: isDark ? "#cbd5e1" : "#475569",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -1181,13 +1247,13 @@ export default function AdminModelsPage() {
             disabled={creating}
             sx={{
               borderRadius: 1,
-              bgcolor: "#0f172a",
+              bgcolor: isDark ? "#f43f5e" : "#0f172a",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
               boxShadow: "none",
-              "&:hover": { bgcolor: "#1e293b", boxShadow: "none" },
+              "&:hover": { bgcolor: isDark ? "#e11d48" : "#1e293b", boxShadow: "none" },
             }}
           >
             {creating ? "Creating..." : "Save & Open Editor"}
@@ -1206,24 +1272,27 @@ export default function AdminModelsPage() {
             elevation: 4,
             sx: {
               borderRadius: 1.5,
-              border: "1px solid #e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
+              color: isDark ? "#f8fafc" : "#0f172a",
             },
           },
         }}
       >
         <DialogTitle component="div" sx={{ pt: 2.5, px: 3, pb: 1 }}>
-          <Typography sx={{ fontWeight: 800, color: "#0f172a", fontSize: "1.0625rem" }}>
+          <Typography sx={{ fontWeight: 800, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "1.0625rem" }}>
             Delete &quot;{modelToDelete?.name}&quot;?
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ px: 3, py: 1 }}>
-          <DialogContentText sx={{ fontSize: "0.8125rem", color: "#64748b" }}>
+          <DialogContentText sx={{ fontSize: "0.8125rem", color: isDark ? "#94a3b8" : "#64748b" }}>
             This will permanently remove the route{" "}
-            <strong style={{ color: "#0f172a" }}>/model/{modelToDelete?.slug}</strong>,
+            <strong style={{ color: isDark ? "#f8fafc" : "#0f172a" }}>/model/{modelToDelete?.slug}</strong>,
             along with all uploaded photos, videos, and associated metadata. This action cannot be undone.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", gap: 1 }}>
           <Button
             variant="outlined"
             onClick={() => {
@@ -1232,12 +1301,12 @@ export default function AdminModelsPage() {
             }}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0",
+              color: isDark ? "#cbd5e1" : "#475569",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -1271,7 +1340,9 @@ export default function AdminModelsPage() {
             elevation: 8,
             sx: {
               borderRadius: 2,
-              border: "1px solid #e2e8f0",
+              bgcolor: isDark ? "#0f1422" : "#ffffff",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.1)" : "#e2e8f0",
               overflow: "hidden",
             },
           },
@@ -1283,7 +1354,8 @@ export default function AdminModelsPage() {
             pt: 2.5,
             px: 3,
             pb: 1.5,
-            borderBottom: "1px solid #f1f5f9",
+            borderBottom: "1px solid",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1295,8 +1367,8 @@ export default function AdminModelsPage() {
                 width: 32,
                 height: 32,
                 borderRadius: "50%",
-                bgcolor: "#f5f3ff",
-                color: "#7c3aed",
+                bgcolor: isDark ? "rgba(168, 85, 247, 0.2)" : "#f5f3ff",
+                color: isDark ? "#c084fc" : "#7c3aed",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1305,10 +1377,10 @@ export default function AdminModelsPage() {
               <SparklesIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 700, color: "#0f172a", fontSize: "1.0625rem" }}>
+              <Typography sx={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", fontSize: "1.0625rem" }}>
                 Create Model with AI
               </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "#64748b" }}>
+              <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#64748b" }}>
                 Fill all 4 tabs (General Info, Main SEO, Photos SEO, Videos SEO) from unstructured text
               </Typography>
             </Box>
@@ -1317,11 +1389,12 @@ export default function AdminModelsPage() {
             size="small"
             label="AI Auto-Structuring"
             sx={{
-              bgcolor: "#f5f3ff",
-              color: "#7c3aed",
+              bgcolor: isDark ? "rgba(168, 85, 247, 0.15)" : "#f5f3ff",
+              color: isDark ? "#d8b4fe" : "#7c3aed",
               fontWeight: 600,
               fontSize: "0.75rem",
-              border: "1px solid #ddd6fe",
+              border: "1px solid",
+              borderColor: isDark ? "rgba(168, 85, 247, 0.3)" : "#ddd6fe",
             }}
           />
         </DialogTitle>
@@ -1333,7 +1406,7 @@ export default function AdminModelsPage() {
             </Alert>
           )}
 
-          <Typography sx={{ fontSize: "0.8125rem", color: "#475569", mb: 1 }}>
+          <Typography sx={{ fontSize: "0.8125rem", color: isDark ? "#cbd5e1" : "#475569", mb: 1 }}>
             Paste any unstructured creator biography, wiki, social bio, or notes below. The AI will parse
             and structure every field across the 4 tabs while keeping your provided data intact.
             Images are left empty for you to upload manually.
@@ -1353,10 +1426,11 @@ export default function AdminModelsPage() {
                   borderRadius: 1.5,
                   fontSize: "0.875rem",
                   fontFamily: "monospace",
-                  bgcolor: "#f8fafc",
-                  "& fieldset": { borderColor: "#cbd5e1" },
-                  "&:hover fieldset": { borderColor: "#94a3b8" },
-                  "&.Mui-focused fieldset": { borderColor: "#7c3aed" },
+                  bgcolor: isDark ? "rgba(255, 255, 255, 0.04)" : "#f8fafc",
+                  color: isDark ? "#f8fafc" : "#0f172a",
+                  "& fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1" },
+                  "&:hover fieldset": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#94a3b8" },
+                  "&.Mui-focused fieldset": { borderColor: isDark ? "#c084fc" : "#7c3aed" },
                 },
               },
             }}
@@ -1373,18 +1447,18 @@ export default function AdminModelsPage() {
             }}
           >
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              <Chip size="small" variant="outlined" label="General Info & Bio" sx={{ fontSize: "0.7rem" }} />
-              <Chip size="small" variant="outlined" label="Main SEO & Meta Tags" sx={{ fontSize: "0.7rem" }} />
-              <Chip size="small" variant="outlined" label="Photos Page SEO" sx={{ fontSize: "0.7rem" }} />
-              <Chip size="small" variant="outlined" label="Videos Page SEO" sx={{ fontSize: "0.7rem" }} />
+              <Chip size="small" variant="outlined" label="General Info & Bio" sx={{ fontSize: "0.7rem", color: isDark ? "#cbd5e1" : undefined }} />
+              <Chip size="small" variant="outlined" label="Main SEO & Meta Tags" sx={{ fontSize: "0.7rem", color: isDark ? "#cbd5e1" : undefined }} />
+              <Chip size="small" variant="outlined" label="Photos Page SEO" sx={{ fontSize: "0.7rem", color: isDark ? "#cbd5e1" : undefined }} />
+              <Chip size="small" variant="outlined" label="Videos Page SEO" sx={{ fontSize: "0.7rem", color: isDark ? "#cbd5e1" : undefined }} />
             </Box>
-            <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+            <Typography sx={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#94a3b8" }}>
               {aiInputText.length} characters (optimized prompt load)
             </Typography>
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid #e2e8f0", gap: 1 }}>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: "1px solid", borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0", gap: 1 }}>
           <Button
             variant="outlined"
             disabled={generatingWithAi}
@@ -1394,12 +1468,12 @@ export default function AdminModelsPage() {
             }}
             sx={{
               borderRadius: 1,
-              borderColor: "#e2e8f0",
-              color: "#475569",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#e2e8f0",
+              color: isDark ? "#cbd5e1" : "#475569",
               textTransform: "none",
               fontWeight: 600,
               fontSize: "0.8125rem",
-              "&:hover": { borderColor: "#cbd5e1", bgcolor: "#f8fafc" },
+              "&:hover": { borderColor: isDark ? "rgba(255, 255, 255, 0.25)" : "#cbd5e1", bgcolor: isDark ? "rgba(255, 255, 255, 0.06)" : "#f8fafc" },
             }}
           >
             Cancel
@@ -1418,7 +1492,7 @@ export default function AdminModelsPage() {
             }
             sx={{
               borderRadius: 1,
-              bgcolor: "#7c3aed",
+              bgcolor: isDark ? "#9333ea" : "#7c3aed",
               color: "#ffffff",
               textTransform: "none",
               fontWeight: 600,
@@ -1426,8 +1500,8 @@ export default function AdminModelsPage() {
               px: 2.5,
               py: 0.85,
               boxShadow: "none",
-              "&:hover": { bgcolor: "#6d28d9", boxShadow: "none" },
-              "&:disabled": { bgcolor: "#c4b5fd", color: "#ffffff" },
+              "&:hover": { bgcolor: isDark ? "#7e22ce" : "#6d28d9", boxShadow: "none" },
+              "&:disabled": { bgcolor: isDark ? "rgba(168, 85, 247, 0.3)" : "#c4b5fd", color: "#ffffff" },
             }}
           >
             {generatingWithAi ? "Structuring with AI..." : "Generate & Create Model"}
