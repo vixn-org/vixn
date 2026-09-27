@@ -224,8 +224,8 @@ export function generateModelJsonLd(model: IModel) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Model",
-        item: `${SITE_URL}/model`,
+        name: "Models",
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -348,8 +348,8 @@ export function generateModelPhotosJsonLd(model: any) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Model",
-        item: `${SITE_URL}/model`,
+        name: "Models",
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -480,8 +480,8 @@ export function generateModelVideosJsonLd(model: any) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Model",
-        item: `${SITE_URL}/model`,
+        name: "Models",
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -839,8 +839,8 @@ export function generatePhotoJsonLd(
       {
         "@type": "ListItem",
         position: 2,
-        name: "Model",
-        item: `${SITE_URL}/model`,
+        name: "Models",
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -851,7 +851,7 @@ export function generatePhotoJsonLd(
       {
         "@type": "ListItem",
         position: 4,
-        name: "Photo",
+        name: "Photos",
         item: `${SITE_URL}/model/${model.slug}/photos`,
       },
       {
@@ -1002,8 +1002,8 @@ export function generateVideoJsonLd(
       {
         "@type": "ListItem",
         position: 2,
-        name: "Model",
-        item: `${SITE_URL}/model`,
+        name: "Models",
+        item: `${SITE_URL}/models`,
       },
       {
         "@type": "ListItem",
@@ -1014,7 +1014,7 @@ export function generateVideoJsonLd(
       {
         "@type": "ListItem",
         position: 4,
-        name: "Video",
+        name: "Videos",
         item: `${SITE_URL}/model/${model.slug}/videos`,
       },
       {

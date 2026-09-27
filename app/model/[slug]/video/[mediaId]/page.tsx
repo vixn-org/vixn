@@ -86,10 +86,25 @@ export default async function ModelVideoPage({ params }: Props) {
   const { slug, mediaId } = await params;
   await connectDB();
 
-  const model = await Model.findOne({
+  // ── Fetch model + other models concurrently ─────────────────────────────
+  const modelPromise = Model.findOne({
     slug: { $regex: new RegExp(`^${slug}$`, "i") },
     status: "published",
   }).lean();
+
+  const otherModelsPromise = Model.find({
+    status: "published",
+    "media.type": "video",
+  })
+    .select("name slug profileImage coverImage category media._id media.type media.url media.title media.alt media.thumbnail media.order")
+    .sort({ featured: -1, updatedAt: -1 })
+    .limit(13) // fetch 13 so we can exclude current model and still have 12
+    .lean();
+
+  const [model, otherModelsRaw] = await Promise.all([
+    modelPromise,
+    otherModelsPromise,
+  ]);
 
   if (!model) {
     notFound();
@@ -111,15 +126,10 @@ export default async function ModelVideoPage({ params }: Props) {
     .map((v: any, originalIndex: number) => ({ ...v, originalIndex }))
     .filter((v: any) => v._id?.toString() !== currentVideo._id?.toString());
 
-  const otherModelsWithVideos = await Model.find({
-    status: "published",
-    slug: { $ne: model.slug },
-    "media.type": "video",
-  })
-    .select("name slug profileImage coverImage category media")
-    .sort({ featured: -1, updatedAt: -1 })
-    .limit(12)
-    .lean();
+  // Filter out the current model from other models results
+  const otherModelsWithVideos = otherModelsRaw
+    .filter((m: any) => m.slug !== model.slug)
+    .slice(0, 12);
 
   const otherModelVideos = otherModelsWithVideos
     .map((m: any) => {
@@ -254,8 +264,11 @@ export default async function ModelVideoPage({ params }: Props) {
                   Videos
                 </Link>
                 <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
-                <span className="text-rose-400 font-bold truncate max-w-[160px]">
-                  Clip #{currentIndex + 1}
+                <span
+                  title={videoTitle}
+                  className="text-rose-400 font-bold truncate max-w-[180px] sm:max-w-xs"
+                >
+                  {videoTitle}
                 </span>
               </nav>
 

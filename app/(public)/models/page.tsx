@@ -77,6 +77,7 @@ export default async function ModelsPage() {
   try {
     await connectDB();
     const rawModels = await Model.find({ status: "published" })
+      .select("name slug bio category country tags profileImage coverImage featured media.type createdAt")
       .sort("-createdAt")
       .lean();
 

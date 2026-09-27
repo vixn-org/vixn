@@ -89,10 +89,25 @@ export default async function ModelPhotoPage({ params }: Props) {
   const { slug, mediaId } = await params;
   await connectDB();
 
-  const model = await Model.findOne({
+  // ── Fetch model + other models concurrently ─────────────────────────────
+  const modelPromise = Model.findOne({
     slug: { $regex: new RegExp(`^${slug}$`, "i") },
     status: "published",
   }).lean();
+
+  const otherModelsPromise = Model.find({
+    status: "published",
+    "media.type": "photo",
+  })
+    .select("name slug profileImage coverImage category media._id media.type media.url media.title media.alt media.order")
+    .sort({ featured: -1, updatedAt: -1 })
+    .limit(13) // fetch 13 so we can exclude current model and still have 12
+    .lean();
+
+  const [model, otherModelsRaw] = await Promise.all([
+    modelPromise,
+    otherModelsPromise,
+  ]);
 
   if (!model) {
     notFound();
@@ -116,16 +131,10 @@ export default async function ModelPhotoPage({ params }: Props) {
     .map((p: any, originalIndex: number) => ({ ...p, originalIndex }))
     .filter((p: any) => p._id?.toString() !== currentPhoto._id?.toString());
 
-  // Fetch photos from other unique models (1 photo per unique model)
-  const otherModelsWithPhotos = await Model.find({
-    status: "published",
-    slug: { $ne: model.slug },
-    "media.type": "photo",
-  })
-    .select("name slug profileImage coverImage category media")
-    .sort({ featured: -1, updatedAt: -1 })
-    .limit(12)
-    .lean();
+  // Filter out the current model from other models results
+  const otherModelsWithPhotos = otherModelsRaw
+    .filter((m: any) => m.slug !== model.slug)
+    .slice(0, 12);
 
   const otherModelPhotos = otherModelsWithPhotos
     .map((m: any) => {
@@ -257,8 +266,11 @@ export default async function ModelPhotoPage({ params }: Props) {
                   Photos
                 </Link>
                 <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
-                <span className="text-indigo-400 font-bold truncate max-w-[160px]">
-                  Photo #{currentIndex + 1}
+                <span
+                  title={photoTitle}
+                  className="text-indigo-400 font-bold truncate max-w-[180px] sm:max-w-xs"
+                >
+                  {photoTitle}
                 </span>
               </nav>
 

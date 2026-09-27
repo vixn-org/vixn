@@ -11,7 +11,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import WhatshotRoundedIcon from "@mui/icons-material/WhatshotRounded";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 function unslugify(slug: string): string {
   return slug.replace(/-/g, " ");
@@ -49,7 +49,7 @@ export default async function TagsPage() {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Tag",
+        name: "Tags",
         item: `${SITE_URL}/tag`,
       },
     ],
@@ -116,7 +116,7 @@ export default async function TagsPage() {
               sx={{ fontSize: 14, color: "#64748b" }}
               className="shrink-0"
             />
-            <span className="text-rose-400 font-bold">Tag Index</span>
+            <span className="text-rose-400 font-bold">Tags</span>
           </nav>
 
           <div className="space-y-3">

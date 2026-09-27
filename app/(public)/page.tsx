@@ -109,39 +109,124 @@ const faqsList: FAQItem[] = [
   },
 ];
 
+// Only the fields the homepage actually renders — no SEO blobs, no full media arrays
+const CARD_FIELDS =
+  "name slug bio category tags profileImage coverImage featured status" as const;
+
+// Lightweight projection that includes per-model photo & video counts via virtuals
+// computed from an aggregation, so we never pull the full media[] to the app server.
+async function fetchHomepageData() {
+  await connectDB();
+
+  // ── 1. Featured models (small set, needs a few extra display fields) ─────
+  const featuredModelsPromise = Model.find({
+    status: "published",
+    featured: true,
+  })
+    .select(`${CARD_FIELDS} media.type`) // only media.type, not url/thumbnail/keywords etc.
+    .sort("-createdAt")
+    .limit(12)
+    .lean();
+
+  // ── 2. All models for the grid (limited + projected) ────────────────────
+  const allModelsPromise = Model.find({ status: "published" })
+    .select(`${CARD_FIELDS} media.type`)
+    .sort("-createdAt")
+    .limit(48)
+    .lean();
+
+  // ── 3. Aggregate global stats + categories at DB level ──────────────────
+  //    Single aggregation pass – no full documents pulled.
+  const statsPromise = Model.aggregate([
+    { $match: { status: "published" } },
+    {
+      $project: {
+        category: 1,
+        name: 1,
+        slug: 1,
+        photoCount: {
+          $size: {
+            $filter: {
+              input: { $ifNull: ["$media", []] },
+              as: "m",
+              cond: { $eq: ["$$m.type", "photo"] },
+            },
+          },
+        },
+        videoCount: {
+          $size: {
+            $filter: {
+              input: { $ifNull: ["$media", []] },
+              as: "m",
+              cond: { $eq: ["$$m.type", "video"] },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalPhotos: { $sum: "$photoCount" },
+        totalVideos: { $sum: "$videoCount" },
+        categories: { $addToSet: "$category" },
+        // Lightweight list for SEO ItemList schema (name + slug only)
+        modelList: { $push: { name: "$name", slug: "$slug" } },
+        totalModels: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // ── Fire all three queries concurrently ─────────────────────────────────
+  const [featuredModels, allModels, statsResult] = await Promise.all([
+    featuredModelsPromise,
+    allModelsPromise,
+    statsPromise,
+  ]);
+
+  const stats = statsResult[0] ?? {
+    totalPhotos: 0,
+    totalVideos: 0,
+    categories: [],
+    modelList: [],
+    totalModels: 0,
+  };
+
+  return {
+    featuredModels: featuredModels as unknown as PublicModel[],
+    models: allModels as unknown as PublicModel[],
+    totalPhotos: stats.totalPhotos as number,
+    totalVideos: stats.totalVideos as number,
+    totalModels: stats.totalModels as number,
+    categories: (stats.categories as string[]).filter(Boolean),
+    modelList: stats.modelList as { name: string; slug: string }[],
+  };
+}
+
 export default async function HomePage() {
+  let featuredModels: PublicModel[] = [];
   let models: PublicModel[] = [];
+  let totalPhotos = 0;
+  let totalVideos = 0;
+  let totalModels = 0;
+  let categories: string[] = [];
+  let modelList: { name: string; slug: string }[] = [];
 
   try {
-    await connectDB();
-    models = (await Model.find({ status: "published" })
-      .sort("-createdAt")
-      .lean()) as unknown as PublicModel[];
+    const data = await fetchHomepageData();
+    featuredModels = data.featuredModels;
+    models = data.models;
+    totalPhotos = data.totalPhotos;
+    totalVideos = data.totalVideos;
+    totalModels = data.totalModels;
+    categories = data.categories;
+    modelList = data.modelList;
   } catch (error) {
     console.error("HomePage DB connection warning:", error);
   }
 
-  const featuredModels = models.filter((m) => m.featured);
-  const totalPhotos = models.reduce(
-    (acc, m) =>
-      acc + (m.media?.filter((item) => item.type === "photo").length || 0),
-    0
-  );
-  const totalVideos = models.reduce(
-    (acc, m) =>
-      acc + (m.media?.filter((item) => item.type === "video").length || 0),
-    0
-  );
-
-  // Extract unique categories
-  const categories = Array.from(
-    new Set(models.map((m) => m.category).filter(Boolean))
-  ) as string[];
-
   const faqSchema = generateFaqJsonLd(faqsList);
-  const itemListSchema = generateHomepageItemListJsonLd(
-    models.map((m) => ({ name: m.name, slug: m.slug }))
-  );
+  const itemListSchema = generateHomepageItemListJsonLd(modelList);
 
   return (
     <div className="space-y-16 pb-20 text-slate-100">
@@ -206,7 +291,7 @@ export default async function HomePage() {
               </div>
               <div className="text-left">
                 <div className="text-xl font-black text-white leading-tight">
-                  {models.length}
+                  {totalModels}
                 </div>
                 <div className="text-xs font-semibold text-slate-400">Models</div>
               </div>
@@ -533,16 +618,13 @@ export default async function HomePage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {models.map((model) => (
+            {modelList.map((model) => (
               <Link
-                key={model._id.toString()}
+                key={model.slug}
                 href={`/model/${model.slug}`}
                 className="px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs font-bold text-slate-300 hover:text-white shadow-md transition-all flex items-center gap-1.5 border-none"
               >
                 <span>{model.name}</span>
-                <span className="text-[10px] text-slate-400 font-normal">
-                  ({model.media?.length || 0})
-                </span>
               </Link>
             ))}
           </div>

@@ -118,7 +118,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
       </head>
       <body className="min-h-full flex flex-col">

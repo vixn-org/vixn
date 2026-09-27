@@ -49,10 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   await connectDB();
 
-  // Count models matching this exact tag/keyword across all levels
+  // Check if any published models match this tag/keyword
   const tagPattern = new RegExp(slug.replace(/-/g, "[ _-]"), "i");
 
-  const count = await Model.countDocuments({
+  const matchingModel = await Model.findOne({
     status: "published",
     $or: [
       { tags: { $regex: tagPattern } },
@@ -64,7 +64,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       { "media.alt": { $regex: tagPattern } },
       { name: { $regex: tagPattern } },
     ],
-  });
+  })
+    .select("_id")
+    .lean();
 
   const baseTitle = `${capitalTag} - Videos & Photos`;
   const title = formatSeoTitle(baseTitle);
@@ -92,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
     },
-    robots: count > 0 ? "index, follow" : "noindex, follow",
+    robots: matchingModel ? "index, follow" : "noindex, follow",
   };
 }
 
@@ -126,7 +128,7 @@ export default async function TagPage({ params }: Props) {
       ],
     })
       .select(
-        "name slug profileImage coverImage category tags metaKeywords photosSeo videosSeo media bio updatedAt"
+        "name slug profileImage coverImage category tags media._id media.type media.thumbnail media.title media.order updatedAt"
       )
       .sort({ updatedAt: -1 })
       .limit(50)
@@ -180,7 +182,7 @@ export default async function TagPage({ params }: Props) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Tag",
+        name: "Tags",
         item: `${SITE_URL}/tag`,
       },
       {
@@ -279,7 +281,7 @@ export default async function TagPage({ params }: Props) {
                 href="/tag"
                 className="hover:text-rose-400 transition-colors"
               >
-                Tag
+                Tags
               </Link>
               <ChevronRightRoundedIcon sx={{ fontSize: 14, color: "#64748b" }} className="shrink-0" />
               <span className="text-rose-400 font-bold truncate max-w-[200px]">

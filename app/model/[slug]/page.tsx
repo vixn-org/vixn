@@ -66,13 +66,13 @@ export default async function ModelPage({ params }: Props) {
   try {
     await connectDB();
 
-    // Case-insensitive search for resilience
+    // ── Step 1: Fetch the primary model (required before related queries) ──
     model = await Model.findOne({
       slug: { $regex: new RegExp(`^${slug}$`, "i") },
     }).lean();
 
     if (model) {
-      // Priority: models sharing same tags or category for content-relevant internal linking silo
+      // ── Step 2: Fire related models + trending tags CONCURRENTLY ─────────
       const relatedQuery: Record<string, any> = {
         _id: { $ne: model._id },
         status: "published",
@@ -88,10 +88,26 @@ export default async function ModelPage({ params }: Props) {
         }
       }
 
-      relatedModels = await Model.find(relatedQuery)
-        .limit(8)
-        .select("name slug profileImage coverImage category media tags")
-        .lean();
+      const [relatedResult, trendingResult] = await Promise.all([
+        // Related models — only fields needed for cards + media.type for counts
+        Model.find(relatedQuery)
+          .limit(8)
+          .select("name slug profileImage coverImage category tags media.type")
+          .lean(),
+
+        // Trending tags — aggregated at DB level, no documents transferred
+        Model.aggregate([
+          { $match: { status: "published" } },
+          { $project: { tags: 1 } },
+          { $unwind: "$tags" },
+          { $match: { tags: { $ne: "", $type: "string" } } },
+          { $group: { _id: "$tags", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 16 },
+        ]),
+      ]);
+
+      relatedModels = relatedResult;
 
       // If not enough related models, backfill with other published models
       if (relatedModels.length < 4) {
@@ -104,38 +120,20 @@ export default async function ModelPage({ params }: Props) {
           status: "published",
         })
           .limit(4 - relatedModels.length)
-          .select("name slug profileImage coverImage category media tags")
+          .select("name slug profileImage coverImage category tags media.type")
           .lean();
         relatedModels = [...relatedModels, ...backfill];
       }
 
-      // Fetch global trending tags across other published models for cross-site link equity
-      const allPublished = await Model.find({ status: "published" })
-        .select("tags")
-        .limit(60)
-        .lean();
-      const globalTagCounts = new Map<
-        string,
-        { label: string; count: number }
-      >();
-      allPublished.forEach((m: any) => {
-        (m.tags || []).forEach((t: string) => {
-          if (!t || typeof t !== "string") return;
-          const s = slugify(t);
-          if (s) {
-            const existing = globalTagCounts.get(s);
-            if (existing) {
-              existing.count += 1;
-            } else {
-              globalTagCounts.set(s, { label: t.trim(), count: 1 });
-            }
-          }
-        });
-      });
-      trendingTags = Array.from(globalTagCounts.entries())
-        .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 16)
-        .map(([s, val]) => ({ slug: s, label: val.label }));
+      const tagDedup = new Map<string, string>();
+      for (const r of trendingResult) {
+        const s = slugify(r._id);
+        if (s && !tagDedup.has(s)) tagDedup.set(s, r._id.trim());
+      }
+      trendingTags = Array.from(tagDedup.entries()).map(([slug, label]) => ({
+        slug,
+        label,
+      }));
     }
   } catch (error) {
     console.error("ModelPage DB error:", error);

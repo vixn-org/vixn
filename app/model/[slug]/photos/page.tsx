@@ -53,10 +53,21 @@ export default async function ModelPhotosPage({ params }: Props) {
   const { slug } = await params;
   await connectDB();
 
-  const model = await Model.findOne({
+  // ── Fetch model + related models concurrently ───────────────────────────
+  const modelPromise = Model.findOne({
     slug: { $regex: new RegExp(`^${slug}$`, "i") },
     status: "published",
   }).lean();
+
+  // Fire related query concurrently (we'll filter out the current model if needed)
+  const relatedPromise = Model.find({
+    status: "published",
+  })
+    .limit(5) // fetch 5 so we can skip the current model and still have 4
+    .select("name slug profileImage coverImage category media.type")
+    .lean();
+
+  const [model, relatedRaw] = await Promise.all([modelPromise, relatedPromise]);
 
   if (!model) {
     notFound();
@@ -66,13 +77,10 @@ export default async function ModelPhotosPage({ params }: Props) {
   const photos = allMedia.filter((m: any) => m.type === "photo");
   const videos = allMedia.filter((m: any) => m.type === "video");
 
-  const relatedModels = await Model.find({
-    _id: { $ne: model._id },
-    status: "published",
-  })
-    .limit(4)
-    .select("name slug profileImage coverImage category media")
-    .lean();
+  // Filter out the current model from related results
+  const relatedModels = relatedRaw
+    .filter((m: any) => m._id.toString() !== model._id.toString())
+    .slice(0, 4);
 
   // Aggregate all photo-related tags and keywords (deduplicated)
   const tagMap = new Map<string, string>();

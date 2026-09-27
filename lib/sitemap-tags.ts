@@ -21,14 +21,25 @@ function extractKeywords(val: any): string[] {
   return [];
 }
 
+let cachedTags: SitemapTag[] | null = null;
+let lastFetchTime = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes in-memory cache
+
 /**
  * Aggregates, deduplicates, and sorts all unique keyword tags across published models for sitemaps.
  */
-export async function getUniqueSitemapTags(): Promise<SitemapTag[]> {
+export async function getUniqueSitemapTags(forceRefresh = false): Promise<SitemapTag[]> {
+  const now = Date.now();
+  if (!forceRefresh && cachedTags && now - lastFetchTime < CACHE_TTL_MS) {
+    return cachedTags;
+  }
+
   await connectDB();
 
   const models = await Model.find({ status: "published" })
-    .select("tags metaKeywords photosSeo videosSeo media updatedAt createdAt")
+    .select(
+      "tags metaKeywords photosSeo.metaKeywords videosSeo.metaKeywords media.keywords updatedAt createdAt"
+    )
     .lean();
 
   const tagMap = new Map<string, Date>();
@@ -61,7 +72,11 @@ export async function getUniqueSitemapTags(): Promise<SitemapTag[]> {
     }
   }
 
-  return Array.from(tagMap.entries())
+  const result = Array.from(tagMap.entries())
     .map(([slug, lastmod]) => ({ slug, lastmod }))
     .sort((a, b) => b.lastmod.getTime() - a.lastmod.getTime());
+
+  cachedTags = result;
+  lastFetchTime = Date.now();
+  return result;
 }

@@ -9,26 +9,17 @@ export default async function PublicFooter() {
   let topTags: string[] = [];
   try {
     await connectDB();
-    const models = await Model.find({ status: "published" })
-      .select("tags")
-      .limit(100)
-      .lean();
-    
-    const tagCount = new Map<string, number>();
-    models.forEach((m) => {
-      m.tags?.forEach((t: string) => {
-        if (!t || typeof t !== "string") return;
-        const cleaned = t.trim();
-        if (cleaned) {
-          tagCount.set(cleaned, (tagCount.get(cleaned) || 0) + 1);
-        }
-      });
-    });
-
-    topTags = Array.from(tagCount.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12)
-      .map(([tag]) => tag);
+    // Aggregate tags at the DB level — no full documents pulled
+    const result = await Model.aggregate([
+      { $match: { status: "published" } },
+      { $project: { tags: 1 } },
+      { $unwind: "$tags" },
+      { $match: { tags: { $ne: "", $type: "string" } } },
+      { $group: { _id: "$tags", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 12 },
+    ]);
+    topTags = result.map((r: { _id: string }) => r._id);
   } catch {
     // Non-critical fallback
   }
